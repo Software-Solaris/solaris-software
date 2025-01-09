@@ -98,6 +98,7 @@ CONFIG_SOC_I2C_FIFO_LEN=32
 CONFIG_SOC_I2C_CMD_REG_NUM=16
 CONFIG_SOC_I2C_SUPPORT_SLAVE=y
 CONFIG_SOC_I2C_SUPPORT_APB=y
+CONFIG_SOC_I2C_SUPPORT_10BIT_ADDR=y
 CONFIG_SOC_I2C_STOP_INDEPENDENT=y
 CONFIG_SOC_I2S_NUM=2
 CONFIG_SOC_I2S_HW_VERSION_1=y
@@ -500,6 +501,7 @@ CONFIG_TWAI_ERRATA_FIX_LISTEN_ONLY_DOM=y
 #
 CONFIG_ADC_DISABLE_DAC=y
 # CONFIG_ADC_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK is not set
 
 #
 # Legacy ADC Calibration Configuration
@@ -515,48 +517,56 @@ CONFIG_ADC_CAL_LUT_ENABLE=y
 # Legacy DAC Driver Configurations
 #
 # CONFIG_DAC_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_DAC_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy DAC Driver Configurations
 
 #
 # Legacy MCPWM Driver Configurations
 #
 # CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_MCPWM_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy MCPWM Driver Configurations
 
 #
 # Legacy Timer Group Driver Configurations
 #
 # CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_GPTIMER_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy Timer Group Driver Configurations
 
 #
 # Legacy RMT Driver Configurations
 #
 # CONFIG_RMT_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy RMT Driver Configurations
 
 #
 # Legacy I2S Driver Configurations
 #
 # CONFIG_I2S_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_I2S_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy I2S Driver Configurations
 
 #
 # Legacy PCNT Driver Configurations
 #
 # CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_PCNT_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy PCNT Driver Configurations
 
 #
 # Legacy SDM Driver Configurations
 #
 # CONFIG_SDM_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_SDM_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy SDM Driver Configurations
 
 #
 # Legacy Touch Sensor Driver Configurations
 #
 # CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN is not set
+# CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK is not set
 # end of Legacy Touch Sensor Driver Configurations
 # end of Driver Configurations
 
