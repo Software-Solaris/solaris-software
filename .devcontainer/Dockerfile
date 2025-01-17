@@ -39,5 +39,13 @@ RUN chmod +x /root/setup-terminal.sh
 RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
     && echo "source /root/setup-terminal.sh" >> /root/.bashrc
 
+# Set locale to a UTF-8 compatible setting
+RUN apt-get update && apt-get install -y locales && \
+    locale-gen en_US.UTF-8 && \
+    update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
 # Ensure the final user is root
 USER root
