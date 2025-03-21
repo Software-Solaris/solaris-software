@@ -633,12 +633,7 @@ CONFIG_APPTRACE_LOCK_ENABLE=y
 # Bluetooth
 #
 # CONFIG_BT_ENABLED is not set
-
-#
-# Common Options
-#
-# CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED is not set
-# end of Common Options
+CONFIG_BT_ALARM_MAX_NUM=50
 # end of Bluetooth
 
 #
@@ -1954,7 +1949,6 @@ CONFIG_SPI_FLASH_HPM_DC_AUTO=y
 # CONFIG_SPI_FLASH_AUTO_SUSPEND is not set
 CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US=50
 # CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND is not set
-CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM=y
 # end of Optional and Experimental Features (READ DOCS FIRST)
 # end of Main Flash configuration
 

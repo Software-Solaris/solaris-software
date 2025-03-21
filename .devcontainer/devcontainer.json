@@ -19,12 +19,12 @@
     ],
     "remoteUser": "root",
     "mounts": [
-        "source=${localEnv:USERPROFILE}\\.ssh,target=/root/.ssh,type=bind,consistency=cached",
-        "source=${localEnv:USERPROFILE}\\.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
+        "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
     ],
-    "postCreateCommand": "/bin/bash -c 'echo \"source /opt/esp/idf/export.sh\" >> ~/.bashrc && source ~/.bashrc && chown -R root:root /root/.ssh && chmod 700 /root/.ssh && chmod 600 /root/.ssh/config /root/.ssh/id_rsa /root/.ssh/id_ed25519 && chmod 644 /root/.ssh/id_rsa.pub /root/.ssh/id_ed25519.pub && echo \"Dev container ready for ESP-IDF development with SSH keys configured!\"'",
+    "postCreateCommand": "/bin/bash -c 'echo \"source /opt/esp/idf/export.sh\" >> ~/.bashrc && source ~/.bashrc && chown -R root:root /root/.ssh && chmod 700 /root/.ssh && chmod 600 /root/.ssh/config /root/.ssh/id_rsa /root/.ssh/id_ed25519 && chmod 644 /root/.ssh/id_rsa.pub /root/.ssh/id_ed25519.pub && echo \"Dev container ready for ESP-IDF development!\"'",
     "remoteEnv": {
         "IDF_PATH": "/opt/esp/idf",
-        "PATH": "/opt/esp/idf/tools:${containerEnv:PATH}"
+        "PATH": "/opt/esp/idf/tools:${env:PATH}"
     }
 }
