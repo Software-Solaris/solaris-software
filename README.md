@@ -51,7 +51,7 @@ Ejecuta:
 ssh -T git@gitlab.com
 ```
 ---
-
+ alfkjsdlñjfñsf
 ## 6. Clonar el Repositorio
 1. Ve a tu proyecto en [GitLab](https://gitlab.com/) y copia el enlace SSH del repositorio.
 2. En la terminal, navega a la carpeta donde quieres clonar el repositorio:
