@@ -58,14 +58,17 @@ esp_err_t bmp390_set_iir(spi_device_handle_t handle);
 #define BMP390_REG_STATUS         0x03
 
 #define BMP390_STATUS_DRDY_TEMP   0x40
+#define BMP390_STATUS_DRDY_PRES  0x20
 
 esp_err_t bmp390_read_status(spi_device_handle_t handle, uint8_t *status);
 esp_err_t bmp390_wait_temp_ready(spi_device_handle_t handle);
+esp_err_t bmp390_wait_press_ready(spi_device_handle_t handle);
+
 
 //------------------------Lectura Temperatura--------------------------
 
 // Dirección inicial de los coeficientes de temperatura
-#define BMP390_TEMP_CALIB_REG_START  0x31  // NVM_PAR_T1<7:0>
+#define BMP390_TEMP_CALIB_REG_START  0x31
 typedef struct {
     uint16_t par_t1;   // 0x31 (LSB), 0x32 (MSB)  → u16
     int16_t  par_t2;   // 0x33 (LSB), 0x34 (MSB)  → s16
@@ -74,7 +77,7 @@ typedef struct {
     float    t_lin;
 } bmp390_temp_calib_t;
 
-esp_err_t bmp390_read_raw_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib);
+esp_err_t bmp390_read_raw_temp_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib);
 
 typedef struct {
     float PAR_T1;   // Ej. ≈ 28159 / 2^8  ≈ 109.996
@@ -82,10 +85,51 @@ typedef struct {
     float PAR_T3;   // Ej. ≈ −7    / 2^48 ≈ −2.487e-14
 } bmp390_temp_params_t;
 
-esp_err_t bmp390_calibrate_params(spi_device_handle_t handle, bmp390_temp_params_t *out);
+esp_err_t bmp390_calibrate_temp_params(spi_device_handle_t handle, bmp390_temp_params_t *out);
 
+#define BMP390_TEMP_RAW_REG    0x07
 esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp);
 
 float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params);
+
+//------------------------Lectura Presión--------------------------
+// Dirección inicial de los coeficientes de presión
+#define BMP390_PRESS_CALIB_REG_START  0x36
+typedef struct {
+    uint16_t par_p1;   // 0x36 (LSB), 0x37 (MSB)
+    uint16_t par_p2;   // 0x38 (LSB), 0x39 (MSB)
+    int8_t   par_p3;   // 0x3A
+    int8_t   par_p4;   // 0x3B
+    uint16_t  par_p5;   // 0x3C (LSB), 0x3D (MSB)
+    uint16_t   par_p6;   // 0x3E
+    int8_t   par_p7;   // 0x40
+    int8_t   par_p8;   // 0x41
+    int16_t  par_p9;   // 0x42 (LSB), 0x43 (MSB)
+    int8_t   par_p10;  // 0x44
+    int8_t   par_p11;  // 0x45
+} bmp390_press_calib_t;
+
+esp_err_t bmp390_read_raw_press_coeffs(spi_device_handle_t handle, bmp390_press_calib_t *pcalib);
+
+typedef struct {
+    float PAR_P1;   // = (raw.par_p1 - 2^14) / 2^20
+    float PAR_P2;   // = (raw.par_p2 - 2^14) / 2^29
+    float PAR_P3;   // = raw.par_p3 / 2^32
+    float PAR_P4;   // = raw.par_p4 / 2^37
+    float PAR_P5;   // = raw.par_p5 / 2^-3
+    float PAR_P6;   // = raw.par_p6 / 2^6
+    float PAR_P7;   // = raw.par_p7 / 2^8
+    float PAR_P8;   // = raw.par_p8 / 2^15
+    float PAR_P9;   // = raw.par_p9 / 2^48
+    float PAR_P10;  // = raw.par_p10 / 2^48
+    float PAR_P11;  // = raw.par_p11 / 2^65
+} bmp390_press_params_t;
+
+esp_err_t bmp390_calibrate_press_params(spi_device_handle_t handle, bmp390_press_params_t *out);
+
+#define BMP390_PRESS_RAW_REG    0x04
+esp_err_t bmp390_read_raw_press(spi_device_handle_t handle, uint32_t *raw_press);
+
+float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *params);
 
 #endif  // BMP390_H

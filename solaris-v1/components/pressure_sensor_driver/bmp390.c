@@ -175,10 +175,20 @@ esp_err_t bmp390_wait_temp_ready(spi_device_handle_t handle)
     return ESP_OK;
 }
 
+esp_err_t bmp390_wait_press_ready(spi_device_handle_t handle)
+{
+    uint8_t st;
+    esp_err_t ret;
+    do {
+        ret = bmp390_read_status(handle, &st);
+        if (ret != ESP_OK) return ret;
+    } while ((st & BMP390_STATUS_DRDY_PRES) == 0);
+    return ESP_OK;
+}
 
 //----------------------------Lectura Temperatura--------------------------------------------
 
-esp_err_t bmp390_read_raw_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib)
+esp_err_t bmp390_read_raw_temp_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib)
 {
     uint8_t raw[5];  // 5 bytes: registros 0x31..0x35
     esp_err_t ret;
@@ -200,13 +210,13 @@ esp_err_t bmp390_read_raw_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t
     return ESP_OK;
 }
 
-esp_err_t bmp390_calibrate_params(spi_device_handle_t handle, bmp390_temp_params_t *out)
+esp_err_t bmp390_calibrate_temp_params(spi_device_handle_t handle, bmp390_temp_params_t *out)
 {
     esp_err_t ret;
     bmp390_temp_calib_t raw;
 
     // 1) Leer los coeficientes crudos
-    ret = bmp390_read_raw_coeffs(handle, &raw);
+    ret = bmp390_read_raw_temp_coeffs(handle, &raw);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -229,7 +239,7 @@ esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp)
     esp_err_t ret;
 
     // 1) Leer en ráfaga los 3 bytes de temperatura cruda (regs 0x07..0x09)
-    ret = bmp390_read(handle, 0x07, buf, sizeof(buf));
+    ret = bmp390_read(handle, BMP390_TEMP_RAW_REG, buf, sizeof(buf));
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error al leer raw_temp: %d", ret);
         return ret;
@@ -260,3 +270,117 @@ float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *par
     return t_lin;
 }
 
+////------------------------Lectura Presión--------------------------
+
+esp_err_t bmp390_read_raw_press_coeffs(spi_device_handle_t handle, bmp390_press_calib_t *pcalib)
+{
+    uint8_t raw[16];
+    esp_err_t ret = bmp390_read(handle, BMP390_PRESS_CALIB_REG_START, raw, sizeof(raw));
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    // PAR_P1, P2: signed 16-bit
+    pcalib->par_p1  = (uint16_t)((raw[1] << 8) | raw[0]);
+    pcalib->par_p2  = (uint16_t)((raw[3] << 8) | raw[2]);
+    // PAR_P3, P4: signed 8-bit
+    pcalib->par_p3  = (int8_t)  raw[4];
+    pcalib->par_p4  = (int8_t)  raw[5];
+    // PAR_P5, P6: unsigned 16-bit
+    pcalib->par_p5  = (uint16_t)((raw[7] << 8) | raw[6]);
+    pcalib->par_p6  = (uint16_t)((raw[9] << 8) | raw[8]);
+    // PAR_P7, P8: signed 8-bit
+    pcalib->par_p7  = (int8_t)  raw[10];
+    pcalib->par_p8  = (int8_t)  raw[11];
+    // PAR_P9: signed 16-bit
+    pcalib->par_p9  = (int16_t)((raw[13] << 8) | raw[12]);
+    // PAR_P10, P11: signed 8-bit
+    pcalib->par_p10 = (int8_t)  raw[14];
+    pcalib->par_p11 = (int8_t)  raw[15];
+
+    return ESP_OK;
+}
+
+
+
+esp_err_t bmp390_calibrate_press_params(spi_device_handle_t handle, bmp390_press_params_t *out)
+{
+    esp_err_t ret;
+    bmp390_press_calib_t raw;
+
+    // 1) Leer los coeficientes crudos
+    ret = bmp390_read_raw_press_coeffs(handle, &raw);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    // PAR_P1 = (raw.par_p1  - 2^14) / 2^20
+    out->PAR_P1  = (raw.par_p1  - 16384.0f) / 1048576.0f;
+    // PAR_P2 = (raw.par_p2  - 2^14) / 2^29
+    out->PAR_P2  = (raw.par_p2  - 16384.0f) / 536870912.0f;
+    // PAR_P3 = raw.par_p3 / 2^32
+    out->PAR_P3  = raw.par_p3 / 4294967296.0f;
+    // PAR_P4 = raw.par_p4 / 2^37
+    out->PAR_P4  = raw.par_p4 / 137438953472.0f;
+    // PAR_P5 = raw.par_p5 / 2^-3
+    out->PAR_P5  = raw.par_p5 * 8.0f;
+    // PAR_P6 = raw.par_p6 / 2^6
+    out->PAR_P6  = raw.par_p6 / 64.0f;
+    // PAR_P7 = raw.par_p7 / 2^8
+    out->PAR_P7  = raw.par_p7 / 256.0f;
+    // PAR_P8 = raw.par_p8 / 2^15
+    out->PAR_P8  = raw.par_p8 / 32768.0f;
+    // PAR_P9 = raw.par_p9 / 2^48
+    out->PAR_P9  = raw.par_p9 / 281474976710656.0f;
+    // PAR_P10 = raw.par_p10 / 2^48
+    out->PAR_P10 = raw.par_p10 / 281474976710656.0f;
+    // PAR_P11 = raw.par_p11 / 2^65
+    out->PAR_P11 = raw.par_p11 / 36893488147419103232.0f;
+
+    return ESP_OK;
+}
+
+esp_err_t bmp390_read_raw_press(spi_device_handle_t handle, uint32_t *raw_press)
+{
+    uint8_t buf[3];
+    esp_err_t ret;
+
+    // 1) Leer en ráfaga los 3 bytes de presión cruda (regs 0x04..0x06)
+    ret = bmp390_read(handle, BMP390_PRESS_RAW_REG, buf, sizeof(buf));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error al leer raw_press: %d", ret);
+        return ret;
+    }
+
+    // 2) Combinar XLSB, LSB y MSB en un valor de 24 bits:
+    *raw_press = ((uint32_t)buf[2] << 16) | ((uint32_t)buf[1] << 8) | buf[0];
+
+    return ESP_OK;
+}
+
+float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
+{
+    float partial_data1, partial_data2, partial_data3, partial_data4;
+    float partial_out1, partial_out2;
+    float comp_press;
+
+    partial_data1 = p->PAR_P6 * t_lin;
+    partial_data2 = p->PAR_P7 * (t_lin * t_lin);
+    partial_data3 = p->PAR_P8 * (t_lin * t_lin * t_lin);
+    partial_out1  = p->PAR_P5 + partial_data1 + partial_data2 + partial_data3;
+
+    partial_data1 = p->PAR_P2 * t_lin;
+    partial_data2 = p->PAR_P3 * (t_lin * t_lin);
+    partial_data3 = p->PAR_P4 * (t_lin * t_lin * t_lin);
+    partial_out2  = raw_press * (p->PAR_P1 + partial_data1 + partial_data2 + partial_data3);
+
+    partial_data1 = raw_press * raw_press;                               // pres^2
+    partial_data2 = p->PAR_P9 + p->PAR_P10 * t_lin;                     // par_p9 + par_p10*t_lin
+    partial_data3 = partial_data1 * partial_data2;                      // pres^2 * (...)
+    partial_data4 = partial_data3 + (raw_press * raw_press * raw_press) * p->PAR_P11;   // pres^3 * par_p11
+
+    // 4) Suma de todos los términos
+    comp_press = partial_out1 + partial_out2 + partial_data4;
+
+    return comp_press;
+}
