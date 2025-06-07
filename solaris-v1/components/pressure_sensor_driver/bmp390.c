@@ -7,11 +7,14 @@
 
 #define TAG "BMP390"
 
-// Pines según la conexión física
+// ------------------Pines según la conexión física------------------
+
 #define PIN_NUM_MISO 47  // CIPO
 #define PIN_NUM_MOSI 38  // COPI
 #define PIN_NUM_CLK  48  // SCK
 #define PIN_NUM_CS   18  // CS
+
+//--------------------Inicialización (8 bits dummy y halfduplex)---------------------------
 
 esp_err_t bmp390_init(spi_device_handle_t *handle)
 {
@@ -37,6 +40,7 @@ esp_err_t bmp390_init(spi_device_handle_t *handle)
         .queue_size = 7,
         .command_bits = 8,           // 8 bits para la instrucción (registro con bit de lectura)
         .dummy_bits = 8,             // 8 bits dummy para leer la respuesta
+        .flags          = SPI_DEVICE_HALFDUPLEX
     };
 
     ret = spi_bus_add_device(SPI3_HOST, &devcfg, handle);
@@ -49,16 +53,19 @@ esp_err_t bmp390_init(spi_device_handle_t *handle)
     return ESP_OK;
 }
 
-esp_err_t bmp390_soft_reset(spi_device_handle_t handle)
+esp_err_t bmp390_write_reg(spi_device_handle_t handle, uint8_t reg, uint8_t value)
 {
-    uint8_t tx_data[2] = { BMP390_SOFT_RESET_REG & 0x7F, BMP390_SOFT_RESET_CMD };
-    // Aquí usamos la transacción tradicional (sin command_bits) para el soft reset
-    spi_transaction_t t;
-    memset(&t, 0, sizeof(t));
-    t.length = 16;  // 16 bits
+    uint8_t tx_data[2] = { (reg & 0x7F), value };
+    spi_transaction_t t = { 0 };
+    t.length    = 16;          // 16 bits (8 bits registro + 8 bits dato)
     t.tx_buffer = tx_data;
 
-    esp_err_t ret = spi_device_transmit(handle, &t);
+    return spi_device_transmit(handle, &t);
+}
+
+esp_err_t bmp390_soft_reset(spi_device_handle_t handle)
+{
+    esp_err_t ret = bmp390_write_reg(handle, BMP390_SOFT_RESET_REG, BMP390_SOFT_RESET_CMD);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error al enviar soft reset: %d", ret);
         return ret;
@@ -70,14 +77,7 @@ esp_err_t bmp390_soft_reset(spi_device_handle_t handle)
 
 esp_err_t bmp390_enable_spi_mode(spi_device_handle_t handle)
 {
-    // Para escribir usamos la transacción tradicional (sin utilizar command_bits)
-    uint8_t tx_data[2] = { BMP390_IF_CONF_REG & 0x7F, BMP390_IF_CONF_SPI };
-    spi_transaction_t t;
-    memset(&t, 0, sizeof(t));
-    t.length = 16;
-    t.tx_buffer = tx_data;
-
-    esp_err_t ret = spi_device_transmit(handle, &t);
+    esp_err_t ret = bmp390_write_reg(handle, BMP390_IF_CONF_REG, BMP390_IF_CONF_SPI);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Error al habilitar modo SPI: %d", ret);
         return ret;
@@ -86,18 +86,24 @@ esp_err_t bmp390_enable_spi_mode(spi_device_handle_t handle)
     return ESP_OK;
 }
 
-
 esp_err_t bmp390_read_reg(spi_device_handle_t handle, uint8_t reg, uint8_t *val)
 {
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));
-    // Se usa el campo cmd para enviar el registro a leer con el bit de lectura activado:
+
+    // 1. Comando: registro con bit de lectura (MSB = 1)
     t.cmd = reg | 0x80;
-    t.length = 8;      // Se esperan 8 bits (dummy) para la lectura
-    t.rxlength = 8;    // Se esperan 8 bits de respuesta
-    t.rx_buffer = val;
+
+    // 2. fase de datos: no se envía nada en TX
+    t.length   = 0;     // 0 bits de TX en fase de datos
+
+    // 3. fase de datos: se leen 8 bits en RX
+    t.rxlength = 8;     // 8 bits a recibir
+    t.rx_buffer = val;  // val debe apuntar a un uint8_t
+
     return spi_device_polling_transmit(handle, &t);
 }
+
 
 esp_err_t bmp390_read_if_conf(spi_device_handle_t handle, uint8_t *if_conf)
 {
@@ -121,80 +127,130 @@ esp_err_t bmp390_read_chip_id(spi_device_handle_t handle, uint8_t *chip_id)
     return ret;
 }
 
-// —— A PARTIR DE AQUÍ, LO AÑADIDO SIN REDEFINIR NADA MÁS ——
+//-------------------------Activar Lecturas-----------------------------
 
-// Bajo nivel: escribir registro
-esp_err_t bmp390_write_reg(spi_device_handle_t spi, uint8_t reg_addr, uint8_t data)
+//Modo
+esp_err_t bmp390_set_mode_normal(spi_device_handle_t handle)
 {
-    spi_transaction_t t = {
-        .flags   = SPI_TRANS_USE_TXDATA,
-        .tx_data = { reg_addr & 0x7F, data },
-        .length  = 16,
-    };
-    return spi_device_transmit(spi, &t);
+    // Escritura directa del valor pre-combinado (modo Normal + temp + press)
+    return bmp390_write_reg(handle, BMP390_REG_PWR_CTRL, BMP390_PWRCTRL_NORMAL);
 }
 
-esp_err_t bmp390_read_regs(spi_device_handle_t spi, uint8_t reg_start, uint8_t *data, size_t len)
+//Oversampling
+esp_err_t bmp390_set_osr_temp(spi_device_handle_t handle)
 {
-    spi_transaction_t t = {0};
-    t.cmd = reg_start | 0x80; // registro inicial con bit de lectura
-    t.length = len * 8;
-    t.rxlength = len * 8;
-    t.rx_buffer = data;
-    return spi_device_polling_transmit(spi, &t);
+    return bmp390_write_reg(handle, BMP390_REG_OSR, BMP390_OSR_TEMP_x16);
 }
 
-// Variables internas para calibración de temperatura
-static float _par_t1, _par_t2, _par_t3;
-
-// Burst-read de coeficientes de temperatura (0x31…0x36)
-esp_err_t bmp390_read_calibration(spi_device_handle_t spi)
+//ODR
+esp_err_t bmp390_set_odr_50hz(spi_device_handle_t handle)
 {
-    uint8_t buf[5];
-    bmp390_read_regs(spi, 0x31, buf, 5);
+    return bmp390_write_reg(handle, BMP390_REG_ODR, BMP390_ODR_SEL_50HZ);
+}
 
-    // Ahora buf[0]=0x31, buf[1]=0x32, buf[2]=0x33, buf[3]=0x34, buf[4]=0x35
-    uint16_t raw_t1 = ((uint16_t)buf[0] << 8) | buf[1];  // 0x31(MSB)/0x32(LSB)
-    uint16_t raw_t2 = ((uint16_t)buf[2] << 8) | buf[3];  // 0x33(MSB)/0x34(LSB)
-    int8_t  raw_t3 = (int8_t)buf[4];                    // 0x35 (T3)
+//Filtro
+esp_err_t bmp390_set_iir(spi_device_handle_t handle)
+{
+    return bmp390_write_reg(handle, BMP390_REG_CONFIG, BMP390_IIR_COEFF_7);
+}
 
-    // NUEVO: Imprime los valores crudos para depuración
-    ESP_LOGI(TAG, "Buf calib: %02X %02X %02X %02X %02X", buf[0], buf[1], buf[2], buf[3], buf[4]);
+//----------------------------Lectura Temperatura--------------------------------------------
 
-    _par_t1 = raw_t1 / 256.0f;               // 2^-8
-    _par_t2 = raw_t2 / 1073741824.0f;        // 2^30 :contentReference[oaicite:1]{index=1}
-    _par_t3 = raw_t3 / 281474976710656.0f;
-    ESP_LOGI(TAG, "Calib T: t1=%.6f t2=%.6f t3=%.12f", _par_t1, _par_t2, _par_t3);
+esp_err_t bmp390_read_bytes(spi_device_handle_t handle, uint8_t start_reg, uint8_t *buffer,size_t length)
+{
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));
+
+    // En modo half-duplex (devcfg.flags = SPI_DEVICE_HALFDUPLEX, command_bits=8, dummy_bits=8):
+    t.cmd       = start_reg | 0x80;  // 8 bits de comando con bit lectura
+    t.length    = 0;                 // 0 bits TX en fase de datos
+    t.rxlength  = length * 8;        // recibimos 'length' bytes
+    t.rx_buffer = buffer;
+
+    return spi_device_polling_transmit(handle, &t);
+}
+
+esp_err_t bmp390_read_temp_calibration(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib)
+{
+    uint8_t raw[5];  // 5 bytes: 0x31..0x35
+    esp_err_t ret;
+
+    // 1) Leemos de 0x31 a 0x35 (5 bytes consecutivos)
+    ret = bmp390_read_bytes(handle, BMP390_TEMP_CALIB_REG_START, raw, sizeof(raw));
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    // 2) Desempaquetamos en little-endian:
+    tcalib->par_t1 =  (uint16_t)( raw[1] << 8 | raw[0] );
+    tcalib->par_t2 =  (int16_t )( raw[3] << 8 | raw[2] );
+    tcalib->par_t3 =  (int8_t  ) raw[4];
+
+    // 3) Inicializamos t_lin a cero
+    tcalib->t_lin = 0.0f;
+
     return ESP_OK;
 }
 
-
-// Lectura cruda de temperatura (3 bytes DATA_3…DATA_5)
-esp_err_t bmp390_read_raw_temperature(spi_device_handle_t spi, uint32_t *uncomp_temp)
+esp_err_t bmp390_temp_params(spi_device_handle_t handle, bmp390_temp_params_t *out)
 {
-    uint8_t raw[3];
-    esp_err_t r = bmp390_read_regs(spi, BMP390_REG_DATA_3, raw, 3);
-    if (r != ESP_OK) return r;
+    esp_err_t ret;
+    bmp390_temp_calib_t raw;
 
-    ESP_LOGI(TAG, "Temp raw: %02X %02X %02X", raw[0], raw[1], raw[2]);
+    // 1) Leemos los valores “raw” desde el BMP390
+    ret = bmp390_read_temp_calibration(handle, &raw);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
+    // 2) Convertimos a float según la sección 8.4 de la datasheet:
+    //    PAR_T1 = raw.par_t1 / 2^8
+    //    PAR_T2 = raw.par_t2 / 2^30
+    //    PAR_T3 = raw.par_t3 / 2^48
 
-    // Convert 24-bit register data to 20-bit ADC value by discarding 4 LSBs
-     uint32_t u24 = ((uint32_t)raw[2] << 16)
-                  | ((uint32_t)raw[1] <<  8)
-                  |  (uint32_t)raw[0];
-     *uncomp_temp = u24 >> 4;  // now a true 20-bit uncomp_temp
+    out->PAR_T1 = (float) raw.par_t1 / (float)(1 << 8);
+    out->PAR_T2 = (float) raw.par_t2 / (float)(1ULL << 30);
+    out->PAR_T3 = (float) raw.par_t3 / (float)(1ULL << 48);
+
     return ESP_OK;
 }
 
-// Compensación de temperatura en °C (datasheet §3.10)
-float BMP390_compensate_temperature(uint32_t uncomp_temp)
+esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp)
 {
-    float pd1 = (float)uncomp_temp - _par_t1;
-    float pd2 = pd1 * _par_t2;
-    return pd2 + (pd1 * pd1) * _par_t3;
+    uint8_t buf[3];
+    esp_err_t ret;
+
+    // 1) Leer en ráfaga los 3 bytes de temperatura cruda (0x07..0x09)
+    ret = bmp390_read_bytes(handle, 0x07, buf, 3);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error al leer raw_temp: %d", ret);
+        return ret;
+    }
+
+    // 2) Combinar XLSB, LSB y MSB en un valor de 24 bits:
+    //    buf[0] = TEMP_XLSB (bits 7:0)
+    //    buf[1] = TEMP_LSB  (bits 15:8)
+    //    buf[2] = TEMP_MSB  (bits 23:16)
+    *raw_temp = ((uint32_t)buf[2] << 16)  // MSB
+              | ((uint32_t)buf[1] <<  8)  // LSB
+              |  (uint32_t)buf[0];        // XLSB
+
+    return ESP_OK;
 }
 
-float bmp390_get_par_t1(void) { return _par_t1; }
-float bmp390_get_par_t2(void) { return _par_t2; }
-float bmp390_get_par_t3(void) { return _par_t3; }
+float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params)
+{
+    // Según sección 8.4 de la datasheet:
+    //   PAR_T1 = stored_par_t1 / 2^8
+    //   PAR_T2 = stored_par_t2 / 2^30
+    //   PAR_T3 = stored_par_t3 / 2^48
+    //
+    //   t_lin = PAR_T2 * (raw_temp - PAR_T1)
+    //         + PAR_T3 * (raw_temp - PAR_T1)^2
+
+    float partial1 = (float)raw_temp - params->PAR_T1;
+    float partial2 = partial1 * params->PAR_T2;
+    float t_lin = partial2 + (partial1 * partial1) * params->PAR_T3;
+
+    return t_lin;
+}
