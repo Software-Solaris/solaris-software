@@ -1,3 +1,4 @@
-idf_component_register(SRCS "pressure_sensor.c"
-                        INCLUDE_DIRS "include")
+idf_component_register(SRCS "bmp390.c"
+                        INCLUDE_DIRS "include"
+                        REQUIRES driver general)
                         
