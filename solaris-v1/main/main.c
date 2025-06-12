@@ -17,19 +17,23 @@ int app_main(void)
 
     // Inicializar los sensores usando los structs ya creados.
     esp_err_t com_result = init_common_sensors(&icm_dev, &baro_dev);
-
     if (com_result != ESP_OK) {
-        ESP_LOGE(TAG, "Error en la inicialización de los sensores.");
+        ESP_LOGE(TAG, "Failed on establishing communications");
         return ESP_FAIL;
-    } else {
-        // Lectura periódica de los datos en los sensores
-        while (1) {
-            read_common_sensors(&icm_dev, &baro_dev);
-            vTaskDelay(pdMS_TO_TICKS(2000));
-        }
-
-        return ESP_OK;
     }
 
+    // Configuración interna de los sensores
+    esp_err_t set_up_result = configure_common_sensors(&icm_dev, &baro_dev);
+    if (set_up_result != ESP_OK) {
+        ESP_LOGE(TAG, "Failed on sensors set up");
+        return ESP_FAIL;
+    }
+
+    // Lectura periódica de los datos en los sensores
+    while (1) {
+        read_common_sensors(&icm_dev, &baro_dev);
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+    return ESP_OK;
 
 }

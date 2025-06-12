@@ -4,34 +4,16 @@
 
 static const char* TAG = "ICM20948"; 
 
-// Auxiliar para envío de mensajes por spi_device_transmit
 esp_err_t icm20948_send_message(data_t *p_dev, uint8_t tx[2], uint8_t rx[2]) {
+    // Ajuste de parámetros de transacción
     p_dev->trans_desc.length = 16;
     p_dev->trans_desc.tx_buffer = tx;
     p_dev->trans_desc.rx_buffer = rx;
 
-    esp_err_t ret;
-    ret = spi_device_transmit(p_dev->handle, &p_dev->trans_desc);
-    return ret;
+    esp_err_t trans_result = spi_device_transmit(p_dev->handle, &p_dev->trans_desc);
+    return trans_result;
 }
 
-// Auxiliar para petición de datos a la ICM20948
-esp_err_t get_data(data_t *p_dev, uint8_t address1, uint8_t address2, int16_t *p_data) {
-    esp_err_t ret = ESP_OK;
-
-    uint8_t tx_data_h[2] = { (uint8_t)(READ_OP | address1), EMPTY_MESSAGE };
-    uint8_t rx_data_h[2] = { 0, 0 };
-    ret = icm20948_send_message(p_dev, tx_data_h, rx_data_h);
-
-    uint8_t tx_data_l[2] = { (uint8_t)(READ_OP | address2), EMPTY_MESSAGE };
-    uint8_t rx_data_l[2] = { 0, 0 };
-    ret = icm20948_send_message(p_dev, tx_data_l, rx_data_l);
-
-    if (ret != ESP_OK) {ESP_LOGE(TAG, "Alguna extracción de datos tuvo un error");}
-
-    *p_data = (int16_t)(rx_data_h[1] << 8 | rx_data_l[1]);
-    return ret;
-}
 
 esp_err_t icm20948_init(data_t *p_dev) {
 
@@ -73,57 +55,39 @@ esp_err_t icm20948_init(data_t *p_dev) {
 
 
 
-    // Variables en principio fijas para todas las transacciones
+    // Reset del sensor: escribir 0x80 en PWR_MGMT_1
     uint8_t tx_reset[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), BIT_H_RESET };
     uint8_t rx_reset[2] = { 0, 0 };
-    
-    p_dev->trans_desc.length = 16;
-    p_dev->trans_desc.tx_buffer = tx_reset;
-    p_dev->trans_desc.rx_buffer = rx_reset;
 
-    esp_err_t prueba = spi_device_transmit(p_dev->handle, &p_dev->trans_desc);
-    if (prueba != ESP_OK) {
-        ESP_LOGE(TAG, "El reset del sensor ha fallado");
-    } 
-
-    // Leemos el contenido de PWR_MGMT_1
-    uint8_t tx_read[2] = { (uint8_t) (READ_OP | REG_PWR_MGMT_1), EMPTY_MESSAGE };
-    uint8_t rx_read[2] = { 0, 0 };
-    
-    p_dev->trans_desc.length = 16;
-    p_dev->trans_desc.tx_buffer = tx_read;
-    p_dev->trans_desc.rx_buffer = rx_read;
-
-    esp_err_t prueba_2 = spi_device_transmit(p_dev->handle, &p_dev->trans_desc);
-    if (prueba_2 != ESP_OK) {
-        ESP_LOGE(TAG, "El reset del sensor ha fallado");
-    } else {
-        ESP_LOGI(TAG, "El registro PWR_MGMT_1 debería ser 0x41 | Leído: 0x%02X", rx_read[1]);
+    ret = icm20948_send_message(p_dev, tx_reset, rx_reset);
+    vTaskDelay(pdMS_TO_TICKS(100));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Sensor reset returned an error: %d", ret);
+        return ret;
     }
 
+    // Lectura del contenido del WHO_AM_i: leer 0x00
+    uint8_t tx_who_am_i[2] = { (uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE };
+    uint8_t rx_who_am_i[2] = { 0, 0 };
 
+    ret = icm20948_send_message(p_dev, tx_who_am_i, rx_who_am_i);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "WHO_AM_I reading failed: %d", ret);
+        return ret;
+    } else {
+        p_dev->sensor_id = rx_who_am_i[1]; // Datos útiles en el segundo bit
+        ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", p_dev->sensor_id);
+    }
 
     return ret;
 }
 
+esp_err_t icm20948_config(data_t *p_dev) {
+    return ESP_OK;
+}
 
 esp_err_t icm20948_get_measurements(data_t *p_dev) {
-    esp_err_t ret = ESP_OK;
-
-    //Todos los datos vienen en 16 bits, por lo que get_data() hace 2 lecturas y devuelve la suma binaria
-    
-    int16_t x_accel;
-    ret = get_data(p_dev, 0x2D, 0x2E, &x_accel);
-
-    ESP_LOGI(TAG, "Aceleración leída en X: %d", x_accel);
-
-    int16_t y_accel;
-    ret = get_data(p_dev, 0x2F, 0x30, &y_accel);
-
-    ESP_LOGI(TAG, "Aceleración leída en Y: %d", y_accel);
-
-    //Aqui irán el resto de extracciones de datos
-
-    return ret;
+    ESP_LOGI(TAG, "Structure succed!!");
+    return ESP_OK;
 }
 
