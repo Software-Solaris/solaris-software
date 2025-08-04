@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "macros.h"
 
+esp_err_t ret = ESP_OK;
+
 #define PIN_NUM_CS         21 
 
 #define READ_OP            0x80

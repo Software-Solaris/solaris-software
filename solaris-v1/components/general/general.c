@@ -18,7 +18,6 @@ esp_err_t init_common_sensors(data_t *icm, data_t *baro) {
     }
     ESP_LOGI(TAG, "ICM20948 init succed");
 
-    /*
     // Inicializar el barómetro (BMP390) usando el struct proporcionado.
     ret = bmp390_init(baro);
     if (ret != ESP_OK) {
@@ -26,7 +25,7 @@ esp_err_t init_common_sensors(data_t *icm, data_t *baro) {
         return ret;
     }
     ESP_LOGI(TAG, "Inicialización del barómetro exitosa");
-    */
+
    return ESP_OK;
 }
 

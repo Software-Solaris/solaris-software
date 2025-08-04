@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "driver/spi_master.h"  // API del ESP-IDF para SPI
 
+#define PIN_NUM_CS   18
+
 //---------------------Registros y valores esperados------------------------------
 
 #define BMP390_CHIP_ID_REG    0x00
@@ -132,7 +134,6 @@ esp_err_t bmp390_read_raw_press(spi_device_handle_t handle, uint32_t *raw_press)
 
 float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *params);
 
-spi_device_handle_t bmp_spi;
 esp_err_t ret;
 uint8_t id, ifc;
 bmp390_temp_calib_t raw_calib;
@@ -155,7 +156,6 @@ esp_err_t bmp390_prepare_read(void);
 esp_err_t bmp390_read_temp(void);
 esp_err_t bmp390_calc_altitude(void);
 esp_err_t bmp390_read(void);
-
 
 
 #endif  // BMP390_H

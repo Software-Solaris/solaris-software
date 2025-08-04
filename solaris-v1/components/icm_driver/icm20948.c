@@ -15,7 +15,6 @@ esp_err_t send_message(data_t *p_dev, uint8_t tx[2], uint8_t rx[2]) {
 }
 
 int16_t get_raw_axis_data(data_t *p_dev, uint8_t h_reg, uint8_t l_reg) {
-    esp_err_t ret;
 
     uint8_t tx_h[2] = { (uint8_t)(READ_OP | h_reg), EMPTY_MESSAGE };
     uint8_t rx_h[2] = { 0 };
@@ -49,10 +48,10 @@ esp_err_t icm20948_init(data_t *p_dev) {
 
     esp_err_t ret = spi_bus_initialize(SPI_HOST_USED, &p_dev->buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error spi_bus_initialize: %d", ret);
+        ESP_LOGE(TAG, "Error spi_bus_initialize on ICM20948: %d", ret);
         return ret;
     } 
-    ESP_LOGI(TAG, "SPI Bus initialized.");
+    ESP_LOGI(TAG, "SPI bus initialized on ICM20948");
 
     // 2. Configura el dispositivo SPI (CS, velocidad, modo, etc.)
     p_dev->devcfg.clock_speed_hz = 100000;
@@ -70,12 +69,16 @@ esp_err_t icm20948_init(data_t *p_dev) {
 
     ret = spi_bus_add_device(SPI_HOST_USED, &p_dev->devcfg, &p_dev->handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error spi_bus_add_device: %d", ret);
+        ESP_LOGE(TAG, "Error spi_bus_add_device on ICM20948: %d", ret);
         return ret;
     } 
-    ESP_LOGI(TAG, "Device added to SPI bus.");
+    ESP_LOGI(TAG, "ICM20948 added to SPI bus.");
+
+    return ESP_OK;
+}
 
 
+esp_err_t icm20948_config(data_t *p_dev) {
 
     // Reset del sensor: escribir 0x80 en PWR_MGMT_1
     uint8_t tx_reset[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), BIT_H_RESET };
@@ -100,13 +103,6 @@ esp_err_t icm20948_init(data_t *p_dev) {
         p_dev->sensor_id = rx_who_am_i[1]; // Datos útiles en el segundo bit
         ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", p_dev->sensor_id);
     }
-
-    return ret;
-}
-
-
-esp_err_t icm20948_config(data_t *p_dev) {
-    esp_err_t ret;
 
     // Desactivar el modo "I2C_DUTY_CYCLED": escribir 0x00 en LP_CONFIG
     uint8_t tx_lp_config[2] = { (uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DEAC };
@@ -165,7 +161,6 @@ esp_err_t icm20948_config(data_t *p_dev) {
 
 esp_err_t icm20948_get_measurements(data_t *p_dev) {
     // Inicialización de variables
-    esp_err_t ret = ESP_OK;
     int16_t accel_x_raw, accel_y_raw, accel_z_raw;
     float accel_x, accel_y, accel_z;
     int16_t gyro_x_raw, gyro_y_raw, gyro_z_raw;
