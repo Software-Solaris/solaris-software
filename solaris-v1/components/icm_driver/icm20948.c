@@ -104,6 +104,7 @@ esp_err_t icm20948_init(data_t *p_dev) {
     return ret;
 }
 
+
 esp_err_t icm20948_config(data_t *p_dev) {
     esp_err_t ret;
 

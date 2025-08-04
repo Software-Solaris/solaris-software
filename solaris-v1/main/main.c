@@ -1,7 +1,7 @@
-#include "general.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "general.h"
 #include "macros.h"
 
 static const char *TAG = "MainApp";
@@ -29,11 +29,12 @@ int app_main(void)
         return ESP_FAIL;
     }
 
+    // Calibración del bmp: PENDIENTE !!
+
     // Lectura periódica de los datos en los sensores
     while (1) {
         read_common_sensors(&icm_dev, &baro_dev);
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
     return ESP_OK;
-
 }
