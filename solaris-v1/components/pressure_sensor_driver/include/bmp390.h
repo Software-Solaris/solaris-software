@@ -2,7 +2,8 @@
 #define BMP390_H
 
 #include <stdint.h>
-#include "driver/spi_master.h"  // API del ESP-IDF para SPI
+#include "driver/spi_master.h" 
+#include "general.h"
 
 #define PIN_NUM_CS   18
 
@@ -143,19 +144,25 @@ bmp390_press_calib_t raw_press_calib;
 bmp390_press_params_t press_params;
 uint32_t raw_press;
 float t_lin;
+uint8_t st;
+uint8_t buf[3];
+bmp390_press_calib_t raw;
+uint8_t raw[5];  
+float partial_data1, partial_data2, partial_data3, partial_data4;
+float partial_out1, partial_out2;
+float comp_press;
 
+//-----------Aux Functions-----------
+void bmp390_config(void);
 
-//-----------Help for General
-esp_err_t bmp390_config(void);
-
-esp_err_t bmp390_prepare_mode(void);
-esp_err_t bmp390_prepare_temp(void);
-esp_err_t bmp390_prepare_press(void);
-esp_err_t bmp390_prepare_read(void);
+void bmp390_prepare_mode(void);
+void bmp390_prepare_temp(void);
+void bmp390_prepare_press(void);
+void bmp390_prepare_read(void);
 
 esp_err_t bmp390_read_temp(void);
 esp_err_t bmp390_calc_altitude(void);
-esp_err_t bmp390_read(void);
+void bmp390_read(void);
 
 
 #endif  // BMP390_H

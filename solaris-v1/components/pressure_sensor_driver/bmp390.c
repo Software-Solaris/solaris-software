@@ -7,7 +7,7 @@
 
 static const char* TAG = "BMP390";
 
-//--------------------Inicialización (8 bits dummy y halfduplex)---------------------------
+//--------------------INIT (8 dummy bits and halfduplex)---------------------------
 
 esp_err_t bmp390_init(data_t *p_dev)
 {
@@ -47,6 +47,8 @@ esp_err_t bmp390_init(data_t *p_dev)
     return ESP_OK;
 }
 
+//--------------------AUX FUNCTIONS---------------------------
+
 esp_err_t bmp390_write_reg(spi_device_handle_t handle, uint8_t reg, uint8_t value)
 {
     uint8_t tx_data[2] = { (reg & 0x7F), value };
@@ -56,6 +58,23 @@ esp_err_t bmp390_write_reg(spi_device_handle_t handle, uint8_t reg, uint8_t valu
 
     return spi_device_transmit(handle, &t);
 }
+
+esp_err_t bmp390_read(spi_device_handle_t handle, uint8_t reg, uint8_t *dst, size_t len)
+{
+    spi_transaction_t t = { 0 };
+
+    // 1) Prepara el comando de lectura: MSB=1 + dirección
+    t.cmd       = reg | 0x80;
+    // 2) Fase de datos TX: 0 bits
+    t.length    = 0;
+    // 3) Fase de datos RX: len bytes * 8 bits/byte
+    t.rxlength  = len * 8;
+    t.rx_buffer = dst;
+    // 4) Ejecuta la transacción (polling o transmit según convenga)
+    return spi_device_polling_transmit(handle, &t);
+}
+
+//--------------------CONFIG and CHECK---------------------------
 
 esp_err_t bmp390_soft_reset(spi_device_handle_t handle)
 {
@@ -78,24 +97,6 @@ esp_err_t bmp390_enable_spi_mode(spi_device_handle_t handle)
     }
     ESP_LOGI(TAG, "Modo SPI activado correctamente (IF_CONF=0x%02X)", BMP390_IF_CONF_SPI);
     return ESP_OK;
-}
-
-esp_err_t bmp390_read(spi_device_handle_t handle, uint8_t reg, uint8_t *dst, size_t len)
-{
-    spi_transaction_t t = { 0 };
-
-    // 1) Prepara el comando de lectura: MSB=1 + dirección
-    t.cmd       = reg | 0x80;
-
-    // 2) Fase de datos TX: 0 bits
-    t.length    = 0;
-
-    // 3) Fase de datos RX: len bytes * 8 bits/byte
-    t.rxlength  = len * 8;
-    t.rx_buffer = dst;
-
-    // 4) Ejecuta la transacción (polling o puedes usar transmit según convenga)
-    return spi_device_polling_transmit(handle, &t);
 }
 
 
@@ -121,7 +122,7 @@ esp_err_t bmp390_read_chip_id(spi_device_handle_t handle, uint8_t *chip_id)
     return ret;
 }
 
-//-------------------------Activar Lecturas-----------------------------
+//--------------------PREPARE READ---------------------------
 
 //Modo
 esp_err_t bmp390_set_mode_normal(spi_device_handle_t handle)
@@ -155,14 +156,12 @@ esp_err_t bmp390_read_status(spi_device_handle_t handle, uint8_t *status)
 
 esp_err_t bmp390_wait_temp_ready(spi_device_handle_t handle)
 {
-    uint8_t st = 0;
-    esp_err_t ret;
-
-    // Leer STATUS hasta que el bit DRDY_TEMP (0x40) esté a 1
+    // Leer STATUS hasta que el bit DRDY_TEMP esté a 1
     do {
         ret = bmp390_read_status(handle, &st);
-        if (ret != ESP_OK) {
-            return ret;
+        if (ret != ESP_OK) { 
+            ESP_LOGE(TAG, "wait temp ready: %d", ret); 
+            break; 
         }
     } while ((st & BMP390_STATUS_DRDY_TEMP) == 0);
 
@@ -171,22 +170,21 @@ esp_err_t bmp390_wait_temp_ready(spi_device_handle_t handle)
 
 esp_err_t bmp390_wait_press_ready(spi_device_handle_t handle)
 {
-    uint8_t st;
-    esp_err_t ret;
+    // Leer STATUS hasta que el bit DRDY_PRESS esté a 1
     do {
         ret = bmp390_read_status(handle, &st);
-        if (ret != ESP_OK) return ret;
+        if (ret != ESP_OK) { 
+            ESP_LOGE(TAG, "wait press ready: %d", ret); 
+            break; 
+        }
     } while ((st & BMP390_STATUS_DRDY_PRES) == 0);
     return ESP_OK;
 }
 
-//----------------------------Lectura Temperatura--------------------------------------------
+//--------------------READ TEMP---------------------------
 
 esp_err_t bmp390_read_raw_temp_coeffs(spi_device_handle_t handle, bmp390_temp_calib_t *tcalib)
 {
-    uint8_t raw[5];  // 5 bytes: registros 0x31..0x35
-    esp_err_t ret;
-
     // 1) Leer en ráfaga 5 bytes de coeficientes
     ret = bmp390_read(handle, BMP390_TEMP_CALIB_REG_START, raw, sizeof(raw));
     if (ret != ESP_OK) {
@@ -206,32 +204,20 @@ esp_err_t bmp390_read_raw_temp_coeffs(spi_device_handle_t handle, bmp390_temp_ca
 
 esp_err_t bmp390_calibrate_temp_params(spi_device_handle_t handle, bmp390_temp_params_t *out)
 {
-    esp_err_t ret;
-    bmp390_temp_calib_t raw;
-
-    // 1) Leer los coeficientes crudos
-    ret = bmp390_read_raw_temp_coeffs(handle, &raw);
+    ret = bmp390_read_raw_temp_coeffs(handle, &raw); //Raw coeffs
     if (ret != ESP_OK) {
         return ret;
     }
 
-    //    PAR_T1 = raw.par_t1 / 2^8
-    //    PAR_T2 = raw.par_t2 / 2^30
-    //    PAR_T3 = raw.par_t3 / 2^48
-
-    out->PAR_T1 = raw.par_t1 * 256.0f;
-    out->PAR_T2 = raw.par_t2 / 1073741824.0f;
-    out->PAR_T3 = raw.par_t3 / 281474976710656.0f;
+    out->PAR_T1 = raw.par_t1 * 256.0f; // PAR_T1 = raw.par_t1 / 2^8
+    out->PAR_T2 = raw.par_t2 / 1073741824.0f; // PAR_T3 = raw.par_t3 / 2^48
+    out->PAR_T3 = raw.par_t3 / 281474976710656.0f; // PAR_T2 = raw.par_t2 / 2^30
 
     return ESP_OK;
 }
 
-
 esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp)
 {
-    uint8_t buf[3];
-    esp_err_t ret;
-
     // 1) Leer en ráfaga los 3 bytes de temperatura cruda (regs 0x07..0x09)
     ret = bmp390_read(handle, BMP390_TEMP_RAW_REG, buf, sizeof(buf));
     if (ret != ESP_OK) {
@@ -249,14 +235,6 @@ esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp)
 
 float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params)
 {
-    // Según sección 8.4 de la datasheet:
-    //   PAR_T1 = stored_par_t1 / 2^8
-    //   PAR_T2 = stored_par_t2 / 2^30
-    //   PAR_T3 = stored_par_t3 / 2^48
-    //
-    //   t_lin = PAR_T2 * (raw_temp - PAR_T1)
-    //         + PAR_T3 * (raw_temp - PAR_T1)^2
-
     float partial1 = (float)raw_temp - params->PAR_T1;
     float partial2 = partial1 * params->PAR_T2;
     float t_lin = partial2 + (partial1 * partial1) * params->PAR_T3;
@@ -264,7 +242,7 @@ float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *par
     return t_lin;
 }
 
-////------------------------Lectura Presión--------------------------
+//--------------------READ PRESS---------------------------
 
 esp_err_t bmp390_read_raw_press_coeffs(spi_device_handle_t handle, bmp390_press_calib_t *pcalib)
 {
@@ -295,50 +273,30 @@ esp_err_t bmp390_read_raw_press_coeffs(spi_device_handle_t handle, bmp390_press_
     return ESP_OK;
 }
 
-
-
 esp_err_t bmp390_calibrate_press_params(spi_device_handle_t handle, bmp390_press_params_t *out)
 {
-    esp_err_t ret;
-    bmp390_press_calib_t raw;
-
-    // 1) Leer los coeficientes crudos
-    ret = bmp390_read_raw_press_coeffs(handle, &raw);
+    ret = bmp390_read_raw_press_coeffs(handle, &raw); //Rar coeffs
     if (ret != ESP_OK) {
         return ret;
     }
 
-    // PAR_P1 = (raw.par_p1  - 2^14) / 2^20
-    out->PAR_P1  = (raw.par_p1  - 16384.0f) / 1048576.0f;
-    // PAR_P2 = (raw.par_p2  - 2^14) / 2^29
-    out->PAR_P2  = (raw.par_p2  - 16384.0f) / 536870912.0f;
-    // PAR_P3 = raw.par_p3 / 2^32
-    out->PAR_P3  = raw.par_p3 / 4294967296.0f;
-    // PAR_P4 = raw.par_p4 / 2^37
-    out->PAR_P4  = raw.par_p4 / 137438953472.0f;
-    // PAR_P5 = raw.par_p5 / 2^-3
-    out->PAR_P5  = raw.par_p5 * 8.0f;
-    // PAR_P6 = raw.par_p6 / 2^6
-    out->PAR_P6  = raw.par_p6 / 64.0f;
-    // PAR_P7 = raw.par_p7 / 2^8
-    out->PAR_P7  = raw.par_p7 / 256.0f;
-    // PAR_P8 = raw.par_p8 / 2^15
-    out->PAR_P8  = raw.par_p8 / 32768.0f;
-    // PAR_P9 = raw.par_p9 / 2^48
-    out->PAR_P9  = raw.par_p9 / 281474976710656.0f;
-    // PAR_P10 = raw.par_p10 / 2^48
-    out->PAR_P10 = raw.par_p10 / 281474976710656.0f;
-    // PAR_P11 = raw.par_p11 / 2^65
-    out->PAR_P11 = raw.par_p11 / 36893488147419103232.0f;
+    out->PAR_P1  = (raw.par_p1  - 16384.0f) / 1048576.0f; // PAR_P1 = (raw.par_p1  - 2^14) / 2^20
+    out->PAR_P2  = (raw.par_p2  - 16384.0f) / 536870912.0f; // PAR_P2 = (raw.par_p2  - 2^14) / 2^29
+    out->PAR_P3  = raw.par_p3 / 4294967296.0f; // PAR_P3 = raw.par_p3 / 2^32
+    out->PAR_P4  = raw.par_p4 / 137438953472.0f; // PAR_P4 = raw.par_p4 / 2^37    
+    out->PAR_P5  = raw.par_p5 * 8.0f; // PAR_P5 = raw.par_p5 / 2^-3
+    out->PAR_P6  = raw.par_p6 / 64.0f; // PAR_P6 = raw.par_p6 / 2^6
+    out->PAR_P7  = raw.par_p7 / 256.0f; // PAR_P7 = raw.par_p7 / 2^8
+    out->PAR_P8  = raw.par_p8 / 32768.0f; // PAR_P8 = raw.par_p8 / 2^15
+    out->PAR_P9  = raw.par_p9 / 281474976710656.0f; // PAR_P9 = raw.par_p9 / 2^48
+    out->PAR_P10 = raw.par_p10 / 281474976710656.0f; // PAR_P10 = raw.par_p10 / 2^48
+    out->PAR_P11 = raw.par_p11 / 36893488147419103232.0f; // PAR_P11 = raw.par_p11 / 2^65
 
     return ESP_OK;
 }
 
 esp_err_t bmp390_read_raw_press(spi_device_handle_t handle, uint32_t *raw_press)
 {
-    uint8_t buf[3];
-    esp_err_t ret;
-
     // 1) Leer en ráfaga los 3 bytes de presión cruda (regs 0x04..0x06)
     ret = bmp390_read(handle, BMP390_PRESS_RAW_REG, buf, sizeof(buf));
     if (ret != ESP_OK) {
@@ -354,10 +312,6 @@ esp_err_t bmp390_read_raw_press(spi_device_handle_t handle, uint32_t *raw_press)
 
 float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
 {
-    float partial_data1, partial_data2, partial_data3, partial_data4;
-    float partial_out1, partial_out2;
-    float comp_press;
-
     partial_data1 = p->PAR_P6 * t_lin;
     partial_data2 = p->PAR_P7 * (t_lin * t_lin);
     partial_data3 = p->PAR_P8 * (t_lin * t_lin * t_lin);
@@ -368,192 +322,113 @@ float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_p
     partial_data3 = p->PAR_P4 * (t_lin * t_lin * t_lin);
     partial_out2  = raw_press * (p->PAR_P1 + partial_data1 + partial_data2 + partial_data3);
 
-    partial_data1 = raw_press * raw_press;                               // pres^2
-    partial_data2 = p->PAR_P9 + p->PAR_P10 * t_lin;                     // par_p9 + par_p10*t_lin
-    partial_data3 = partial_data1 * partial_data2;                      // pres^2 * (...)
-    partial_data4 = partial_data3 + (raw_press * raw_press * raw_press) * p->PAR_P11;   // pres^3 * par_p11
+    partial_data1 = raw_press * raw_press;                               
+    partial_data2 = p->PAR_P9 + p->PAR_P10 * t_lin;                     
+    partial_data3 = partial_data1 * partial_data2;                      
+    partial_data4 = partial_data3 + (raw_press * raw_press * raw_press) * p->PAR_P11;   
 
-    // 4) Suma de todos los términos
     comp_press = partial_out1 + partial_out2 + partial_data4;
 
     return comp_press;
 }
 
+//--------------------AUX FUNCTIONS (GENERAL)---------------------------
 
-esp_err_t bmp390_config(data_t *p_dev)
+void bmp390_config(data_t *p_dev)
 {
     ret = bmp390_soft_reset(&p_dev->handle);
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error soft reset: %d", ret);
-        return ret;
-    }
 
     ret = bmp390_enable_spi_mode(&p_dev->handle);
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error enable SPI mode: %d", ret);
-        return ret;
-    }
 
     vTaskDelay(pdMS_TO_TICKS(50));
     
     ret = bmp390_read_chip_id(&p_dev->handle, &id);
 
     ret = bmp390_read_if_conf(&p_dev->handle, &ifc);
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error al leer IF_CONF: %d", ret);
-        return ret;
-    }
 
-    return ESP_OK; 
 }//End BMP config
 
-esp_err_t bmp390_prepare_mode(void)
+void bmp390_prepare_mode(void)
 {
     ret = bmp390_set_mode_normal(&p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error modo normal: %d", ret);
-        return;
-    }
+
     ret = bmp390_set_osr_temp(&p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error OSR: %d", ret);
-        return;
-    }
+
     ret = bmp390_set_odr(&p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error ODR: %d", ret);
-        return;
-    }
+
     ret = bmp390_set_iir(&p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error IIR: %d", ret);
-        return;
-    }
 
-    // Dejar tiempo al primer dato en Normal mode
-    vTaskDelay(pdMS_TO_TICKS(50));
+    vTaskDelay(pdMS_TO_TICKS(50)); // Dejar tiempo al primer dato en Normal mode
 
-    return ESP_OK;
 }//End BMP prepare mode
 
-esp_err_t bmp390_prepare_temp(void)
+void bmp390_prepare_temp(void)
 {
-    //Raw coeffs
-    ret = bmp390_read_raw_temp_coeffs(&p_dev->handle, &raw_calib);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Coef raw T1=%u, T2=%d, T3=%d",
-                 raw_calib.par_t1,
-                 raw_calib.par_t2,
-                 raw_calib.par_t3);
-    } else {
-        ESP_LOGE(TAG, "Error al leer coef. calib.: %d", ret);
-        return;
-    }//End raw coeffs
+    ret = bmp390_read_raw_temp_coeffs(&p_dev->handle, &raw_calib); //Raw coeffs
+    ESP_LOGI(TAG, "Coef raw T1=%u, T2=%d, T3=%d",
+                raw_calib.par_t1,
+                raw_calib.par_t2,
+                raw_calib.par_t3);
 
-    //Calib
-    ret = bmp390_calibrate_temp_params(&p_dev->handle, &temp_params);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "PAR_T1 calibrado: %.4f",  temp_params.PAR_T1);
-        ESP_LOGI(TAG, "PAR_T2 calibrado: %.6e",  temp_params.PAR_T2);
-        ESP_LOGI(TAG, "PAR_T3 calibrado: %.6e",  temp_params.PAR_T3);
-    } else {
-        ESP_LOGE(TAG, "Error al calibrar params: %d", ret);
-        return;
-    }//End calib
+    
+    ret = bmp390_calibrate_temp_params(&p_dev->handle, &temp_params); //Calib
+    ESP_LOGI(TAG, "PAR_T1 calibrado: %.4f",  temp_params.PAR_T1);
+    ESP_LOGI(TAG, "PAR_T2 calibrado: %.6e",  temp_params.PAR_T2);
+    ESP_LOGI(TAG, "PAR_T3 calibrado: %.6e",  temp_params.PAR_T3);
 
-    return ESP_OK;
 }//End prepare temp
 
-esp_err_t bmp390_prepare_press(void)
+void bmp390_prepare_press(void)
 {
-    ret = bmp390_read_raw_press_coeffs(&p_dev->handle, &raw_press_calib);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Coef raw P1=%u, P2=%u, P3=%d, P4=%d, P5=%d, P6=%d, P7=%d, P8=%d, P9=%d, P10=%d, P11=%d",
-                 raw_press_calib.par_p1,
-                 raw_press_calib.par_p2,
-                 raw_press_calib.par_p3,
-                 raw_press_calib.par_p4,
-                 raw_press_calib.par_p5,
-                 raw_press_calib.par_p6,
-                 raw_press_calib.par_p7,
-                 raw_press_calib.par_p8,
-                 raw_press_calib.par_p9,
-                 raw_press_calib.par_p10,
-                 raw_press_calib.par_p11);
-    } else {
-        ESP_LOGE(TAG, "Error al leer coef. raw press: %d", ret);
-    }//End raw coeffs
+    ret = bmp390_read_raw_press_coeffs(&p_dev->handle, &raw_press_calib); //Raw coeffs
 
-    //----Calibrar parámetros de presión----
-    ret = bmp390_calibrate_press_params(&p_dev->handle, &press_params);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "PAR_P1 calibrado: %.6f", press_params.PAR_P1);
-        ESP_LOGI(TAG, "PAR_P2 calibrado: %.6f", press_params.PAR_P2);
-        ESP_LOGI(TAG, "PAR_P3 calibrado: %.6f", press_params.PAR_P3);
-        ESP_LOGI(TAG, "PAR_P4 calibrado: %.6f", press_params.PAR_P4);
-        ESP_LOGI(TAG, "PAR_P5 calibrado: %.6f", press_params.PAR_P5);
-        ESP_LOGI(TAG, "PAR_P6 calibrado: %.6f", press_params.PAR_P6);
-        ESP_LOGI(TAG, "PAR_P7 calibrado: %.6f", press_params.PAR_P7);
-        ESP_LOGI(TAG, "PAR_P8 calibrado: %.6f", press_params.PAR_P8);
-        ESP_LOGI(TAG, "PAR_P9 calibrado: %.6f", press_params.PAR_P9);
-        ESP_LOGI(TAG, "PAR_P10 calibrado: %.6f", press_params.PAR_P10);
-        ESP_LOGI(TAG, "PAR_P11 calibrado: %.6f", press_params.PAR_P11);
-    } else {
-        ESP_LOGE(TAG, "Error al calibrar params press: %d", ret);
-    }//End calib
+    ESP_LOGI(TAG, "Coef raw P1=%u, P2=%u, P3=%d, P4=%d, P5=%d, P6=%d, P7=%d, P8=%d, P9=%d, P10=%d, P11=%d",
+                raw_press_calib.par_p1,
+                raw_press_calib.par_p2,
+                raw_press_calib.par_p3,
+                raw_press_calib.par_p4,
+                raw_press_calib.par_p5,
+                raw_press_calib.par_p6,
+                raw_press_calib.par_p7,
+                raw_press_calib.par_p8,
+                raw_press_calib.par_p9,
+                raw_press_calib.par_p10,
+                raw_press_calib.par_p11);
 
-    return ESP_OK;
-}//End prepare temp
+    ret = bmp390_calibrate_press_params(&p_dev->handle, &press_params); //Calib
+    ESP_LOGI(TAG, "PAR_P1 calibrado: %.6f", press_params.PAR_P1);
+    ESP_LOGI(TAG, "PAR_P2 calibrado: %.6f", press_params.PAR_P2);
+    ESP_LOGI(TAG, "PAR_P3 calibrado: %.6f", press_params.PAR_P3);
+    ESP_LOGI(TAG, "PAR_P4 calibrado: %.6f", press_params.PAR_P4);
+    ESP_LOGI(TAG, "PAR_P5 calibrado: %.6f", press_params.PAR_P5);
+    ESP_LOGI(TAG, "PAR_P6 calibrado: %.6f", press_params.PAR_P6);
+    ESP_LOGI(TAG, "PAR_P7 calibrado: %.6f", press_params.PAR_P7);
+    ESP_LOGI(TAG, "PAR_P8 calibrado: %.6f", press_params.PAR_P8);
+    ESP_LOGI(TAG, "PAR_P9 calibrado: %.6f", press_params.PAR_P9);
+    ESP_LOGI(TAG, "PAR_P10 calibrado: %.6f", press_params.PAR_P10);
+    ESP_LOGI(TAG, "PAR_P11 calibrado: %.6f", press_params.PAR_P11);
 
+}//End prepare press
 
-esp_err_t bmp390_prepare_read(void)
+void bmp390_prepare_read(void)
 {
-    ret = bmp390_prepare_mode();
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error preparing mode BMP390: %d", ret);
-        return ret;    
-    }
+    ret = bmp390_prepare_mode(); 
 
-    ret = bmp390_prepare_temp();
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error preparing temp BMP390: %d", ret);
-        return ret;    
-    }
+    ret = bmp390_prepare_temp(); 
 
     ret = bmp390_prepare_press();
-    if (ret != ESP_OK) 
-    {
-        ESP_LOGE(TAG, "Error preparing press BMP390: %d", ret);
-        return ret;    
-    }
-    return ESP_OK;
-}//End prepare read
+}
 
 
 esp_err_t bmp390_read_temp(void)
 {
     ret = bmp390_wait_temp_ready(&p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error wait temp ready: %d", ret);
-        break;
-    }
 
     ret = bmp390_read_raw_temp(&p_dev->handle, &raw_temp);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Raw temp: %u", raw_temp);
+    ESP_LOGI(TAG, "Raw temp: %u", raw_temp);
 
-        float comp_temp = bmp390_compensate_temperature(raw_temp, &temp_params);
-        ESP_LOGI(TAG, "Temp compensada: %.2f °C", comp_temp);
-
-    } else {
-        ESP_LOGE(TAG, "Error read raw temp: %d", ret);
-        break;
-    }
+    float comp_temp = bmp390_compensate_temperature(raw_temp, &temp_params);
+    ESP_LOGI(TAG, "Temp compensada: %.2f °C", comp_temp);
 
     return ESP_OK;
 }//End read temp
@@ -561,26 +436,18 @@ esp_err_t bmp390_read_temp(void)
 esp_err_t bmp390_calc_altitude(void)
 {
     ret = bmp390_wait_press_ready(&p_dev->handle);
-    if (ret != ESP_OK) { 
-        ESP_LOGE(TAG, "wait press ready: %d", ret); 
-        break; 
-    }
+
 
     ret = bmp390_read_raw_press(&p_dev->handle, &raw_press);
-    if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Raw press: %u", raw_press);
 
-        t_lin = bmp390_compensate_temperature(raw_temp, &temp_params);
-        float p_pa = bmp390_compensate_pressure(raw_press, t_lin, &press_params);
-        ESP_LOGI(TAG, "Presión comp.: %.2f Pa", p_pa);
+    ESP_LOGI(TAG, "Raw press: %u", raw_press);
 
-        float altitude = 44330.0f * (1.0f - powf(p_pa/101325.0f, 1.0f/5.255f));
-        ESP_LOGI(TAG, "Altura: %.2f m", altitude);
+    t_lin = bmp390_compensate_temperature(raw_temp, &temp_params);
+    float p_pa = bmp390_compensate_pressure(raw_press, t_lin, &press_params);
+    ESP_LOGI(TAG, "Presión comp.: %.2f Pa", p_pa);
 
-    }else {
-        ESP_LOGE(TAG, "Error read raw press: %d", ret);
-        break;
-    }
+    float altitude = 44330.0f * (1.0f - powf(p_pa/101325.0f, 1.0f/5.255f));
+    ESP_LOGI(TAG, "Altura: %.2f m", altitude);
 
     // Delay para pruebas (5 s)
     vTaskDelay(pdMS_TO_TICKS(5000));
@@ -588,21 +455,20 @@ esp_err_t bmp390_calc_altitude(void)
     return ESP_OK;
 }//End calc altitude
 
-esp_err_t bmp390_read()
+
+void bmp390_read(void)
 {
-    ret = bmp390_read_temp();
+    ret = bmp390_read_temp(); //Temp
     if (ret != ESP_OK) 
     {
         ESP_LOGE(TAG, "Error read temp BMP390: %d", ret);
         return ret;    
     }
 
-    ret = bmp390_calc_altitude();
+    ret = bmp390_calc_altitude(); //Press and Alt
     if (ret != ESP_OK) 
     {
         ESP_LOGE(TAG, "Error calc altitude BMP390: %d", ret);
         return ret;    
     }
-
-    return ESP_OK;
-}
+}//End BMP read
