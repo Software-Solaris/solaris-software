@@ -5,9 +5,17 @@
 #include "driver/spi_master.h" 
 #include "general.h"
 
+
+//---------------------INIT------------------------------
 #define PIN_NUM_CS   18
 
-//---------------------Registros y valores esperados------------------------------
+esp_err_t bmp390_init(spi_device_handle_t *handle);
+
+//---------------------AUX------------------------------
+esp_err_t bmp390_write_reg(spi_device_handle_t handle, uint8_t reg, uint8_t value);
+esp_err_t bmp390_read(spi_device_handle_t handle, uint8_t reg, uint8_t *dst, size_t len);
+
+//--------------------CONFIG and CHECK---------------------------
 
 #define BMP390_CHIP_ID_REG    0x00
 #define BMP390_CHIP_ID_VALUE  0x60
@@ -18,20 +26,13 @@
 #define BMP390_IF_CONF_REG    0x1A
 #define BMP390_IF_CONF_SPI    0x00
 
-//------------------- Prototipos de funciones inicialización--------------------
-
-esp_err_t bmp390_init(spi_device_handle_t *handle);
-
-esp_err_t bmp390_write_reg(spi_device_handle_t handle, uint8_t reg, uint8_t value);
-esp_err_t bmp390_read(spi_device_handle_t handle, uint8_t reg, uint8_t *dst, size_t len);
-
 esp_err_t bmp390_soft_reset(spi_device_handle_t handle);
 esp_err_t bmp390_enable_spi_mode(spi_device_handle_t handle);
 
 esp_err_t bmp390_read_if_conf(spi_device_handle_t handle, uint8_t *if_conf);
 esp_err_t bmp390_read_chip_id(spi_device_handle_t handle, uint8_t *chip_id);
 
-//-----------------------Activar Lecturas-----------------------
+//-----------------------PREPARE READ-----------------------
 
 //Modo
 #define BMP390_REG_PWRCTRL     0x1B
@@ -68,7 +69,7 @@ esp_err_t bmp390_wait_temp_ready(spi_device_handle_t handle);
 esp_err_t bmp390_wait_press_ready(spi_device_handle_t handle);
 
 
-//------------------------Lectura Temperatura--------------------------
+//------------------------READ TEMP--------------------------
 
 // Dirección inicial de los coeficientes de temperatura
 #define BMP390_TEMP_CALIB_REG_START  0x31
@@ -95,7 +96,7 @@ esp_err_t bmp390_read_raw_temp(spi_device_handle_t handle, uint32_t *raw_temp);
 
 float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params);
 
-//------------------------Lectura Presión--------------------------
+//------------------------READ PRESS--------------------------
 // Dirección inicial de los coeficientes de presión
 #define BMP390_PRESS_CALIB_REG_START  0x36
 typedef struct {
