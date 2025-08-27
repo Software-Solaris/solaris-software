@@ -29,7 +29,7 @@ int app_main(void)
         return ESP_FAIL;
     }
 
-    // Calibración del bmp: PENDIENTE !!
+    // Calibración del bmp: PENDIENTE !! (cuarta función principal para no sobrecargar configure_common_sensors)
 
     // Lectura periódica de los datos en los sensores
     while (1) {
