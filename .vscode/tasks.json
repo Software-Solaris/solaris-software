@@ -7,19 +7,46 @@
       "command": "bash",
       "args": [
         "-lc",
-        "source /opt/esp/idf/export.sh && openocd -f board/esp32s3-builtin.cfg"
+        "\"/opt/esp/tools/openocd-esp32/v0.12.0-esp32-20250707/openocd-esp32/bin/openocd            -f board/esp32s3-builtin.cfg            -c 'gdb_port 3333; tcl_port 6666; telnet_port 4444'\""
       ],
       "isBackground": true,
-      "problemMatcher": [
-        {
-          "pattern": [{ "regexp": ".*" }],
-          "background": {
-            "activeOnStart": true,
-            "beginsPattern": "Info\\ :\\ clock speed",
-            "endsPattern": "Info\\ :\\ Listening on port 3333 for gdb connections"
-          }
+      "problemMatcher": {
+        "base": "$gcc",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*Listening on port 3333 for gdb connections.*"
         }
-      ]
+      }
+    },
+    {
+      "label": "reset-halt-esp32s3",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "(echo reset halt; echo exit) | telnet localhost 4444 >/dev/null 2>&1 || true"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "prep-openocd-esp32s3",
+      "dependsOn": [
+        "openocd-esp32s3",
+        "reset-halt-esp32s3"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "stop-openocd",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "\"(echo shutdown | nc -w 1 localhost 4444) >/dev/null 2>&1 ||            (echo shutdown | telnet localhost 4444 >/dev/null 2>&1 || true);            pkill -f 'openocd-esp32' >/dev/null 2>&1 || true\""
+      ],
+      "problemMatcher": []
     }
   ]
 }

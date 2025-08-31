@@ -2,21 +2,32 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ESP32-S3 Debug",
+      "name": "ESP32-S3 Debug (cppdbg + OpenOCD)",
       "type": "cppdbg",
       "request": "launch",
+
       "program": "${workspaceFolder}/solaris-v1/build/solaris-v1.elf",
       "cwd": "${workspaceFolder}/solaris-v1",
+
       "MIMode": "gdb",
       "miDebuggerPath": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
+      "externalConsole": false,
+
+      "stopAtEntry": false,
+      "preLaunchTask": "prep-openocd-esp32s3",
+      "postDebugTask": "stop-openocd",
+
+      "launchCompleteCommand": "exec-continue",
+
       "setupCommands": [
-        { "text": "target remote :3333" },
-        { "text": "monitor reset halt" },
-        { "text": "flushregs" },
-        { "text": "thb app_main" }      // opcional: parar en app_main al iniciar
-      ],
-      "preLaunchTask": "openocd-esp32s3",
-      "externalConsole": false
+        { "text": "set confirm off" },
+        { "text": "set pagination off" },
+
+        { "text": "-target-select remote localhost:3333" },  // <-- conecta a OpenOCD
+        { "text": "monitor reset halt" },                    // <-- ahora sí existe 'monitor'
+        { "text": "thb app_main" },
+        { "text": "flushregs" }
+      ]
     }
   ]
 }
