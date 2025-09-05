@@ -6,5 +6,6 @@ solaris-v1/sdkconfig
 settings.json 
 /solaris-v1/sdkconfig
 
-//holahola
 
+/build/*
+!/build/merged-bin.bin
