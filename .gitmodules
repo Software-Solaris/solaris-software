@@ -1,3 +1,0 @@
-[submodule "solaris-v1/components/spp"]
-	path = solaris-v1/components/spp
-	url = git@gitlab.com:solaris8804017/solaris-packet-protocol.git
