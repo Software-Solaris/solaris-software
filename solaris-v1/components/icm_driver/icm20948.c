@@ -106,7 +106,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
     }
 
     // Desactivar el modo "I2C_DUTY_CYCLED": escribir 0x00 en LP_CONFIG
-    uint8_t tx_lp_config[2] = { (uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DEAC };
+    uint8_t tx_lp_config[2] = { (uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DM_DEAC };
     uint8_t rx_lp_config[2] = { 0, 0 };
 
     ret = send_message(p_dev, tx_lp_config, rx_lp_config);
@@ -114,14 +114,73 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ESP_LOGE(TAG, "LP_CONFIG changed,  read 0x%02X | should be: 0x00", rx_lp_config[1]);
     }
 
-    // Sacar el sensor del modo "SLEEP_MODE": escribir 0x01 en PWR_MGMT_1
+    // Habilitar recursos a emplear del icm: activar FIFO, I2C interno, etc... en USER_CTRL
+    uint8_t tx_user_ctrl[2] = { (uint8_t) (WRITE_OP | REG_USER_CTRL), USER_CTRL_CONFIG };
+    uint8_t rx_user_ctrl[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_user_ctrl, rx_user_ctrl);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on USER_CTRL sub-modules activation");
+    }
+
+    // Cambiar a banco 3 de registros
+    uint8_t tx_bank_sel[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30 };
+    uint8_t rx_bank_sel[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_bank_sel, rx_bank_sel);
+
+    // Dejamos I2C_MST_ODR_CONFIG a 0x00 para que tome muestras a la velocidad del giroscopio
+    // Definimos la velocidad de transacción I2C interno: escribir 0x07 en I2C_MST_CTRL
+    uint8_t tx_i2c_ctrl[2] = { (uint8_t) (WRITE_OP | REG_I2C_CTRL), I2C_SP_CONFIG };
+    uint8_t rx_i2c_ctrl[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_i2c_ctrl, rx_i2c_ctrl);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on i2c transmition configuration");
+    }
+
+    // Escribir la dirección física del magnetómetro en el esclavo "SLVO": escribir 0x8C en I2C_SLV0_ADDR
+    uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_PHYS_ADDR };
+    uint8_t rx_magneto[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_magneto, rx_magneto);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0 configuration (1)");
+    }
+
+    // Determinar punto de inicio de leída en el magnetómetro: escribir 0x11 en I2C_SLV0_REG
+    uint8_t tx_magneto_read[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
+    uint8_t rx_magneto_read[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_magneto_read, rx_magneto_read);
+    if (ret == ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0 configuration (2)");
+    }
+
+    // Configurar los detalles del magnetómetro: escribir 0x86 en I2C_SLV0_CTRL (modificable)
+    uint8_t tx_magneto_ctrl[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG };
+    uint8_t rx_magneto_ctrl[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_magneto_ctrl, rx_magneto_ctrl);
+    if (ret == ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0 configuration (3)");
+    }
+
+    // Devolver a banco 0 de registros
+    uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
+    uint8_t rx_bank_sel_2[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
+
+
+    // Sacar el sensor del modo "SLEEP_MODE" y desactivar sensor de temperatura: escribir 0x09 en PWR_MGMT_1
     uint8_t tx_sleep_off[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), 0x01 };
     uint8_t rx_sleep_off[2] = { 0, 0 };
     vTaskDelay(pdMS_TO_TICKS(20));
     ret = send_message(p_dev, tx_sleep_off, rx_sleep_off);
 
     if (ret == ESP_OK) {
-        ESP_LOGE(TAG, "PWR_MGMT_1 changed, read 0x%02X | should be: 0x01", rx_sleep_off[1]);
+        ESP_LOGE(TAG, "PWR_MGMT_1 changed, read 0x%02X | should be: 0x09", rx_sleep_off[1]);
     }
 
     return ESP_OK;
@@ -130,12 +189,12 @@ esp_err_t icm20948_config(data_t *p_dev) {
 esp_err_t icm20948_prepare_read(data_t *p_dev) {
 
     // Cambiar a banco 2 de registros
-    uint8_t tx_bank_sel[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x20 };
-    uint8_t rx_bank_sel[2] = { 0, 0 };
+    uint8_t tx_bank_sel_3[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x20 };
+    uint8_t rx_bank_sel_3[2] = { 0, 0 };
 
-    ret = send_message(p_dev, tx_bank_sel, rx_bank_sel);
+    ret = send_message(p_dev, tx_bank_sel_3, rx_bank_sel_3);
 
-    // Configuración del filtro de paso bajo del acelerómetro
+    // Configuración del filtro de paso bajo del acelerómetro: escribir la configuración deseada en ACCEL_CONFIG
     uint8_t tx_accel_conf[2] = { (uint8_t) (WRITE_OP | REG_ACCEL_CONFIG), ACCEL_FILTER_SELEC };
     uint8_t rx_accel_conf[2] = { 0, 0 };
 
@@ -144,7 +203,7 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
         ESP_LOGE(TAG, "ACCEL_CONFIG modified succesfully, now low pass filter is activated");
     }
 
-    // Configuración del filtro de paso bajo del giroscopio
+    // Configuración del filtro de paso bajo del giroscopio: escribir la configuración deseada en GYRO_CONFIG
     uint8_t tx_gyro_conf[2] = { (uint8_t) (WRITE_OP | REG_GYRO_CONFIG), GYRO_FILTER_SELEC };
     uint8_t rx_gyro_conf[2] = { 0, 0 };
 
@@ -156,10 +215,10 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
     vTaskDelay(pdMS_TO_TICKS(500)); //Espera al modificar características de los sensores
 
     // Devolver a banco 0 para las lecturas de datos
-    uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
-    uint8_t rx_bank_sel_2[2] = { 0, 0 };
+    uint8_t tx_bank_sel_4[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
+    uint8_t rx_bank_sel_4[2] = { 0, 0 };
 
-    ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
+    ret = send_message(p_dev, tx_bank_sel_4, rx_bank_sel_4);
 
     return ESP_OK;
 }
@@ -170,8 +229,10 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
     float accel_x, accel_y, accel_z;
     int16_t gyro_x_raw, gyro_y_raw, gyro_z_raw;
     float gyro_x, gyro_y, gyro_z;
+    int16_t magneto_x_raw, magneto_y_raw, magneto_z_raw;
+    float magneto_x, magneto_y, magneto_z;
 
-    // Variables de compensación (para la icm de Vladik)
+    // Variables de compensación (para la icm de Vladik, tomar medidas de calibración sin offset antes de su uso)
     float ax_offset = 1.622;
     float ay_offset = 0.288;
     float az_offset = -8.682;
@@ -181,7 +242,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Accel: X
     accel_x_raw = get_raw_axis_data(p_dev, REG_ACCEL_X_H, REG_ACCEL_X_L);
-    accel_x = (((float)accel_x_raw / 16384.0f) * 9.80665f) + ax_offset;
+    accel_x = (((float)accel_x_raw / 16384.0f) * 9.80665f) + ax_offset; // Pasamos el valor digital -> g en función de la sensibilidad -> m/s2
 
     // Accel: Y
     accel_y_raw = get_raw_axis_data(p_dev, REG_ACCEL_Y_H, REG_ACCEL_Y_L);
@@ -193,7 +254,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Gyro: X
     gyro_x_raw = get_raw_axis_data(p_dev, REG_GYRO_X_H, REG_GYRO_X_L);
-    gyro_x = ((float)gyro_x_raw / 131.0f) + gx_offset;
+    gyro_x = ((float)gyro_x_raw / 131.0f) + gx_offset; // Pasamos el valor digital -> dps (degrees per second)
 
     // Gyro: Y
     gyro_y_raw = get_raw_axis_data(p_dev, REG_GYRO_Y_H, REG_GYRO_Y_L);
@@ -203,9 +264,13 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
     gyro_z_raw = get_raw_axis_data(p_dev, REG_GYRO_Z_H, REG_GYRO_Z_L);
     gyro_z = ((float)gyro_z_raw / 131.0f) + gz_offset;
 
+    // Magneto: X
+    magneto_x_raw = get_raw_axis_data(p_dev, REG_MAGNETO_X_H, REG_MAGNETO_X_L);
+
     // Logs
     ESP_LOGI(TAG, "Accel g    - X: %.2f, Y: %.2f, Z: %.2f", accel_x, accel_y, accel_z);
     ESP_LOGI(TAG, "Gyro dps   - X: %.2f, Y: %.2f, Z: %.2f", gyro_x, gyro_y, gyro_z);
+    ESP_LOGI(TAG, "DATOS EN CRUDO DEL MAGNETÓMETRO EN X CRUDOS (PRUEBA): %d", magneto_x_raw);
 
     return ESP_OK;
 }
