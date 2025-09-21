@@ -59,7 +59,7 @@ esp_err_t icm20948_init(data_t *p_dev) {
     p_dev->devcfg.clock_speed_hz = 100000;
     p_dev->devcfg.mode = 3;           // Probar en modo 0 si falla
     p_dev->devcfg.spics_io_num = PIN_NUM_CS;
-    p_dev->devcfg.queue_size = 1;
+    p_dev->devcfg.queue_size = 20; // To execute queue SPI transaction
     p_dev->devcfg.address_bits = 0;
     p_dev->devcfg.command_bits = 0;
     p_dev->devcfg.dummy_bits = 0;
@@ -82,161 +82,27 @@ esp_err_t icm20948_init(data_t *p_dev) {
 
 esp_err_t icm20948_config(data_t *p_dev) {
 
-    spp_uint8_t data_send[2] = 
+    spp_uint8_t data_send[28] = 
                                 // {(spp_uint8_t) (WRITE_OP | REG_PWR_MGMT_1), BIT_H_RESET,     /* <- Soft reset to the sensor */
-                                // (spp_uint8_t) (WRITE_OP | REG_PWR_MGMT_1), 0x01,            /* <- Take from sleep mode the sensor*/
-                                {(spp_uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE};
-                                // (spp_uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DM_DEAC,
-                                // (spp_uint8_t) (WRITE_OP | REG_USER_CTRL), USER_CTRL_CONFIG,
-                                // (spp_uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30,
-                                // (spp_uint8_t) (WRITE_OP | REG_I2C_CTRL), I2C_SP_CONFIG,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_WR_ADDR,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_CTRL_2,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_1, 
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_DO), MAGNETO_MSM_MODE_2,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD,
-                                // (spp_uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2,
-                                // (spp_uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
+                                {(spp_uint8_t) (WRITE_OP | REG_PWR_MGMT_1), 0x01,            /* <- Take from sleep mode the sensor*/
+                                (spp_uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE,
+                                (spp_uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DM_DEAC,
+                                (spp_uint8_t) (WRITE_OP | REG_USER_CTRL), USER_CTRL_CONFIG,
+                                (spp_uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30,
+                                (spp_uint8_t) (WRITE_OP | REG_I2C_CTRL), I2C_SP_CONFIG,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_WR_ADDR,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_CTRL_2,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_1, 
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_DO), MAGNETO_MSM_MODE_2,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD,
+                                (spp_uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2,
+                                (spp_uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
 
-    spp_uint8_t data_recieved[2];
-    retval_t trans_result = SPP_SPI_Transmit((void*)p_dev->handle, (void*)data_send, (void*)data_recieved, (spp_uint8_t)2);
+    spp_uint8_t data_recieved[28];
+    retval_t trans_result = SPP_SPI_Transmit((void*)p_dev->handle, (void*)data_send, (void*)data_recieved, (spp_uint8_t)28);
 
-
-    ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", data_recieved[2]);
-
-    // // Sacar el sensor del modo "SLEEP_MODE" y desactivar sensor de temperatura: escribir 0x09 en PWR_MGMT_1
-    // uint8_t tx_sleep_off[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), 0x01 };
-    // uint8_t rx_sleep_off[2] = { 0, 0 };
-    // vTaskDelay(pdMS_TO_TICKS(20));
-    // ret = send_message(p_dev, tx_sleep_off, rx_sleep_off);
-
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "PWR_MGMT_1 changed, read 0x%02X | should be: 0x09", rx_sleep_off[1]);
-    // }
-
-    // // Lectura del contenido del WHO_AM_i: leer 0x00
-    // uint8_t tx_who_am_i[2] = { (uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE };
-    // uint8_t rx_who_am_i[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_who_am_i, rx_who_am_i);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "WHO_AM_I reading failed: %d", ret);
-    //     return ret;
-    // } else {
-    //     p_dev->sensor_id = rx_who_am_i[1]; // Datos útiles en el segundo bit
-    //     ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", p_dev->sensor_id);
-    // }
-
-    // // Desactivar el modo "I2C_DUTY_CYCLED": escribir 0x00 en LP_CONFIG
-    // uint8_t tx_lp_config[2] = { (uint8_t) (WRITE_OP | REG_LP_CONFIG), I2C_DM_DEAC };
-    // uint8_t rx_lp_config[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_lp_config, rx_lp_config);
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "LP_CONFIG changed,  read 0x%02X | should be: 0x00", rx_lp_config[1]);
-    // }
-
-    // // Habilitar recursos a emplear del icm: activar FIFO, I2C interno, etc... en USER_CTRL
-    // uint8_t tx_user_ctrl[2] = { (uint8_t) (WRITE_OP | REG_USER_CTRL), USER_CTRL_CONFIG };
-    // uint8_t rx_user_ctrl[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_user_ctrl, rx_user_ctrl);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on USER_CTRL sub-modules activation");
-    // }
-
-    // // Cambiar a banco 3 de registros
-    // uint8_t tx_bank_sel[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30 };
-    // uint8_t rx_bank_sel[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_bank_sel, rx_bank_sel);
-
-    // // Dejamos I2C_MST_ODR_CONFIG a 0x00 para que tome muestras a la velocidad del giroscopio
-    // // Definimos la velocidad de transacción I2C interno: escribir 0x07 en I2C_MST_CTRL
-    // uint8_t tx_i2c_ctrl[2] = { (uint8_t) (WRITE_OP | REG_I2C_CTRL), I2C_SP_CONFIG };
-    // uint8_t rx_i2c_ctrl[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_i2c_ctrl, rx_i2c_ctrl);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on i2c transmition configuration");
-    // }
-
-    //                                 /* Sacar el  magnetómetro del power-down mode: */
-
-    // //  1. Acceder al magnetómetro con dirección física pero en modo escritura: escribir 0x0C en I2C_SLV0_ADDR
-    // //  2. Dar dirección de "Control 2": escribir 0x31 en I2C_SLV0_REG
-    // //  3. Configurar los datos de transacción: escribir 0x81 en I2C_SLV0_CTRL
-    // //  4. Escribir mensaje a enviarle: escribir 0x08 (mode 2) en I2C_SLV0_DO
-
-    // // 1.
-    // uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_WR_ADDR };
-    // uint8_t rx_magneto[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto, rx_magneto);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (1.1)");
-    // }
-
-    // // 2.
-    // uint8_t tx_magneto_read[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_CTRL_2 };
-    // uint8_t rx_magneto_read[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_read, rx_magneto_read);
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (1.2)");
-    // }
-
-    // // 3.
-    // uint8_t tx_magneto_ctrl[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_1 };
-    // uint8_t rx_magneto_ctrl[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_ctrl, rx_magneto_ctrl);
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (1.3)");
-    // }
-
-    // // 4.
-    // uint8_t tx_magneto_msg[2] = { (uint8_t) (WRITE_OP | REG_SLV0_DO), MAGNETO_MSM_MODE_2 };
-    // uint8_t rx_magneto_msg[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_msg, rx_magneto_msg);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (1.4)");
-    // }
-
-    // // Escribir la dirección física del magnetómetro en el esclavo "SLVO" pero en modo lectura: escribir 0x8C en I2C_SLV0_ADDR
-    // uint8_t tx_magneto_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR };
-    // uint8_t rx_magneto_1[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_1, rx_magneto_1);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (2.1)");
-    // }
-
-    // // Determinar punto de inicio de leída en el magnetómetro: escribir 0x11 en I2C_SLV0_REG
-    // uint8_t tx_magneto_read_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
-    // uint8_t rx_magneto_read_1[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (2.2)");
-    // }
-
-    // // Configurar los detalles del magnetómetro: escribir 0x86 en I2C_SLV0_CTRL (modificable)
-    // uint8_t tx_magneto_ctrl_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2 };
-    // uint8_t rx_magneto_ctrl_1[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_magneto_ctrl_1, rx_magneto_ctrl_1);
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0 configuration (2.3)");
-    // }
-
-    // // Devolver a banco 0 de registros
-    // uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
-    // uint8_t rx_bank_sel_2[2] = { 0, 0 };
-
-    // ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
+    ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", data_recieved[3]);
 
     return ESP_OK;
 }
