@@ -100,7 +100,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
                                 (spp_uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
 
     spp_uint8_t data_recieved[28];
-    retval_t trans_result = SPP_SPI_Transmit((void*)p_dev->handle, (void*)data_send, (void*)data_recieved, (spp_uint8_t)28);
+    retval_t trans_result = SPP_HAL_SPI_Transmit((void*)p_dev->handle, (void*)data_send, (void*)data_recieved, (spp_uint8_t)28);
 
     ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", data_recieved[3]);
 
