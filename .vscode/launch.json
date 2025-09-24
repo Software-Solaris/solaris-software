@@ -9,7 +9,7 @@
       "cwd": "${workspaceFolder}/solaris-v1",
       "MIMode": "gdb",
       "miDebuggerPath": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
-      "miDebuggerServerAddress": "127.0.0.1:3333",
+      "miDebuggerServerAddress": "127.0.0.1:3337",
       "externalConsole": false,
       "stopAtEntry": false,
       "preLaunchTask": "gdb-prepare",
