@@ -21,6 +21,10 @@
 #define REG_SLV0_REG       0x04 // En banco 3
 #define REG_SLV0_CTRL      0x05 // En banco 3
 #define REG_SLV0_DO        0x06 // En banco 3
+#define REG_SLV4_ADDR      0x13 // En banco 3
+#define REG_SLV4_REG       0x14 // En banco 3
+#define REG_SLV4_CTRL      0x15 // En banco 3
+#define REG_SLV4_DO        0x16 // En banco 3
 #define REG_ACCEL_CONFIG   0X14 // En banco 2
 #define REG_GYRO_CONFIG    0x01 // En banco 2
 
@@ -56,7 +60,7 @@
 #define MAGNETO_RD_ADDR    0x8C // bit7 = 1 + physical address (0x0C) = 0x8C
 #define MAGNETO_START_RD   0x11 // Dirección de los registros del magnetómetro
 #define MAGNETO_CTRL_2     0x31 //Dirección de los registros del magnetómetro
-#define MAGNETO_CONFIG_1   0x81
+#define MAGNETO_CONFIG_1   0x80
 #define MAGNETO_CONFIG_2   0x86
 #define MAGNETO_MSM_MODE_2 0x04    
 #define ACCEL_FILTER_SELEC 0x31 // Pone el rango al mínimo y el filtro al máximo (modificable)
