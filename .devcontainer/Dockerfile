@@ -1,5 +1,5 @@
 # Use the base image for ESP-IDF development
-FROM espressif/idf
+FROM espressif/idf:v6.0-dev
 
 # Install necessary packages
 USER root

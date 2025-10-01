@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ESP32-S3 Debug (GDB server via SSH tunnel)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/solaris-v1/build/solaris-v1.elf",
+      "cwd": "${workspaceFolder}/solaris-v1",
+      "MIMode": "gdb",
+      "miDebuggerPath": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
+      "miDebuggerServerAddress": "127.0.0.1:3337",
+      "externalConsole": false,
+      "stopAtEntry": false,
+      "preLaunchTask": "gdb-prepare",
+      "postDebugTask": "ssh-tunnel-openocd-down",
+      "launchCompleteCommand": "exec-continue",
+      "setupCommands": [
+        { "text": "set confirm off" },
+        { "text": "set pagination off" },
+        { "text": "set breakpoint pending on" },
+        { "text": "set remotetimeout 5" },
+        { "text": "set print pretty on" },
+        { "text": "set step-mode on" },
+        { "text": "thb app_main" }
+      ]
+    }
+  ]
+}

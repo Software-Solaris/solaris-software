@@ -1,0 +1,30 @@
+services:
+  esp32-dev:
+    container_name: esp32-dev
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        USERNAME: root
+        USER_UID: 1000
+        USER_GID: 1000
+    user: root
+    tty: true
+    stdin_open: true
+
+    environment:
+      IDF_PATH: /opt/esp/idf
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+
+    volumes:
+      - ${HOME}/.ssh:/tmp/host-ssh:ro
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - ..:/workspace/software-solaris:cached
+
+    network_mode: host
+    dns:
+      - 192.168.10.1
+
+    working_dir: /workspace/software-solaris
+

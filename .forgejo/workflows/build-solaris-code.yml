@@ -1,0 +1,45 @@
+name: ESP-IDF Build
+on: [push]
+
+jobs:
+  build-solaris-code:
+    runs-on: [self-hosted, raspi]
+
+    container:
+      image: espressif/idf:v6.0-dev
+      # Ejecutar como root, montar la clave como id_ed25519 y resolver el dominio a tu IP
+      options: >-
+        --user root
+        -v /root/.ssh/forgejo-ci:/root/.ssh/id_ed25519:ro
+        --add-host=git.softwaresolaris.com:192.168.10.202
+
+    steps:
+      - name: Ensure git & ssh client (just in case)
+        run: |
+          apt-get update && apt-get install -y git openssh-client && rm -rf /var/lib/apt/lists/*
+
+      - name: Checkout repository (SSH + submodules)
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          # Confiar en el servidor SSH de Forgejo (puerto 2222)
+          ssh-keyscan -p 2222 git.softwaresolaris.com >> ~/.ssh/known_hosts
+
+          # Forzar que cualquier URL ssh://git@git.softwaresolaris.com/... use el puerto 2222
+          git config --global url."ssh://git@git.softwaresolaris.com:2222/".insteadOf "ssh://git@git.softwaresolaris.com/"
+
+          # Clonar este repo en el directorio de trabajo del job
+          git clone ssh://git@git.softwaresolaris.com:2222/solaris/solaris-software.git .
+          git checkout ${{ github.sha }}
+
+          # Traer submódulos (spp, spp-ports, etc.)
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Build firmware
+        run: |
+          set -e
+          cd solaris-v1
+          . /opt/esp/idf/export.sh     # <= equivalente a "source"
+          idf.py build
+          idf.py merge-bin

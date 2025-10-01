@@ -1,0 +1,9 @@
+[submodule "solaris-v1/external/spp"]
+    path = solaris-v1/external/spp
+    url = ssh://git@git.softwaresolaris.com:2222/solaris/solaris-packet-protocol.git
+[submodule "solaris-v1/external/spp-ports"]
+	path = solaris-v1/external/spp-ports
+	url = ssh://git@git.softwaresolaris.com:2222/solaris/spp-ports.git
+[submodule "solaris-v1/external/esp-idf"]
+	path = solaris-v1/external/esp-idf
+	url = https://github.com/espressif/esp-idf.git
