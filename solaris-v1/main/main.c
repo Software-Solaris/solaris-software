@@ -4,16 +4,16 @@
 #include "general.h"
 #include "macros.h"
 #include "gpio_int.h"
-#include "core.h"
+// #include "core.h"
 
 
-retval_t ret = SPP_OK;
+// retval_t ret = SPP_OK;
 static const char *TAG = "MainApp";
 
 int app_main(void)
 {
 
-    ret = Core_Init();
+    // ret = Core_Init();
     // Declarar e inicializar los structs de los sensores (inicializados a cero)
     data_t icm_dev = {0};
     data_t baro_dev = {0};
@@ -48,8 +48,8 @@ int app_main(void)
 
     // Lectura periódica de los datos en los sensores
     while (1) {
-         read_common_sensors(&icm_dev, &baro_dev);
-         vTaskDelay(pdMS_TO_TICKS(2000));
+        read_common_sensors(&icm_dev, &baro_dev);
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
     return ESP_OK;
 }

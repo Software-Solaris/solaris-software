@@ -1,7 +1,7 @@
 #include "icm20948.h"
 #include "esp_log.h"
 #include "driver/spi_common.h"
-#include "spi.h"
+// #include "spi.h"
 
 static const char* TAG = "ICM20948"; 
 static esp_err_t ret;
@@ -99,10 +99,6 @@ esp_err_t icm20948_config(data_t *p_dev) {
     vTaskDelay(pdMS_TO_TICKS(20));
     ret = send_message(p_dev, tx_sleep_off, rx_sleep_off);
 
-    // ?? You are reading garbage here
-    // if (ret == ESP_OK) {
-    //     ESP_LOGE(TAG, "PWR_MGMT_1 changed, read 0x%02X | should be: 0x09", rx_sleep_off[1]);
-    // }
 
     // Lectura del contenido del WHO_AM_i: leer 0x00
     uint8_t tx_who_am_i[2] = { (uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE };
@@ -126,11 +122,12 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ESP_LOGE(TAG, "Error on USER_CTRL sub-modules activation");
     }
 
-    // Leemos le valor para asegurarnos
+    // Leemos el valor para asegurarnos
     uint8_t tx_user_ctrl1[2] = { (uint8_t) (READ_OP | REG_PWR_MGMT_1), EMPTY_MESSAGE };
     uint8_t rx_user_ctrl1[2] = { 0, 0 };
 
     ret = send_message(p_dev, tx_user_ctrl1, rx_user_ctrl1);
+
 
     // Cambiar a banco 3 de registros
     uint8_t tx_bank_sel[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30 };
@@ -164,7 +161,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
     // Lectura del Device ID (usamos un scope en C con {})
     {
         // 1.1
-        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), (READ_OP | MAGNETO_WR_ADDR )};
+        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_RD_ADDR};
         uint8_t rx_magneto[2] = { 0, 0 };
 
         ret = send_message(p_dev, tx_magneto, rx_magneto);
@@ -198,13 +195,15 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
+        } else {
+            ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0x09", rx_magneto_read_1);
         }
     } //End of scope
 
     // Activamos el magnetómetro
     {
         // 1.1
-        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), (WRITE_OP | MAGNETO_WR_ADDR )};
+        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_WR_ADDR};
         uint8_t rx_magneto[2] = { 0, 0 };
 
         ret = send_message(p_dev, tx_magneto, rx_magneto);
@@ -244,7 +243,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
     // Leemos el registro de control
     {
         // 1.1
-        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), (READ_OP | MAGNETO_WR_ADDR )};
+        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_RD_ADDR };
         uint8_t rx_magneto[2] = { 0, 0 };
 
         ret = send_message(p_dev, tx_magneto, rx_magneto);
@@ -271,49 +270,49 @@ esp_err_t icm20948_config(data_t *p_dev) {
         }
         vTaskDelay(pdMS_TO_TICKS(100)); // Delay para llevar a cabo la lectura
 
-        // Leemos el registro del WHO_AM_I del magneto
+        // Leemos si se ha configurado CTRL_2 correctamente
         uint8_t tx_magneto_read_1[2] = { (uint8_t) (READ_OP| REG_SLV4_DI), EMPTY_MESSAGE };
         uint8_t rx_magneto_read_1[2] = { 0, 0 };
 
         ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
+        if (ret == ESP_OK) {
+            ESP_LOGE(TAG, "Valor leído 0x%02X ", rx_magneto_read_1[1]);
         }
     } //End of scope
 
-    // // 2.1 
-    // uint8_t tx_magneto_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR };
-    // uint8_t rx_magneto_1[2] = { 0, 0 };
+    // 2.1 
+    uint8_t tx_magneto_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR };
+    uint8_t rx_magneto_1[2] = { 0, 0 };
 
-    // ret = send_message(p_dev, tx_magneto_1, rx_magneto_1);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0_ADDR configuration (2.1)");
-    // }
+    ret = send_message(p_dev, tx_magneto_1, rx_magneto_1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0_ADDR configuration (2.1)");
+    }
 
 
-    // // 2.2
-    // uint8_t tx_magneto_read_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
-    // uint8_t rx_magneto_read_1[2] = { 0, 0 };
+    // 2.2
+    uint8_t tx_magneto_read_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
+    uint8_t rx_magneto_read_1[2] = { 0, 0 };
 
-    // ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
-    // }
+    ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
+    }
 
-    // // 2.3
-    // uint8_t tx_magneto_ctrl_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2 };
-    // uint8_t rx_magneto_ctrl_1[2] = { 0, 0 };
+    // 2.3
+    uint8_t tx_magneto_ctrl_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2 };
+    uint8_t rx_magneto_ctrl_1[2] = { 0, 0 };
 
-    // ret = send_message(p_dev, tx_magneto_ctrl_1, rx_magneto_ctrl_1);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Error on SLV0_CTRL configuration (2.3)");
-    // }
+    ret = send_message(p_dev, tx_magneto_ctrl_1, rx_magneto_ctrl_1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error on SLV0_CTRL configuration (2.3)");
+    }
 
-    // // Devolver a banco 0 de registros
-    // uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
-    // uint8_t rx_bank_sel_2[2] = { 0, 0 };
+    // Devolver a banco 0 de registros
+    uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
+    uint8_t rx_bank_sel_2[2] = { 0, 0 };
 
-    // ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
+    ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
 
     return ESP_OK;
 }
@@ -353,6 +352,13 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
     ret = send_message(p_dev, tx_bank_sel_4, rx_bank_sel_4);
 
     return ESP_OK;
+
+    // Leemos EXT_SLV0_EXT_SENS_DATA que contiene el STATUS_1 del magnetómetro
+    uint8_t tx_ext[2] = { (uint8_t) (READ_OP | 0x3B), EMPTY_MESSAGE };
+    uint8_t rx_ext[2] = { 0, 0 };
+
+    ret = send_message(p_dev, tx_ext, rx_ext);
+
 }
 
 esp_err_t icm20948_read_measurements(data_t *p_dev) {
@@ -398,13 +404,20 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Magneto: X
     magneto_x_raw = get_raw_axis_data(p_dev, REG_MAGNETO_X_H, REG_MAGNETO_X_L);
-    magneto_x = ((float)magneto_x_raw * 0.15);
+    magneto_x = ((float)magneto_x_raw * 0.15); // Pasamos el valor digital -> μT
+
+    // Magneto: Y
+    magneto_y_raw = get_raw_axis_data(p_dev, REG_MAGNETO_Y_H, REG_MAGNETO_Y_L);
+    magneto_y = ((float)magneto_y_raw * 0.15);
+
+    // Magneto: Z
+    magneto_z_raw = get_raw_axis_data(p_dev, REG_MAGNETO_Z_H, REG_MAGNETO_Z_L);
+    magneto_z = ((float)magneto_z_raw * 0.15);
 
     // Logs
-    ESP_LOGI(TAG, "Accel g    - X: %.2f, Y: %.2f, Z: %.2f", accel_x, accel_y, accel_z);
-    ESP_LOGI(TAG, "Gyro dps   - X: %.2f, Y: %.2f, Z: %.2f", gyro_x, gyro_y, gyro_z);
-    ESP_LOGI(TAG, "DATOS EN CRUDO DEL MAGNETÓMETRO EN X CRUDOS (PRUEBA): %d", magneto_x_raw);
-    ESP_LOGI(TAG, "DATOS MAGNETO_X PROCESADOS (PRUEBA): %f", magneto_x);
+    ESP_LOGI(TAG, "Accel (g)     - X: %.2f, Y: %.2f, Z: %.2f", accel_x, accel_y, accel_z);
+    ESP_LOGI(TAG, "Gyro (dps     - X: %.2f, Y: %.2f, Z: %.2f", gyro_x, gyro_y, gyro_z);
+    ESP_LOGI(TAG, "Magneto (μT)  - X: %.2f, Y: %.2f, Z: %.2f", magneto_x, magneto_y, magneto_z);
 
 
     return ESP_OK;

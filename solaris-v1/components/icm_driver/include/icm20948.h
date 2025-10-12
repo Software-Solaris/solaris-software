@@ -48,22 +48,26 @@
 #define REG_GYRO_Z_L      0x38
 
 // Registros del magnetómetro -> NOTA: Los registros del magnetómetro llegan en little endian
-#define REG_MAGNETO_X_H   0x3C
-#define REG_MAGNETO_X_L   0x3B
+#define REG_MAGNETO_X_H   0x3D
+#define REG_MAGNETO_X_L   0x3C
+#define REG_MAGNETO_Y_H   0x3F
+#define REG_MAGNETO_Y_L   0x3E
+#define REG_MAGNETO_Z_H   0x41
+#define REG_MAGNETO_Z_L   0x40
 
 
 // Mensajes a enviar
 #define BIT_H_RESET        0x80
-#define USER_CTRL_CONFIG   0xE0
+#define USER_CTRL_CONFIG   0x30 // ACTIVAR FIFO Y DMP AQUI UNA VEZ NOS PONGAMOS CON ESO!!!
 #define I2C_DM_DEAC        0x00
 #define I2C_SP_CONFIG      0x07
 #define MAGNETO_WR_ADDR    0x0C
 #define MAGNETO_RD_ADDR    0x8C // bit7 = 1 + physical address (0x0C) = 0x8C
-#define MAGNETO_START_RD   0x11 // Dirección de los registros del magnetómetro
+#define MAGNETO_START_RD   0x10 // Dirección de los registros del magnetómetro (ST1 + DATA)
 #define MAGNETO_WHO_AM_I   0x01
 #define MAGNETO_CTRL_2     0x31 //Dirección de los registros del magnetómetro
 #define MAGNETO_CONFIG_1   0x80
-#define MAGNETO_CONFIG_2   0x86
+#define MAGNETO_CONFIG_2   0x89
 #define MAGNETO_MSM_MODE_2 0x04   
 #define ACCEL_FILTER_SELEC 0x31 // Pone el rango al mínimo y el filtro al máximo (modificable)
 #define GYRO_FILTER_SELEC  0x31 // modificable igualmente
