@@ -93,3 +93,5 @@ git config --global user.email "tu_email@example.com"
 ## 10. Abrir el Proyecto en un Contenedor
 1. Abre el proyecto en Visual Studio Code.
 2. Selecciona **Reopen in Container** desde la paleta de comandos (`Ctrl+Shift+P`).
+
+
