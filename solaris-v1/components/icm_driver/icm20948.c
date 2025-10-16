@@ -1,13 +1,14 @@
 #include "icm20948.h"
+#include "macros.h"
 #include "esp_log.h"
 #include "driver/spi_common.h"
-// #include "spi.h"
 
 static const char* TAG = "ICM20948"; 
 static esp_err_t ret;
 
+//-----------------------------AUX-----------------------------
 esp_err_t send_message(data_t *p_dev, uint8_t tx[2], uint8_t rx[2]) {
-    // Ajuste de parámetros de transacción
+    // Transaction parameters set up
     p_dev->trans_desc.length = 16;
     p_dev->trans_desc.tx_buffer = tx;
     p_dev->trans_desc.rx_buffer = rx;
@@ -37,10 +38,10 @@ int16_t get_raw_axis_data(data_t *p_dev, uint8_t h_reg, uint8_t l_reg) {
     return (int16_t)((rx_h[1] << 8) | rx_l[1]);
 }
 
-
+//-----------------------------INIT-------------------------------
 esp_err_t icm20948_init(data_t *p_dev) {
 
-    // 1. Inicializa la configuración del bus SPI
+    // 1. Init of SPI communication
     p_dev->buscfg.miso_io_num = PIN_NUM_CIPO;
     p_dev->buscfg.mosi_io_num = PIN_NUM_COPI;
     p_dev->buscfg.sclk_io_num = PIN_NUM_CLK;
@@ -55,9 +56,9 @@ esp_err_t icm20948_init(data_t *p_dev) {
     } 
     ESP_LOGI(TAG, "SPI bus initialized on ICM20948");
 
-    // 2. Configura el dispositivo SPI (CS, velocidad, modo, etc.)
+    // 2. Configures SPI (CS, speed, mode, ...)
     p_dev->devcfg.clock_speed_hz = 100000;
-    p_dev->devcfg.mode = 3;           // Probar en modo 0 si falla
+    p_dev->devcfg.mode = 3;           // Try on mode 0 if it fails
     p_dev->devcfg.spics_io_num = PIN_NUM_CS;
     p_dev->devcfg.queue_size = 20; // To execute queue SPI transaction
     p_dev->devcfg.address_bits = 0;
@@ -67,7 +68,7 @@ esp_err_t icm20948_init(data_t *p_dev) {
     p_dev->devcfg.duty_cycle_pos = 128;
     p_dev->devcfg.pre_cb = NULL;
     p_dev->devcfg.post_cb = NULL;
-    vTaskDelay(pdMS_TO_TICKS(100)); // Espera adicional de 100 ms
+    vTaskDelay(pdMS_TO_TICKS(100)); // Aditional waiting of 100 ms
 
     ret = spi_bus_add_device(SPI_HOST_USED, &p_dev->devcfg, &p_dev->handle);
     if (ret != ESP_OK) {
@@ -82,7 +83,7 @@ esp_err_t icm20948_init(data_t *p_dev) {
 
 esp_err_t icm20948_config(data_t *p_dev) {
 
-    // Reset del sensor: escribir 0x80 en PWR_MGMT_1
+    // Reset of ICM: writing 0x80 on PWR_MGMT_1
     uint8_t tx_reset[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), BIT_H_RESET };
     uint8_t rx_reset[2] = { 0, 0 };
 
@@ -93,14 +94,14 @@ esp_err_t icm20948_config(data_t *p_dev) {
         return ret;
     }
 
-    // Sacar el sensor del modo "SLEEP_MODE" y desactivar sensor de temperatura: escribir 0x09 en PWR_MGMT_1
+    // Wake up the ICM from "SLEEP_MODE" and deactivation of temperature sensor:  writing 0x09 on PWR_MGMT_1
     uint8_t tx_sleep_off[2] = { (uint8_t) (WRITE_OP | REG_PWR_MGMT_1), 0x09 };
     uint8_t rx_sleep_off[2] = { 0, 0 };
     vTaskDelay(pdMS_TO_TICKS(20));
     ret = send_message(p_dev, tx_sleep_off, rx_sleep_off);
 
 
-    // Lectura del contenido del WHO_AM_i: leer 0x00
+    // Reading of WHO_AM_I content: reading 0x00
     uint8_t tx_who_am_i[2] = { (uint8_t) (READ_OP | REG_WHO_AM_I), EMPTY_MESSAGE };
     uint8_t rx_who_am_i[2] = { 0, 0 };
 
@@ -109,11 +110,11 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ESP_LOGE(TAG, "WHO_AM_I reading failed: %d", ret);
         return ret;
     } else {
-        p_dev->sensor_id = rx_who_am_i[1]; // Datos útiles en el segundo bit
+        p_dev->sensor_id = rx_who_am_i[1]; // Data is stored on the second element
         ESP_LOGI(TAG, "WHO_AM_I register has 0x%02X | should be: 0xEA", p_dev->sensor_id);
     }
 
-    // Habilitar recursos a emplear del icm: activar FIFO, I2C interno y DMP en USER_CTRL
+    // Enable ICM resources: activate FIFO, internal I2C and DMP in USER_CTRL register
     uint8_t tx_user_ctrl[2] = { (uint8_t) (WRITE_OP | REG_USER_CTRL), USER_CTRL_CONFIG };
     uint8_t rx_user_ctrl[2] = { 0, 0 };
 
@@ -122,21 +123,17 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ESP_LOGE(TAG, "Error on USER_CTRL sub-modules activation");
     }
 
-    // Leemos el valor para asegurarnos
-    uint8_t tx_user_ctrl1[2] = { (uint8_t) (READ_OP | REG_PWR_MGMT_1), EMPTY_MESSAGE };
-    uint8_t rx_user_ctrl1[2] = { 0, 0 };
-
-    ret = send_message(p_dev, tx_user_ctrl1, rx_user_ctrl1);
+    ret = send_message(p_dev, tx_user_ctrl, rx_user_ctrl);
 
 
-    // Cambiar a banco 3 de registros
+    // Swap to bank 3
     uint8_t tx_bank_sel[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x30 };
     uint8_t rx_bank_sel[2] = { 0, 0 };
 
     ret = send_message(p_dev, tx_bank_sel, rx_bank_sel);
 
-    // Dejamos I2C_MST_ODR_CONFIG a 0x00 para que tome muestras a la velocidad del giroscopio
-    // Definimos la velocidad de transacción I2C interno: escribir 0x07 en I2C_MST_CTRL
+    // I2C_MST_ODR_CONFIG is set on 0x00 for 1.1kHz sample rate
+    // Definition of internal I2C transaction speed: writing 0x07 on I2C_MST_CTRL
     uint8_t tx_i2c_ctrl[2] = { (uint8_t) (WRITE_OP | REG_I2C_CTRL), I2C_SP_CONFIG };
     uint8_t rx_i2c_ctrl[2] = { 0, 0 };
 
@@ -145,22 +142,22 @@ esp_err_t icm20948_config(data_t *p_dev) {
         ESP_LOGE(TAG, "Error on i2c transmition configuration");
     }
 
-    /* CONFIGURACIÓN DEL MAGNETÓMETRO
+    /* MAGNETOMETER CONFIGURATION
 
-        1. Hacer un reset y sacarlo del power-mode desde el SLV_4
-            1.1 Acceder al magnetómetro con dirección física en modo escritura: escribir 0x0C en I2C_SLV4_ADDR
-            1.2 Dar dirección de "Control 2": escribir 0x31 en I2C_SLV4_REG
-            1.3 Escribir mensaje a enviarle: escribir 0x08 (mode 2) en I2C_SLV4_DO
-            1.4 Configurar los datos de transacción: escribir 0x81 en I2C_SLV4_CTRL
-         2. Configurar las lecturas periódicas de los datos desde el SLV_0
-            2.1 Acceder al magnetómetro con dirección física en modo lectura: escribir 0x8C en I2C_SLV0_ADDR
-            2.2 Dar dirección del principio de los registros: escribir 0x11 en I2C_SLV0_REG
-            2.3 Configurar los datos de transacción: escribir 0x81 en I2C_SLV0_CTRL
+        1. Use SLV_4 to get the magnetometer out of the power-off mode
+            1.1 Access the magnetometer with its physical address in write mode: write 0x0C to I2C_SLV4_ADDR
+            1.2. Set the “Control 2” register address: write 0x31 to I2C_SLV4_REG
+            1.3. Write the message to be sent: write 0x08 (mode 2) to I2C_SLV4_DO
+            1.4. Configure the transaction data: write 0x81 to I2C_SLV4_CTRL
+
+        2. Configure periodic readings of data from SLV_0
+            2.1. Access the magnetometer with its physical address in read mode: write 0x8C to I2C_SLV0_ADDR
+            2.2. Set the starting address of the registers: write 0x11 to I2C_SLV0_REG
+            2.3. Configure the transaction data: write 0x81 to I2C_SLV0_CTRL
     */
 
-    // Lectura del Device ID (usamos un scope en C con {})
-    {
-        // 1.1
+    // Device ID reading (using a C scope with {})
+    { // First, we read magnetometer's WHO_AM_I
         uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_RD_ADDR};
         uint8_t rx_magneto[2] = { 0, 0 };
 
@@ -169,7 +166,6 @@ esp_err_t icm20948_config(data_t *p_dev) {
             ESP_LOGE(TAG, "Error on SLV4_ADDR configuration");
         }
 
-        // 1.2
         uint8_t tx_magneto_read[2] = { (uint8_t) (WRITE_OP | REG_SLV4_REG), MAGNETO_WHO_AM_I };
         uint8_t rx_magneto_read[2] = { 0, 0 };
 
@@ -178,7 +174,6 @@ esp_err_t icm20948_config(data_t *p_dev) {
             ESP_LOGE(TAG, "Error on SLV4_REG configuration");
         }
 
-        // 1.4 - Indicamos que ejecute la transacción
         uint8_t tx_magneto_ctrl[2] = { (uint8_t) (WRITE_OP | REG_SLV4_CTRL), MAGNETO_CONFIG_1 };
         uint8_t rx_magneto_ctrl[2] = { 0, 0 };
 
@@ -186,9 +181,9 @@ esp_err_t icm20948_config(data_t *p_dev) {
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error on SLV4_ctrl configuration");
         }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay para llevar a cabo la escritura
+        vTaskDelay(pdMS_TO_TICKS(100)); // Delay for writing
 
-        // Leemos el registro del WHO_AM_I del magneto
+        // Reading of Magnetometer WHO_AM_I
         uint8_t tx_magneto_read_1[2] = { (uint8_t) (READ_OP| REG_SLV4_DI), EMPTY_MESSAGE };
         uint8_t rx_magneto_read_1[2] = { 0, 0 };
 
@@ -200,7 +195,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
         }
     } //End of scope
 
-    // Activamos el magnetómetro
+    // Activation of the magnetometer - measurement mode 2
     {
         // 1.1
         uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_WR_ADDR};
@@ -220,7 +215,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
             ESP_LOGE(TAG, "Error on SLV4_REG configuration");
         }
 
-        //1.3 - Continuous measurement mode 2 (??)
+        // 1.3 - Continuous measurement mode 2
         uint8_t tx_magneto_msg[2] = { (uint8_t) (WRITE_OP | REG_SLV4_DO), MAGNETO_MSM_MODE_2 };
         uint8_t rx_magneto_msg[2] = { 0, 0 };
 
@@ -229,7 +224,7 @@ esp_err_t icm20948_config(data_t *p_dev) {
             ESP_LOGE(TAG, "Error on SLV4_DO configuration");
         }
 
-        // 1.4 - Indicamos que ejecute la transacción
+        // 1.4
         uint8_t tx_magneto_ctrl[2] = { (uint8_t) (WRITE_OP | REG_SLV4_CTRL), MAGNETO_CONFIG_1 };
         uint8_t rx_magneto_ctrl[2] = { 0, 0 };
 
@@ -237,95 +232,57 @@ esp_err_t icm20948_config(data_t *p_dev) {
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error on SLV4_ctrl configuration");
         }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay para llevar a cabo la escritura
+        vTaskDelay(pdMS_TO_TICKS(100));
     } //End of scope
 
-    // Leemos el registro de control
     {
-        // 1.1
-        uint8_t tx_magneto[2] = { (uint8_t) (WRITE_OP | REG_SLV4_ADDR), MAGNETO_RD_ADDR };
-        uint8_t rx_magneto[2] = { 0, 0 };
+        // 2.1 
+        uint8_t tx_magneto_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR };
+        uint8_t rx_magneto_1[2] = { 0, 0 };
 
-        ret = send_message(p_dev, tx_magneto, rx_magneto);
+        ret = send_message(p_dev, tx_magneto_1, rx_magneto_1);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error on SLV4_ADDR configuration");
+            ESP_LOGE(TAG, "Error on SLV0_ADDR configuration (2.1)");
         }
 
-        // 1.2
-        uint8_t tx_magneto_read[2] = { (uint8_t) (WRITE_OP | REG_SLV4_REG), MAGNETO_CTRL_2 };
-        uint8_t rx_magneto_read[2] = { 0, 0 };
 
-        ret = send_message(p_dev, tx_magneto_read, rx_magneto_read);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error on SLV4_REG configuration");
-        }
-
-        // 1.4 - Indicamos que ejecute la transacción
-        uint8_t tx_magneto_ctrl[2] = { (uint8_t) (WRITE_OP | REG_SLV4_CTRL), MAGNETO_CONFIG_1 };
-        uint8_t rx_magneto_ctrl[2] = { 0, 0 };
-
-        ret = send_message(p_dev, tx_magneto_ctrl, rx_magneto_ctrl);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error on SLV4_ctrl configuration");
-        }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay para llevar a cabo la lectura
-
-        // Leemos si se ha configurado CTRL_2 correctamente
-        uint8_t tx_magneto_read_1[2] = { (uint8_t) (READ_OP| REG_SLV4_DI), EMPTY_MESSAGE };
+        // 2.2
+        uint8_t tx_magneto_read_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
         uint8_t rx_magneto_read_1[2] = { 0, 0 };
 
         ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
-        if (ret == ESP_OK) {
-            ESP_LOGE(TAG, "Valor leído 0x%02X ", rx_magneto_read_1[1]);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
         }
-    } //End of scope
 
-    // 2.1 
-    uint8_t tx_magneto_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_ADDR), MAGNETO_RD_ADDR };
-    uint8_t rx_magneto_1[2] = { 0, 0 };
+        // 2.3
+        uint8_t tx_magneto_ctrl_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2 };
+        uint8_t rx_magneto_ctrl_1[2] = { 0, 0 };
 
-    ret = send_message(p_dev, tx_magneto_1, rx_magneto_1);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error on SLV0_ADDR configuration (2.1)");
+        ret = send_message(p_dev, tx_magneto_ctrl_1, rx_magneto_ctrl_1);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Error on SLV0_CTRL configuration (2.3)");
+        }
+
+        // Swap to bank 0
+        uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
+        uint8_t rx_bank_sel_2[2] = { 0, 0 };
+
+        ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
     }
-
-
-    // 2.2
-    uint8_t tx_magneto_read_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_REG), MAGNETO_START_RD };
-    uint8_t rx_magneto_read_1[2] = { 0, 0 };
-
-    ret = send_message(p_dev, tx_magneto_read_1, rx_magneto_read_1);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error on SLV0_REG configuration (2.2)");
-    }
-
-    // 2.3
-    uint8_t tx_magneto_ctrl_1[2] = { (uint8_t) (WRITE_OP | REG_SLV0_CTRL), MAGNETO_CONFIG_2 };
-    uint8_t rx_magneto_ctrl_1[2] = { 0, 0 };
-
-    ret = send_message(p_dev, tx_magneto_ctrl_1, rx_magneto_ctrl_1);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error on SLV0_CTRL configuration (2.3)");
-    }
-
-    // Devolver a banco 0 de registros
-    uint8_t tx_bank_sel_2[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
-    uint8_t rx_bank_sel_2[2] = { 0, 0 };
-
-    ret = send_message(p_dev, tx_bank_sel_2, rx_bank_sel_2);
 
     return ESP_OK;
 }
 
 esp_err_t icm20948_prepare_read(data_t *p_dev) {
 
-    // Cambiar a banco 2 de registros
+    // Swap to bank 2
     uint8_t tx_bank_sel_3[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x20 };
     uint8_t rx_bank_sel_3[2] = { 0, 0 };
 
     ret = send_message(p_dev, tx_bank_sel_3, rx_bank_sel_3);
 
-    // Configuración del filtro de paso bajo del acelerómetro: escribir la configuración deseada en ACCEL_CONFIG
+    // Accelerometer low-pass filter configutarion: writing the configuration on ACCEL_CONFIG
     uint8_t tx_accel_conf[2] = { (uint8_t) (WRITE_OP | REG_ACCEL_CONFIG), ACCEL_FILTER_SELEC };
     uint8_t rx_accel_conf[2] = { 0, 0 };
 
@@ -334,7 +291,7 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
         ESP_LOGE(TAG, "ACCEL_CONFIG modified succesfully, now low pass filter is activated");
     }
 
-    // Configuración del filtro de paso bajo del giroscopio: escribir la configuración deseada en GYRO_CONFIG
+    // Gyroscope low-pass filter configutarion: writing the configuration on GYRO_CONFIG
     uint8_t tx_gyro_conf[2] = { (uint8_t) (WRITE_OP | REG_GYRO_CONFIG), GYRO_FILTER_SELEC };
     uint8_t rx_gyro_conf[2] = { 0, 0 };
 
@@ -343,7 +300,7 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
         ESP_LOGE(TAG, "GYRO_CONFIG modified succesfully, now low pass filter is activated");
     }
 
-    vTaskDelay(pdMS_TO_TICKS(500)); //Espera al modificar características de los sensores
+    vTaskDelay(pdMS_TO_TICKS(500));
 
     // Devolver a banco 0 para las lecturas de datos
     uint8_t tx_bank_sel_4[2] = { (uint8_t) (WRITE_OP | REG_BANK_SEL), 0x00 };
@@ -353,16 +310,10 @@ esp_err_t icm20948_prepare_read(data_t *p_dev) {
 
     return ESP_OK;
 
-    // Leemos EXT_SLV0_EXT_SENS_DATA que contiene el STATUS_1 del magnetómetro
-    uint8_t tx_ext[2] = { (uint8_t) (READ_OP | 0x3B), EMPTY_MESSAGE };
-    uint8_t rx_ext[2] = { 0, 0 };
-
-    ret = send_message(p_dev, tx_ext, rx_ext);
-
 }
 
 esp_err_t icm20948_read_measurements(data_t *p_dev) {
-    // Inicialización de variables
+    // Required variables
     int16_t accel_x_raw, accel_y_raw, accel_z_raw;
     float accel_x, accel_y, accel_z;
     int16_t gyro_x_raw, gyro_y_raw, gyro_z_raw;
@@ -370,7 +321,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
     int16_t magneto_x_raw, magneto_y_raw, magneto_z_raw;
     float magneto_x, magneto_y, magneto_z;
 
-    // Variables de compensación (para la icm de Vladik, tomar medidas de calibración sin offset antes de su uso)
+    // Compensation variables (these are unique for each esp32, so they must be set with the average destiation of your own esp32)
     float ax_offset = 1.622;
     float ay_offset = 0.288;
     float az_offset = -8.682;
@@ -380,7 +331,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Accel: X
     accel_x_raw = get_raw_axis_data(p_dev, REG_ACCEL_X_H, REG_ACCEL_X_L);
-    accel_x = (((float)accel_x_raw / 16384.0f) * 9.80665f) + ax_offset; // Pasamos el valor digital -> g en función de la sensibilidad -> m/s2
+    accel_x = (((float)accel_x_raw / 16384.0f) * 9.80665f) + ax_offset; // Digital value -> g -> m/s2
 
     // Accel: Y
     accel_y_raw = get_raw_axis_data(p_dev, REG_ACCEL_Y_H, REG_ACCEL_Y_L);
@@ -392,7 +343,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Gyro: X
     gyro_x_raw = get_raw_axis_data(p_dev, REG_GYRO_X_H, REG_GYRO_X_L);
-    gyro_x = ((float)gyro_x_raw / 131.0f) + gx_offset; // Pasamos el valor digital -> dps (degrees per second)
+    gyro_x = ((float)gyro_x_raw / 131.0f) + gx_offset; // Digital value -> dps (degrees per second)
 
     // Gyro: Y
     gyro_y_raw = get_raw_axis_data(p_dev, REG_GYRO_Y_H, REG_GYRO_Y_L);
@@ -404,7 +355,7 @@ esp_err_t icm20948_read_measurements(data_t *p_dev) {
 
     // Magneto: X
     magneto_x_raw = get_raw_axis_data(p_dev, REG_MAGNETO_X_H, REG_MAGNETO_X_L);
-    magneto_x = ((float)magneto_x_raw * 0.15); // Pasamos el valor digital -> μT
+    magneto_x = ((float)magneto_x_raw * 0.15); // Digital value -> μT
 
     // Magneto: Y
     magneto_y_raw = get_raw_axis_data(p_dev, REG_MAGNETO_Y_H, REG_MAGNETO_Y_L);

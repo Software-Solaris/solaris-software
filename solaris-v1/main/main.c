@@ -1,54 +1,49 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "general.h"
 #include "macros.h"
-#include "gpio_int.h"
-// #include "core.h"
+#include "icm20948.h"
 
 
-// retval_t ret = SPP_OK;
 static const char *TAG = "MainApp";
 
 int app_main(void)
 {
 
-    // ret = Core_Init();
-    // Declarar e inicializar los structs de los sensores (inicializados a cero)
-    data_t icm_dev = {0};
-    data_t baro_dev = {0};
+    // Initial struct for setting up SPI communication
+    esp_err_t ret;
+    data_t icm = {0};
 
-    // Esperar 5 segundos antes de iniciar (para estabilizar el sistema)
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    //Time to stabilize
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // Inicializar los sensores usando los structs ya creados.
-    esp_err_t com_result = init_common_sensors(&icm_dev, &baro_dev);
-    if (com_result != ESP_OK) {
-        ESP_LOGE(TAG, "Failed on establishing communications");
-        // return ESP_FAIL;
+    //---------INIT---------
+    ret = icm20948_init(&icm);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error at ICM20948 init: %d", ret);
+        return ret;
     }
+    ESP_LOGI(TAG, "ICM20948 init succed");
 
-    // Configuración interna de los sensores
-    esp_err_t set_up_result = configure_common_sensors(&icm_dev, &baro_dev);
-    if (set_up_result != ESP_OK) {
-        ESP_LOGE(TAG, "Failed on sensors set up");
-        // return ESP_FAIL;
+    //---------CONFIG & CHECK---------
+    ret = icm20948_config(&icm);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error at ICM20948 setup: %d", ret);
+        return ret;
     }
+    ESP_LOGI(TAG, "ICM20948 setup succed");
 
-    // Calibración de los sensores para recogida de datos
-    esp_err_t calib_result = calibrate_common_sensors(&icm_dev, &baro_dev);
-    if (calib_result != ESP_OK) {
-        ESP_LOGE(TAG, "Failed on sensors calibration");
-        // return ESP_FAIL;
+    //---------PREPARE READ---------
+    ret = icm20948_prepare_read(&icm);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Error at ICM20948 calibration: %d", ret);
+        return ret;
     }
+    ESP_LOGI(TAG, "ICM20948 calibration succed");
 
-    // int_gpio_init();
-    // isr_config();
-
-
-    // Lectura periódica de los datos en los sensores
+    //---------READ LOOP---------
     while (1) {
-        read_common_sensors(&icm_dev, &baro_dev);
+        ret = icm20948_read_measurements(&icm);
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
     return ESP_OK;
