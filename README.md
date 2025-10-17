@@ -8,7 +8,7 @@ To use and compile the code, we have developed a Docker container with the lates
 However, this configuration can easily be adapted (by changing the Docker image) to any other board or architecture.
 We use Docker as a common base so that all our developers share the same dependencies and can build code in a consistent environment.
 
-We recommend reading our [installation guide for Linux users.](https://softwaresolaris.com/solaris/solaris-software/wiki/Installation-guide-for-Linux-users)
+We recommend reading our [installation guide for Linux users.](https://softwaresolaris.com/solaris/solaris-software/wiki/Installation-guide-for-Linux-users) or our [installation guide for Windows users.](https://softwaresolaris.com/solaris/solaris-software/wiki/Installation-Guide-for-Windows)
 
 We also have a [short general installation guide.](https://softwaresolaris.com/solaris/solaris-software/wiki/Gu%C3%ADa-de-Instalaci%C3%B3n)
 
