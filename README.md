@@ -14,8 +14,8 @@ We recommend reading our [installation guide for Linux users.](https://softwares
 We have currently two versions of our code: [solaris-v0.1](https://softwaresolaris.com/solaris/solaris-software/src/tag/solaris-v0.1) where we configure the BMP390 sensor and a [solaris-v0.2](https://softwaresolaris.com/solaris/solaris-software/src/tag/solaris-v0.2) where we configure the ICM20948.
 
 ## Next steps
-We are currently working on an improved version of the Solaris software. We will introduce in next version the use of a new Solaris Packet Protocol for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hawrdware Abstraction layer (HAL) and operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
-If you wish to colaborate on this layers, contact the repository administrators via email.
+We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hawrdware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
+If you wish to colaborate on this layers, you can explore all our branches or contact the repository administrators via email.
 
 ## Collaboration
 We are open to contributions, ideas or improvements — it is the only way to progress and be able to develop faster.
