@@ -24,6 +24,6 @@ To collaborate, you will need to create an account in our Forgejo. Each account 
 ## License
 This project is licensed under **GPLv3 with Additional Terms for Amateur Rocketry**.  
 Commercial use is allowed, but all modifications must remain open source and properly attributed.  
-See [LICENSE](./LICENSE) for full terms.
+See [LICENSE](https://softwaresolaris.com/solaris/solaris-software/src/branch/main/LICENSE.md) for full terms.
 
 
