@@ -1,5 +1,0 @@
-Command: /opt/esp/python_env/idf6.0_py3.12_env/bin/python -m esptool --chip esp32s3 merge_bin -o merged-binary.bin -f raw @flash_args
-esptool.py --chip esp32s3 merge_bin -o merged-binary.bin -f raw --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 solaris-v0.2.bin 0x8000 partition_table/partition-table.bin
-esptool.py v4.9.dev8
-SHA digest in image updated
-Wrote 0x4b740 bytes to file merged-binary.bin, ready to flash to offset 0x0
