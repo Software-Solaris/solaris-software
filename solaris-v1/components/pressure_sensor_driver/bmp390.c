@@ -6,6 +6,9 @@
 #include <string.h>
 #include <math.h>
 
+#include "core/returntypes.h"
+#include "spi.h"
+
 static esp_err_t ret;
 static const char* TAG = "BMP390";
 uint8_t id, ifc;
@@ -23,42 +26,18 @@ float comp_press;
 
 //--------------------INIT (8 dummy bits and halfduplex)---------------------------
 
-esp_err_t bmp390_init(data_t *p_dev)
+void BmpInit(void* p_data)
 {
+    for(;;){
+        // Declare variables
+        retval_t ret = SPP_ERROR;
+        void* p_spi_bmp;
 
-    // 1. Inicializa la configuración del bus SPI
-    p_dev->buscfg.miso_io_num = PIN_NUM_CIPO;
-    p_dev->buscfg.mosi_io_num = PIN_NUM_COPI;
-    p_dev->buscfg.sclk_io_num = PIN_NUM_CLK;
-    p_dev->buscfg.quadwp_io_num = -1;
-    p_dev->buscfg.quadhd_io_num = -1;
-    p_dev->buscfg.max_transfer_sz = 4096;
+        ret = SPP_HAL_SPI_BusInit();
+        p_spi_bmp = SPP_HAL_SPI_GetHandler();
+        ret = SPP_HAL_SPI_DeviceInit(p_spi_bmp);
+    }  
 
-    esp_err_t ret = spi_bus_initialize(SPI_HOST_USED, &p_dev->buscfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error spi_bus_initialize on BMP390: %d", ret);
-        return ret;
-    }
-    ESP_LOGI(TAG, "SPI bus initialized on BMP390");
-
-    // 2. Configura el dispositivo SPI (CS, velocidad, modo, etc.)
-    p_dev->devcfg.clock_speed_hz = 500 * 1000; // 500kHz
-    p_dev->devcfg.mode = 3;           // Probar en modo 0 si falla
-    p_dev->devcfg.spics_io_num = PIN_NUM_CS;
-    p_dev->devcfg.queue_size = 7;
-    p_dev->devcfg.command_bits = 8;
-    p_dev->devcfg.dummy_bits = 8;
-    p_dev->devcfg.flags = SPI_DEVICE_HALFDUPLEX;
-    vTaskDelay(pdMS_TO_TICKS(100)); // Espera adicional de 100 ms
-
-    ret = spi_bus_add_device(SPI_HOST_USED, &p_dev->devcfg, &p_dev->handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Error spi_bus_add_device on BMP390: %d", ret);
-        return ret;
-    }
-    ESP_LOGI(TAG, "BMP390 added to SPI bus.");
-
-    return ESP_OK;
 }
 
 //--------------------AUX FUNCTIONS---------------------------

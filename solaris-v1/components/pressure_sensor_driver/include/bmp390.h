@@ -5,11 +5,15 @@
 #include "driver/spi_master.h" 
 #include "general.h"
 
+//---------------------INIT------------------------------
+#define BMP_INIT_PRIO   4
+#define BMP_INIT_TASK_STACK_SIZE 1024
+
 
 //---------------------INIT------------------------------
 #define PIN_NUM_CS   18
 
-esp_err_t bmp390_init(data_t *p_dev);
+void BmpInit(void* p_data);
 
 //---------------------AUX------------------------------
 esp_err_t bmp390_write_reg(data_t *p_dev, uint8_t reg, uint8_t value);

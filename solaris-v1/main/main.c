@@ -2,28 +2,20 @@
 #include "spi.h"
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
-#include "macros.h"
+#include "core/macros.h"
+#include "bmp390.h"
+#include "task.h"
 
 
 void app_main()
 {
-    retval_t ret;
-    void* p_dev;
-
-    //texto
-
-    ret = SPP_HAL_SPI_BusInit();
-    if (ret != SPP_OK) return;
-
-    for(int i = 0; i < MAX_DEVICES; i++)
-    {
-        p_dev = SPP_HAL_SPI_GetHandler();
-        if (p_dev == NULL) break;
-
-        ret = SPP_HAL_SPI_DeviceInit(p_dev);
-        if (ret == SPP_ERROR) break; 
-    }
-}
+   // Create the task that inits the BMP390 device in the SPI bus
+   void *p_bmp_init;
+   p_bmp_init = SPP_OSAL_TaskCreate(BmpInit, "BMP390 Init Task", STACK_SIZE, NULL, BMP_INIT_PRIO, BMP_INIT_TASK_STACK_SIZE);
+   if (p_bmp_init == NULL){
+      return;
+   }
+}  
 
 /*
 FLUJO ESPERADO DE INICIALIZACIÓN SPI (BMP → ICM) CON CASOS DE FALLO
