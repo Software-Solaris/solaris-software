@@ -10,6 +10,8 @@ void app_main()
     retval_t ret;
     void* p_dev;
 
+    //texto
+
     ret = SPP_HAL_SPI_BusInit();
     if (ret != SPP_OK) return;
 
