@@ -1,4 +1,4 @@
-/solaris-v1/build
+/solaris-v*/build
 /.devcontainer/devcontainer.json
 sdkconfig
 sdkconfig.old

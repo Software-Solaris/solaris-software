@@ -8,10 +8,10 @@ To use and compile the code, we have developed a Docker container with the lates
 However, this configuration can easily be adapted (by changing the Docker image) to any other board or architecture.
 We use Docker as a common base so that all our developers share the same dependencies and can build code in a consistent environment.
 
-We recommend reading our [installation guide for Linux users.](https://softwaresolaris.com/solaris/solaris-software/wiki/Installation-guide-for-Linux-users)
+We recommend reading our [installation guide for Linux users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Linux-users) and also for the [Windows users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Windows-users)
 
 ## Versions
-We have currently two versions of our code: [solaris-v0.1](https://softwaresolaris.com/solaris/solaris-software/src/tag/solaris-v0.1) where we configure the BMP390 sensor and a [solaris-v0.2](https://softwaresolaris.com/solaris/solaris-software/src/tag/solaris-v0.2) where we configure the ICM20948.
+We have currently two versions of our code: [solaris-v0.1](https://github.com/secureshadow/solaris-software/tree/solaris-v0.1) where we configure the BMP390 sensor and a [solaris-v0.2](https://github.com/secureshadow/solaris-software/tree/solaris-v0.2) where we configure the ICM20948.
 
 ## Next steps
 We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hawrdware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
@@ -27,3 +27,4 @@ Commercial use is allowed, but all modifications must remain open source and pro
 See [LICENSE](https://softwaresolaris.com/solaris/solaris-software/src/branch/main/LICENSE.md) for full terms
 
 
+ 

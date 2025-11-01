@@ -1,1 +1,0 @@
-Command: /opt/esp/python_env/idf6.0_py3.12_env/bin/python -m esptool --chip esp32s3 merge_bin -o merged-binary.bin -f raw @flash_args

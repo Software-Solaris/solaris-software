@@ -22,23 +22,10 @@
     "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
   ],
 
-  "postCreateCommand": "/bin/bash -lc '\
-    echo \"source /opt/esp/idf/export.sh\" >> ~/.bashrc && \
-    mkdir -p /root/.ssh && \
-    cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true && \
-    chown -R root:root /root/.ssh && chmod 700 /root/.ssh && \
-    for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done && \
-    for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done && \
-    echo \"Dev container ready for ESP-IDF development!\"'",
+  "postCreateCommand": "/bin/bash -lc 'echo \"source /opt/esp/idf/export.sh\" >> ~/.bashrc && mkdir -p /root/.ssh && cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true && chown -R root:root /root/.ssh && chmod 700 /root/.ssh && for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done && for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done && echo \"Dev container ready for ESP-IDF development!\"'",
 
   "remoteEnv": {
     "IDF_PATH": "/opt/esp/idf",
     "PATH": "/opt/esp/idf/tools:${env:PATH}"
-  },
-
-  "runArgs": [
-    "--network=host",
-    "--dns=192.168.10.1"
-  ]
-
+  }
 }
