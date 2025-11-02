@@ -1,9 +1,9 @@
 [submodule "solaris-v1/external/spp"]
     path = solaris-v1/external/spp
-    url = git@github.com:secureshadow/solaris-packet-protocol.git
+    url = git@github.com:Software-Solaris/solaris-packet-protocol.git
 [submodule "solaris-v1/external/spp-ports"]
     path = solaris-v1/external/spp-ports
-    url = git@github.com:secureshadow/spp-ports.git
+    url = git@github.com:Software-Solaris/spp-ports.git
 [submodule "solaris-v1/external/esp-idf"]
     path = solaris-v1/external/esp-idf
     url = https://github.com/espressif/esp-idf.git
