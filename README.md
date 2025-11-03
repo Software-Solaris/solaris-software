@@ -14,12 +14,12 @@ We recommend reading our [installation guide for Linux users](https://github.com
 We have currently two versions of our code: [solaris-v0.1](https://github.com/secureshadow/solaris-software/tree/solaris-v0.1) where we configure the BMP390 sensor and a [solaris-v0.2](https://github.com/secureshadow/solaris-software/tree/solaris-v0.2) where we configure the ICM20948.
 
 ## Next steps
-We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hawrdware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
+We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hardware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
 If you wish to colaborate on this layers, you can explore all our branches or contact the repository administrators via email.
 
 ## Collaboration
 We are open to contributions, ideas or improvements — it is the only way to progress and be able to develop faster.
-To collaborate, you will need to create an account in our Forgejo. Each account will be administrated to avoid DDoS attacks on our servers, it is recommended you send an email to our administrators explaining your background and why you wish to collaborate, if you are not a robot, we will accept you :). To particpate, new users can create forks of our repository and propose their modifications, they will then need to associate a PR to our repository against your branch in your forked repo.
+To collaborate, you will need to create an account in GitHub. To particpate, users can create forks of our repository and propose their modifications, they will then need to associate a PR to our repository against your branch in your forked repo.
 
 ## License
 This project is licensed under **GPLv3 with Additional Terms for Amateur Rocketry**.  
