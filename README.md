@@ -11,7 +11,7 @@ We use Docker as a common base so that all our developers share the same depende
 We recommend reading our [installation guide for Linux users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Linux-users) and also for the [Windows users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Windows-users)
 
 ## Versions
-We have currently two versions of our code: [solaris-v0.1](https://github.com/secureshadow/solaris-software/tree/solaris-v0.1) where we configure the BMP390 sensor and a [solaris-v0.2](https://github.com/secureshadow/solaris-software/tree/solaris-v0.2) where we configure the ICM20948.
+We have currently one version of our code: [solaris-v0](https://github.com/Software-Solaris/solaris-software/tree/solaris-v0) where we configure the barometer BMP390 and the IMU ICM20948.
 
 ## Next steps
 We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hardware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
