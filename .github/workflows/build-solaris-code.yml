@@ -11,34 +11,25 @@ jobs:
         -v /var/run/docker.sock:/var/run/docker.sock
 
     steps:
+      - name: Fix permissions for GitHub workspace
+        run: |
+          chmod -R 777 $GITHUB_WORKSPACE || true
+          chmod -R 777 /__w || true
+
       - name: Checkout (repo + submodules)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-          # Si ALGÚN submódulo es privado o usa SSH,
-          # añade un secreto CI_SSH_KEY y descomenta estas 2 líneas:
-          # ssh-key: ${{ secrets.CI_SSH_KEY }}
-          # persist-credentials: false
 
-      - name: Ensure git & ssh client (just in case)
-        run: |
-          apt-get update && apt-get install -y git openssh-client && rm -rf /var/lib/apt/lists/*
+      - name: Ensure git & ssh client
+        run: apt-get update && apt-get install -y git openssh-client && rm -rf /var/lib/apt/lists/*
 
-      - name: (Opcional) Confiar en github.com en known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts || true
-
-      - name: Sync & init submodules (refuerzo)
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
+      - name: Sync & init submodules
+        run: git submodule update --init --recursive
 
       - name: Build firmware
         run: |
-          set -e
           cd solaris-v0.2
           . /opt/esp/idf/export.sh
           idf.py build
-          idf.py merge-bin
