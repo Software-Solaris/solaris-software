@@ -17,10 +17,11 @@ jobs:
           chmod -R 777 /__w || true
 
       - name: Checkout (repo + submodules)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Ensure git & ssh client
         run: apt-get update && apt-get install -y git openssh-client && rm -rf /var/lib/apt/lists/*
