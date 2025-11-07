@@ -7,6 +7,8 @@ jobs:
 
     container:
       image: espressif/idf:v6.0-dev
+      options: >-
+        --security-opt label=disable
 
     steps:
       - name: Fix permissions for GitHub workspace
