@@ -5,6 +5,7 @@
 #include "core/macros.h"
 #include "bmp390.h"
 #include "task.h"
+#include "eventgroups.h"
 
 
 void app_main()
@@ -13,12 +14,22 @@ void app_main()
    retval_t ret = SPP_ERROR;
    void *p_bmp_init;
    void * p_task_storage;
-   vTaskDelay(pdMS_TO_TICKS(1000));
+   void * p_buffer_eg;
+   void *p_event_group = NULL;
    p_task_storage = SPP_OSAL_GetTaskStorage();
    p_bmp_init = SPP_OSAL_TaskCreate(BmpInit, "BMP390 Init Task", STACK_SIZE, NULL, BMP_INIT_PRIO, p_task_storage);
    if (p_bmp_init == NULL){
       return;
    }
+   
+   p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
+   
+   ret = OSAL_EventGroupCreate(p_event_group, p_buffer_eg);
+   if (ret != SPP_OK){
+      //Event group failed to be created
+   }
+   vTaskDelay(pdMS_TO_TICKS(1000));
+
 
 }  
 
