@@ -3,7 +3,7 @@ on: [push]
 
 jobs:
   build-solaris-code:
-    runs-on: [self-hosted, raspi]
+    runs-on: [self-hosted]
 
     container:
       image: espressif/idf:v6.0-dev
