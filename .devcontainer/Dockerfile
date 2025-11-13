@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
     grep \
     sed \
     util-linux \
+    locales \
+    doxygen \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Set nano as the default Git editor
