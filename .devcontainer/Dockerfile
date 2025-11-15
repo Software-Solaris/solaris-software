@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     locales \
     doxygen \
     graphviz \
+    texlive-full \
     && rm -rf /var/lib/apt/lists/*
 
 # Set nano as the default Git editor
