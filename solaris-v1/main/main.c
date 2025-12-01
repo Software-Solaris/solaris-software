@@ -5,7 +5,7 @@
 #include "core/macros.h"
 #include "bmp390.h"
 #include "task.h"
-#include "eventgroups.h"
+// #include "eventgroups.h"
 
 
 void app_main()
@@ -22,12 +22,12 @@ void app_main()
       return;
    }
    
-   p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
+   // p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
    
-   ret = OSAL_EventGroupCreate(p_event_group, p_buffer_eg);
-   if (ret != SPP_OK){
-      //Event group failed to be created
-   }
+   // ret = OSAL_EventGroupCreate(p_event_group, p_buffer_eg);
+   // if (ret != SPP_OK){
+   //    //Event group failed to be created
+   // }
    vTaskDelay(pdMS_TO_TICKS(1000));
 
 

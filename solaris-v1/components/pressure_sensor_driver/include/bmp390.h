@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "driver/spi_master.h" 
+#include "returntypes.h"
 #include "general.h"
 
 //---------------------INIT------------------------------

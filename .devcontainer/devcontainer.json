@@ -6,6 +6,13 @@
     "args": { "USERNAME": "root", "USER_UID": "1000", "USER_GID": "1000" }
   },
 
+  "runArgs": [
+      "--privileged",
+      "--device=/dev/ttyACM0",
+      "--group-add=dialout",
+      "--group-add=plugdev"
+  ],
+
   "settings": { "terminal.integrated.defaultProfile.linux": "bash" },
 
   "extensions": [
