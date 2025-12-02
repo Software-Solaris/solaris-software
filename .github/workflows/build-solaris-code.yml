@@ -16,24 +16,22 @@ jobs:
           chmod -R 777 "$GITHUB_WORKSPACE" || true
           chmod -R 777 /__w || true
 
-      - name: Checkout (repo + submodules con token)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive
+          submodules: true
+          persist-credentials: false
           token: ${{ secrets.CI_GH_TOKEN }}
-          
-      - name: Mark workspace as safe for Git
-        run: |
-          # Opción estricta (recomendada): sólo este repo
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          # Si aún diera guerra con submódulos anidados, usa el comodín (menos estricto en CI efímero):
-          # git config --global --add safe.directory '*'
 
-      - name: Sync & init submodules (refuerzo)
+      - name: Sync and update submodules to pinned commits
         run: |
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive --checkout
+
+      - name: Mark workspace as safe for Git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Ensure git & ssh client
         run: |
