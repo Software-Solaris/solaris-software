@@ -77,6 +77,16 @@
         "set -e; BIN=$(ls ${workspaceFolder}/solaris-v1/build/merged-*.bin | head -n1); scp \"$BIN\" raspi:/tmp/merged.bin; ssh raspi \"python3 -m esptool --chip esp32s3 --port /dev/ttyACM0 --baud 460800 --before default_reset --after hard_reset write_flash 0x0 /tmp/merged.bin\""
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "flash unit tests",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; source /opt/esp/idf/export.sh >/tmp/idf-env.log 2>&1; cd /opt/esp/idf/tools/unit-test-app; idf.py -T pressure_sensor_component merge-bin; BIN=/opt/esp/idf/tools/unit-test-app/build/merged-binary.bin; scp \"$BIN\" raspi:/tmp/merged.bin; ssh raspi \"python3 -m esptool --chip esp32s3 --port /dev/ttyACM0 --baud 460800 --before default_reset --after hard_reset write_flash 0x0 /tmp/merged.bin\""
+      ],
+      "problemMatcher": []
     }
   ]
 }
