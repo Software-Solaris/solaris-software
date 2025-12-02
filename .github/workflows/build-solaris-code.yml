@@ -23,10 +23,17 @@ jobs:
           submodules: false
           persist-credentials: false
           token: ${{ secrets.CI_GH_TOKEN }}
+          clean: true
 
-      - name: Clean cached nested modules
+      - name: Mark workspace as safe for Git
         run: |
-          rm -rf .git/modules/* || true
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Purge submodule cache (self-hosted runner)
+        run: |
+          rm -rf solaris-v1/external/esp-idf solaris-v1/external/spp solaris-v1/external/spp-ports || true
+          rm -rf .git/modules/solaris-v1/external/esp-idf .git/modules/solaris-v1/external/spp .git/modules/solaris-v1/external/spp-ports || true
+          rm -rf .git/modules/solaris-v1/external/spp/third_party/OS/FreeRTOS || true
 
       - name: Init submodules (only first level)
         run: |
@@ -35,9 +42,23 @@ jobs:
           git submodule update --init solaris-v1/external/spp
           git submodule update --init solaris-v1/external/spp-ports
 
-      - name: Mark workspace as safe for Git
+      - name: CI workaround: remove broken nested FreeRTOS submodule inside spp
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          SPP="solaris-v1/external/spp"
+          rm -rf "$SPP/third_party/OS/FreeRTOS/.git" || true
+          rm -rf ".git/modules/$SPP/third_party/OS/FreeRTOS" || true
+
+          if [ -f "$SPP/.gitmodules" ]; then
+            (cd "$SPP" && \
+              git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | \
+              while read -r key path; do
+                if [ "$path" = "third_party/OS/FreeRTOS" ] || [ "$path" = "$SPP/third_party/OS/FreeRTOS" ]; then
+                  name="${key#submodule.}"; name="${name%.path}"
+                  git config -f .gitmodules --remove-section "submodule.${name}" || true
+                fi
+              done
+            )
+          fi
 
       - name: Ensure git & ssh client
         run: |
