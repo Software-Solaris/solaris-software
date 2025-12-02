@@ -16,7 +16,11 @@ jobs:
           chmod -R 777 "$GITHUB_WORKSPACE" || true
           chmod -R 777 /__w || true
 
-      - name: Checkout repo (no submodules)
+      - name: Wipe workspace
+        run: |
+          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -29,42 +33,29 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Purge submodule cache (self-hosted runner)
+      - name: Purge submodule cache
         run: |
+          rm -rf .git/modules/* || true
           rm -rf solaris-v1/external/esp-idf solaris-v1/external/spp solaris-v1/external/spp-ports || true
-          rm -rf .git/modules/solaris-v1/external/esp-idf .git/modules/solaris-v1/external/spp .git/modules/solaris-v1/external/spp-ports || true
-          rm -rf .git/modules/solaris-v1/external/spp/third_party/OS/FreeRTOS || true
 
-      - name: Init submodules (only first level)
+      - name: Force HTTPS for submodules and authenticate
         run: |
-          git submodule sync
+          if [ -f .gitmodules ]; then
+            sed -i \
+              -e 's#git@github.com:#https://github.com/#g' \
+              -e 's#ssh://git@github.com/#https://github.com/#g' \
+              .gitmodules
+          fi
+          git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+          git submodule sync --recursive
+
+      - name: Initialize submodules
+        run: |
           git submodule update --init solaris-v1/external/esp-idf
           git submodule update --init solaris-v1/external/spp
           git submodule update --init solaris-v1/external/spp-ports
-
-      - name: CI workaround: remove broken nested FreeRTOS submodule inside spp
-        run: |
-          SPP="solaris-v1/external/spp"
-          rm -rf "$SPP/third_party/OS/FreeRTOS/.git" || true
-          rm -rf ".git/modules/$SPP/third_party/OS/FreeRTOS" || true
-
-          if [ -f "$SPP/.gitmodules" ]; then
-            (cd "$SPP" && \
-              git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | \
-              while read -r key path; do
-                if [ "$path" = "third_party/OS/FreeRTOS" ] || [ "$path" = "$SPP/third_party/OS/FreeRTOS" ]; then
-                  name="${key#submodule.}"; name="${name%.path}"
-                  git config -f .gitmodules --remove-section "submodule.${name}" || true
-                fi
-              done
-            )
-          fi
-
-      - name: Ensure git & ssh client
-        run: |
-          apt-get update
-          apt-get install -y git openssh-client
-          rm -rf /var/lib/apt/lists/*
 
       - name: Build firmware
         run: |
