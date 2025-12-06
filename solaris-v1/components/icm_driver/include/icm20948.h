@@ -1,16 +1,14 @@
 #ifndef ICM20948_H
 #define ICM20948_H
 
-#include "driver/spi_master.h"
 #include "returntypes.h"
-#include "esp_err.h"
-#include "esp_log.h"
 #include "general.h"
 
 #define PIN_NUM_CS         21 
 
 #define ICM_TASK_PRIORITY  4 
 #define ICM_CONFIG_TASK_PRIORITY 5
+#define ICM_READ_SENSORS_PRIORITY 4
 
 #define READ_OP            0x80
 #define WRITE_OP           0x00
@@ -53,6 +51,10 @@
 // Registros del magnetómetro -> NOTA: Los registros del magnetómetro llegan en little endian
 #define REG_MAGNETO_X_H   0x3C
 #define REG_MAGNETO_X_L   0x3B
+#define REG_MAGNETO_Y_H   0x3E
+#define REG_MAGNETO_Y_L   0x3D
+#define REG_MAGNETO_Z_H   0x40
+#define REG_MAGNETO_Z_L   0x3F
 
 
 // Mensajes a enviar
@@ -79,9 +81,8 @@ typedef struct{
 
 retval_t IcmInit(void *p_data);
 retval_t IcmConfig(void *p_data);
-esp_err_t icm20948_prepare_read(data_t *p_dev);
-esp_err_t icm20948_read_measurements(data_t *p_dev);
-
-esp_err_t icm20948_send_message(data_t *p_dev, uint8_t tx[2], uint8_t rx[2]);
+retval_t IcmPrepareRead(void *p_data);
+retval_t IcmReadSensors(void *p_data);
+void IcmGetSensorsData(void * p_data);
 
 #endif
