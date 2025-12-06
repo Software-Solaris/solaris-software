@@ -14,8 +14,7 @@ void app_main()
    retval_t ret = SPP_ERROR;
    ret = IcmInit((void*)&icm_data);
    ret = IcmConfig((void*)&icm_data);
-   ret = IcmPrepareRead((void*)&icm_data);
-
+   
    /** Initialization of the task for reading data from sensors */
    void *p_icm_init;
    void * p_task_storage;

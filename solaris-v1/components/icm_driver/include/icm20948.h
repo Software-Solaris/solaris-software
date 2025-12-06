@@ -89,7 +89,6 @@ typedef struct{
 
 retval_t IcmInit(void *p_data);
 retval_t IcmConfig(void *p_data);
-retval_t IcmPrepareRead(void *p_data);
 retval_t IcmReadSensors(void *p_data);
 void IcmGetSensorsData(void * p_data);
 
