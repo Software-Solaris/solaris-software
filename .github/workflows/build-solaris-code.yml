@@ -53,12 +53,14 @@ jobs:
 
       - name: Initialize submodules
         run: |
-          git submodule update --init solaris-v1/external/esp-idf
           git submodule update --init solaris-v1/external/spp
           git submodule update --init solaris-v1/external/spp-ports
+          git submodule add -f https://github.com/espressif/esp-idf.git solaris-v1/external/esp-idf
+          cd solaris-v1/external/esp-idf
+          git checkout v5.1
 
       - name: Build firmware
         run: |
-          cd solaris-v0.2
+          cd solaris-v1
           . /opt/esp/idf/export.sh
           idf.py build
