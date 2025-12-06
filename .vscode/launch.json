@@ -2,14 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ESP32-S3 Debug (GDB server via SSH tunnel)",
+      "name": "ESP32-S3 Debug (OpenOCD remoto)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/solaris-v1/build/solaris-v1.elf",
       "cwd": "${workspaceFolder}/solaris-v1",
       "MIMode": "gdb",
       "miDebuggerPath": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
-      "miDebuggerServerAddress": "127.0.0.1:3337",
+      "miDebuggerServerAddress": "192.168.20.236:3333",
       "externalConsole": false,
       "stopAtEntry": true,
       "preLaunchTask": "gdb-prepare",
