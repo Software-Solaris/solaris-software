@@ -6,15 +6,20 @@
     "args": { "USERNAME": "root", "USER_UID": "1000", "USER_GID": "1000" }
   },
 
+  "runArgs": [
+    "--privileged"
+  ],
+
   "settings": { "terminal.integrated.defaultProfile.linux": "bash" },
 
   "extensions": [
-    "espressif.esp-idf-extension",
     "vsciot-vscode.vscode-arduino",
     "ms-vscode.cpptools",
     "eamodio.gitlens",
     "cschlosser.doxdocgen",
-    "samubarb.vscode-doxyfile"
+    "samubarb.vscode-doxyfile",
+    "openai.tu-extension-codex",
+    "github.vscode-pull-request-github"
   ],
 
   "remoteUser": "root",

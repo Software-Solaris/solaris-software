@@ -2,11 +2,15 @@
 #define ICM20948_H
 
 #include "driver/spi_master.h"
+#include "returntypes.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "general.h"
 
 #define PIN_NUM_CS         21 
+
+#define ICM_TASK_PRIORITY  4 
+#define ICM_CONFIG_TASK_PRIORITY 5
 
 #define READ_OP            0x80
 #define WRITE_OP           0x00
@@ -67,10 +71,14 @@
 #define GYRO_FILTER_SELEC  0x31 // modificable igualmente
 #define EMPTY_MESSAGE      0x00
 
+typedef struct{
+    void *p_handler_spi;
+}icm_data_t;
 
 
-esp_err_t icm20948_init(data_t *p_dev);
-esp_err_t icm20948_config(data_t *p_dev);
+
+retval_t IcmInit(void *p_data);
+retval_t IcmConfig(void *p_data);
 esp_err_t icm20948_prepare_read(data_t *p_dev);
 esp_err_t icm20948_read_measurements(data_t *p_dev);
 
