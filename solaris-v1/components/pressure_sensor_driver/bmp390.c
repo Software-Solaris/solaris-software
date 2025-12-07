@@ -11,15 +11,15 @@
 #include "task.h"
 
 static const char* TAG = "BMP390";
-uint8_t id, ifc;
+spp_uint8_t id, ifc;
 bmp390_temp_calib_t raw_calib;
 bmp390_temp_params_t temp_params;
-uint32_t raw_temp;
+spp_uint32_t raw_temp;
 bmp390_press_calib_t raw_press_calib;
 bmp390_press_params_t press_params;
-uint32_t raw_press;
+spp_uint32_t raw_press;
 float t_lin;
-uint8_t st;
+spp_uint8_t st;
 float partial_data1, partial_data2, partial_data3, partial_data4;
 float partial_out1, partial_out2;
 float comp_press;
@@ -60,71 +60,69 @@ void BmpInit(void* p_data)
 
 //--------------------CONFIG and CHECK---------------------------
 
-// retval_t bmp390_soft_reset(void *p_data)
-// {
-//     uint8_t tx[2] = {BMP390_SOFT_RESET_REG, BMP390_SOFT_RESET_CMD};
+retval_t bmp390_soft_reset(void *p_spi)
+{
+    spp_uint8_t buf[2] = 
+    {
+        (spp_uint8_t)BMP390_SOFT_RESET_REG,
+        (spp_uint8_t)BMP390_SOFT_RESET_CMD
+    };
 
-//     retval_t ret = SPP_HAL_SPI_Transmit(p_data, tx, NULL, 2);
+    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
 
-//     vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(100));
 
-//     return ret;
-// }
+    return ret;
+}
 
-// retval_t bmp390_enable_spi_mode(data_t *p_data)
-// {
-//     uint8_t tx[2] = {BMP390_IF_CONF_REG, BMP390_IF_CONF_SPI};
+retval_t bmp390_enable_spi_mode(void *p_spi)
+{
+    spp_uint8_t buf[2] = 
+    {
+        (spp_uint8_t)BMP390_IF_CONF_REG,
+        (spp_uint8_t)BMP390_IF_CONF_SPI
+    };
 
-//     retval_t ret = SPP_HAL_SPI_Transmit(p_data, tx, NULL, 2);
+    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
 
-//     vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(100));
 
-//     return ret;
-// }
+    return ret;
+}
 
-// /*
-// esp_err_t bmp390_read_if_conf(data_t *p_dev, uint8_t *if_conf)
-// {
-//     esp_err_t ret = bmp390_read(p_dev, BMP390_IF_CONF_REG, if_conf, 1);
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Error al leer IF_CONF: %d", ret);
-//     } else {
-//         ESP_LOGI(TAG, "IF_CONF leído: 0x%02X", *if_conf);
-//     }
-//     return ret;
-// }
+retval_t bmp390_config_check(void *p_spi)
+{
+    retval_t ret;
 
-// esp_err_t bmp390_read_chip_id(data_t *p_dev, uint8_t *chip_id)
-// {
-//     esp_err_t ret = bmp390_read(p_dev, BMP390_CHIP_ID_REG, chip_id, 1);
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Error al leer CHIP ID: %d", ret);
-//     } else {
-//         ESP_LOGI(TAG, "CHIP ID leído: 0x%02X", *chip_id);
-//     }
-//     return ret;
-// }
-// */
-// //--------------------PREPARE READ---------------------------
+    spp_uint8_t buf[4] = 
+    {
+        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG),    EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE
+    };
 
-// retval_t bmp390_prepare_measure(void* p_spi)
-// {
-//     uint8_t tx[8] = 
-//     {
-//         BMP390_REG_OSR,     BMP390_VALUE_OSR,
-//         BMP390_REG_ODR,     BMP390_VALUE_ODR,
-//         BMP390_REG_IIR,     BMP390_VALUE_IIR,
-//         BMP390_REG_PWRCTRL, BMP390_VALUE_PWRCTRL
-//     };
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
 
-//     uint8_t rx[8];
+    return ret;
+}
 
-//     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, tx, rx, 8);
+//--------------------PREPARE READ---------------------------
 
-//     return ret;
-// }
+retval_t bmp390_prepare_measure(void *p_spi)
+{
+    spp_uint8_t buf[8] = 
+    {
+        (spp_uint8_t)BMP390_REG_OSR,     (spp_uint8_t)BMP390_VALUE_OSR,
+        (spp_uint8_t)BMP390_REG_ODR,     (spp_uint8_t)BMP390_VALUE_ODR,
+        (spp_uint8_t)BMP390_REG_IIR,     (spp_uint8_t)BMP390_VALUE_IIR,
+        (spp_uint8_t)BMP390_REG_PWRCTRL, (spp_uint8_t)BMP390_VALUE_PWRCTRL
+    };
 
-// // Hasta aquí está pasado a SPP
+    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+
+    return ret;
+}
+
+//
 // esp_err_t bmp390_wait_temp_ready(data_t *p_dev)
 // {
 //     // Leer STATUS hasta que el bit DRDY_TEMP esté a 1
@@ -152,166 +150,210 @@ void BmpInit(void* p_data)
 //     return ESP_OK;
 // }
 
-// //--------------------READ TEMP---------------------------
+//--------------------READ TEMP---------------------------
 
-// esp_err_t bmp390_read_raw_temp_coeffs(data_t *p_dev, bmp390_temp_calib_t *tcalib)
-// {
-//     uint8_t raw[5];
+retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib)
+{
+    retval_t ret;
 
-//     // 1) Leer en ráfaga 5 bytes de coeficientes
-//     ret = bmp390_read(p_dev, BMP390_TEMP_CALIB_REG_START, raw, sizeof(raw));
-//     if (ret != ESP_OK) {
-//         return ret;
-//     }
+    spp_uint8_t buf[10] = {
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 0)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 1)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 2)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 3)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 4)), EMPTY_MESSAGE
+    };
 
-//     // 2) Desempaquetar en little-endian
-//     tcalib->par_t1 =  (uint16_t)(raw[1] << 8 | raw[0]);
-//     tcalib->par_t2 =  (int16_t )(raw[3] << 8 | raw[2]);
-//     tcalib->par_t3 =  (int8_t  ) raw[4];
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     // 3) Inicializar t_lin
-//     tcalib->t_lin = 0.0f;
+    spp_uint8_t raw[5];
+    raw[0] = buf[1];
+    raw[1] = buf[3];
+    raw[2] = buf[5];
+    raw[3] = buf[7];
+    raw[4] = buf[9];
 
-//     return ESP_OK;
-// }
+    tcalib->par_t1 = (spp_uint16_t)((raw[1] << 8) | raw[0]);
+    tcalib->par_t2 = (spp_int16_t)((raw[3] << 8) | raw[2]);
+    tcalib->par_t3 = (spp_int8_t)raw[4];
 
-// esp_err_t bmp390_calibrate_temp_params(data_t *p_dev, bmp390_temp_params_t *out)
-// {
-//     bmp390_temp_calib_t raw;
-    
-//     ret = bmp390_read_raw_temp_coeffs(p_dev, &raw); //Raw coeffs
-//     if (ret != ESP_OK) {
-//         return ret;
-//     }
+    tcalib->t_lin = 0.0f;
 
-//     out->PAR_T1 = raw.par_t1 * 256.0f; // PAR_T1 = raw.par_t1 / 2^8
-//     out->PAR_T2 = raw.par_t2 / 1073741824.0f; // PAR_T3 = raw.par_t3 / 2^48
-//     out->PAR_T3 = raw.par_t3 / 281474976710656.0f; // PAR_T2 = raw.par_t2 / 2^30
+    return SPP_OK;
+}
 
-//     return ESP_OK;
-// }
 
-// esp_err_t bmp390_read_raw_temp(data_t *p_dev, uint32_t *raw_temp)
-// {
-//     uint8_t buf[3];
+retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out)
+{
+    retval_t ret;
+    bmp390_temp_calib_t raw;
 
-//     // 1) Leer en ráfaga los 3 bytes de temperatura cruda (regs 0x07..0x09)
-//     ret = bmp390_read(p_dev, BMP390_TEMP_RAW_REG, buf, sizeof(buf));
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Error al leer raw_temp: %d", ret);
-//         return ret;
-//     }
+    ret = bmp390_read_raw_temp_coeffs(p_spi, &raw);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     // 2) Combinar XLSB, LSB y MSB en un valor de 24 bits:
-//     *raw_temp = ((uint32_t)buf[2] << 16)  // MSB
-//               | ((uint32_t)buf[1] <<  8)  // LSB
-//               |  (uint32_t)buf[0];        // XLSB
+    out->PAR_T1 = raw.par_t1 * 256.0f;                   // 2^(-8)
+    out->PAR_T2 = raw.par_t2 / 1073741824.0f;            // 2^30
+    out->PAR_T3 = raw.par_t3 / 281474976710656.0f;       // 2^48
 
-//     return ESP_OK;
-// }
+    return SPP_OK;
+}
 
-// float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params)
-// {
-//     float partial1 = (float)raw_temp - params->PAR_T1;
-//     float partial2 = partial1 * params->PAR_T2;
-//     float t_lin = partial2 + (partial1 * partial1) * params->PAR_T3;
+retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp)
+{
+    retval_t ret;
 
-//     return t_lin;
-// }
+    spp_uint8_t buf[6] = {
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 0)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 1)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 2)), EMPTY_MESSAGE
+    };
 
-// //--------------------READ PRESS---------------------------
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-// esp_err_t bmp390_read_raw_press_coeffs(data_t *p_dev, bmp390_press_calib_t *pcalib)
-// {
-//     uint8_t raw[16];
+    spp_uint8_t xlsb = buf[1];
+    spp_uint8_t lsb  = buf[3];
+    spp_uint8_t msb  = buf[5];
 
-//     esp_err_t ret = bmp390_read(p_dev, BMP390_PRESS_CALIB_REG_START, raw, sizeof(raw));
-//     if (ret != ESP_OK) {
-//         return ret;
-//     }
+    *raw_temp = ((spp_uint32_t)msb << 16) | ((spp_uint32_t)lsb <<  8) | (spp_uint32_t)xlsb;
 
-//     // PAR_P1, P2: signed 16-bit
-//     pcalib->par_p1  = (uint16_t)((raw[1] << 8) | raw[0]);
-//     pcalib->par_p2  = (uint16_t)((raw[3] << 8) | raw[2]);
-//     // PAR_P3, P4: signed 8-bit
-//     pcalib->par_p3  = (int8_t)  raw[4];
-//     pcalib->par_p4  = (int8_t)  raw[5];
-//     // PAR_P5, P6: unsigned 16-bit
-//     pcalib->par_p5  = (uint16_t)((raw[7] << 8) | raw[6]);
-//     pcalib->par_p6  = (uint16_t)((raw[9] << 8) | raw[8]);
-//     // PAR_P7, P8: signed 8-bit
-//     pcalib->par_p7  = (int8_t)  raw[10];
-//     pcalib->par_p8  = (int8_t)  raw[11];
-//     // PAR_P9: signed 16-bit
-//     pcalib->par_p9  = (int16_t)((raw[13] << 8) | raw[12]);
-//     // PAR_P10, P11: signed 8-bit
-//     pcalib->par_p10 = (int8_t)  raw[14];
-//     pcalib->par_p11 = (int8_t)  raw[15];
+    return SPP_OK;
+}
 
-//     return ESP_OK;
-// }
+float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t *params)
+{
+    float partial1 = (float)raw_temp - params->PAR_T1;
+    float partial2 = partial1 * params->PAR_T2;
+    float t_lin = partial2 + (partial1 * partial1) * params->PAR_T3;
 
-// esp_err_t bmp390_calibrate_press_params(data_t *p_dev, bmp390_press_params_t *out)
-// {
-//     bmp390_press_calib_t raw;
-//     ret = bmp390_read_raw_press_coeffs(p_dev, &raw); //Rar coeffs
-//     if (ret != ESP_OK) {
-//         return ret;
-//     }
+    return t_lin;
+}
 
-//     out->PAR_P1  = (raw.par_p1  - 16384.0f) / 1048576.0f; // PAR_P1 = (raw.par_p1  - 2^14) / 2^20
-//     out->PAR_P2  = (raw.par_p2  - 16384.0f) / 536870912.0f; // PAR_P2 = (raw.par_p2  - 2^14) / 2^29
-//     out->PAR_P3  = raw.par_p3 / 4294967296.0f; // PAR_P3 = raw.par_p3 / 2^32
-//     out->PAR_P4  = raw.par_p4 / 137438953472.0f; // PAR_P4 = raw.par_p4 / 2^37    
-//     out->PAR_P5  = raw.par_p5 * 8.0f; // PAR_P5 = raw.par_p5 / 2^-3
-//     out->PAR_P6  = raw.par_p6 / 64.0f; // PAR_P6 = raw.par_p6 / 2^6
-//     out->PAR_P7  = raw.par_p7 / 256.0f; // PAR_P7 = raw.par_p7 / 2^8
-//     out->PAR_P8  = raw.par_p8 / 32768.0f; // PAR_P8 = raw.par_p8 / 2^15
-//     out->PAR_P9  = raw.par_p9 / 281474976710656.0f; // PAR_P9 = raw.par_p9 / 2^48
-//     out->PAR_P10 = raw.par_p10 / 281474976710656.0f; // PAR_P10 = raw.par_p10 / 2^48
-//     out->PAR_P11 = raw.par_p11 / 36893488147419103232.0f; // PAR_P11 = raw.par_p11 / 2^65
+//--------------------READ PRESS---------------------------
 
-//     return ESP_OK;
-// }
+retval_t bmp390_read_raw_press_coeffs(void *p_spi, bmp390_press_calib_t *pcalib)
+{
+    retval_t ret;
 
-// esp_err_t bmp390_read_raw_press(data_t *p_dev, uint32_t *raw_press)
-// {
-//     uint8_t buf[3];
+    spp_uint8_t buf[32] = {
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  0)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  1)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  2)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  3)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  4)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  5)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  6)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  7)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  8)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  9)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 10)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 11)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 12)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 13)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 14)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 15)), EMPTY_MESSAGE
+    };
 
-//     // 1) Leer en ráfaga los 3 bytes de presión cruda (regs 0x04..0x06)
-//     ret = bmp390_read(p_dev, BMP390_PRESS_RAW_REG, buf, sizeof(buf));
-//     if (ret != ESP_OK) {
-//         ESP_LOGE(TAG, "Error al leer raw_press: %d", ret);
-//         return ret;
-//     }
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    if (ret != SPP_OK) return ret;
 
-//     // 2) Combinar XLSB, LSB y MSB en un valor de 24 bits:
-//     *raw_press = ((uint32_t)buf[2] << 16) | ((uint32_t)buf[1] << 8) | buf[0];
+    spp_uint8_t raw[16];
+    for (int i = 0; i < 16; i++) {
+        raw[i] = buf[2 * i + 1];
+    }
 
-//     return ESP_OK;
-// }
+    pcalib->par_p1  = (spp_uint16_t)((raw[1] << 8) | raw[0]);
+    pcalib->par_p2  = (spp_uint16_t)((raw[3] << 8) | raw[2]);
+    pcalib->par_p3  = (spp_int8_t)   raw[4];
+    pcalib->par_p4  = (spp_int8_t)   raw[5];
+    pcalib->par_p5  = (spp_uint16_t)((raw[7] << 8) | raw[6]);
+    pcalib->par_p6  = (spp_uint16_t)((raw[9] << 8) | raw[8]);
+    pcalib->par_p7  = (spp_int8_t)   raw[10];
+    pcalib->par_p8  = (spp_int8_t)   raw[11];
+    pcalib->par_p9  = (spp_int16_t)((raw[13] << 8) | raw[12]);
+    pcalib->par_p10 = (spp_int8_t)   raw[14];
+    pcalib->par_p11 = (spp_int8_t)   raw[15];
 
-// float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
-// {
-//     partial_data1 = p->PAR_P6 * t_lin;
-//     partial_data2 = p->PAR_P7 * (t_lin * t_lin);
-//     partial_data3 = p->PAR_P8 * (t_lin * t_lin * t_lin);
-//     partial_out1  = p->PAR_P5 + partial_data1 + partial_data2 + partial_data3;
+    return SPP_OK;
+}
 
-//     partial_data1 = p->PAR_P2 * t_lin;
-//     partial_data2 = p->PAR_P3 * (t_lin * t_lin);
-//     partial_data3 = p->PAR_P4 * (t_lin * t_lin * t_lin);
-//     partial_out2  = raw_press * (p->PAR_P1 + partial_data1 + partial_data2 + partial_data3);
+retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
+{
+    retval_t ret;
+    bmp390_press_calib_t raw;
 
-//     partial_data1 = raw_press * raw_press;                               
-//     partial_data2 = p->PAR_P9 + p->PAR_P10 * t_lin;                     
-//     partial_data3 = partial_data1 * partial_data2;                      
-//     partial_data4 = partial_data3 + (raw_press * raw_press * raw_press) * p->PAR_P11;   
+    ret = bmp390_read_raw_press_coeffs(p_spi, &raw);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     comp_press = partial_out1 + partial_out2 + partial_data4;
+    out->PAR_P1  = (raw.par_p1  - 16384.0f) / 1048576.0f;             // (p1 - 2^14) / 2^20
+    out->PAR_P2  = (raw.par_p2  - 16384.0f) / 536870912.0f;           // (p2 - 2^14) / 2^29
+    out->PAR_P3  =  raw.par_p3 / 4294967296.0f;                       // / 2^32
+    out->PAR_P4  =  raw.par_p4 / 137438953472.0f;                     // / 2^37
+    out->PAR_P5  =  raw.par_p5 * 8.0f;                                // / 2^-3
+    out->PAR_P6  =  raw.par_p6 / 64.0f;                               // / 2^6
+    out->PAR_P7  =  raw.par_p7 / 256.0f;                              // / 2^8
+    out->PAR_P8  =  raw.par_p8 / 32768.0f;                            // / 2^15
+    out->PAR_P9  =  raw.par_p9 / 281474976710656.0f;                  // / 2^48
+    out->PAR_P10 =  raw.par_p10 / 281474976710656.0f;                 // / 2^48
+    out->PAR_P11 =  raw.par_p11 / 36893488147419103232.0f;            // / 2^65
 
-//     return comp_press;
-// }
+    return SPP_OK;
+}
+
+retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
+{
+    retval_t ret;
+
+    spp_uint8_t buf[6] = {
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 0)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 1)), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 2)), EMPTY_MESSAGE
+    };
+
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    if (ret != SPP_OK) {
+        return ret;
+    }
+
+    spp_uint8_t xlsb = buf[1];
+    spp_uint8_t lsb  = buf[3];
+    spp_uint8_t msb  = buf[5];
+
+    *raw_press = ((spp_uint32_t)msb << 16) | ((spp_uint32_t)lsb <<  8) | (spp_uint32_t)xlsb;
+
+    return SPP_OK;
+}
+
+float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
+{
+    partial_data1 = p->PAR_P6 * t_lin;
+    partial_data2 = p->PAR_P7 * (t_lin * t_lin);
+    partial_data3 = p->PAR_P8 * (t_lin * t_lin * t_lin);
+    partial_out1  = p->PAR_P5 + partial_data1 + partial_data2 + partial_data3;
+
+    partial_data1 = p->PAR_P2 * t_lin;
+    partial_data2 = p->PAR_P3 * (t_lin * t_lin);
+    partial_data3 = p->PAR_P4 * (t_lin * t_lin * t_lin);
+    partial_out2  = raw_press * (p->PAR_P1 + partial_data1 + partial_data2 + partial_data3);
+
+    partial_data1 = raw_press * raw_press;                               
+    partial_data2 = p->PAR_P9 + p->PAR_P10 * t_lin;                     
+    partial_data3 = partial_data1 * partial_data2;                      
+    partial_data4 = partial_data3 + (raw_press * raw_press * raw_press) * p->PAR_P11;   
+
+    comp_press = partial_out1 + partial_out2 + partial_data4;
+
+    return comp_press;
+}
 
 // //--------------------AUX FUNCTIONS (GENERAL)---------------------------
 

@@ -16,10 +16,6 @@
 
 void BmpInit(void* p_data);
 
-//---------------------AUX------------------------------
-esp_err_t bmp390_write_reg(data_t *p_dev, uint8_t reg, uint8_t value);
-esp_err_t bmp390_read(data_t *p_dev, uint8_t reg, uint8_t *dst, size_t len);
-
 //--------------------CONFIG and CHECK---------------------------
 
 #define BMP390_CHIP_ID_REG    0x00
@@ -31,11 +27,10 @@ esp_err_t bmp390_read(data_t *p_dev, uint8_t reg, uint8_t *dst, size_t len);
 #define BMP390_IF_CONF_REG    0x1A
 #define BMP390_IF_CONF_SPI    0x00
 
-retval_t bmp390_soft_reset(void *p_data);
-retval_t bmp390_enable_spi_mode(data_t *p_data);
+retval_t bmp390_soft_reset(void *p_spi);
+retval_t bmp390_enable_spi_mode(void *p_spi);
 
-//esp_err_t bmp390_read_if_conf(data_t *p_dev, uint8_t *if_conf);
-//esp_err_t bmp390_read_chip_id(data_t *p_dev, uint8_t *chip_id);
+retval_t bmp390_config_check(void *p_spi, spp_uint8_t *p_if_conf, spp_uint8_t *p_soft_reset);
 
 //-----------------------PREPARE READ-----------------------
 
@@ -52,7 +47,7 @@ retval_t bmp390_enable_spi_mode(data_t *p_data);
 #define BMP390_VALUE_ODR       0x02 //50Hz
 
 //Filtro
-#define BMP390_REG_IIR   0x1F
+#define BMP390_REG_IIR      0x1F
 #define BMP390_VALUE_IIR    0x02 //coeficiente 1 (adaptar)
 
 retval_t bmp390_prepare_measure(void* p_spi);
@@ -80,7 +75,7 @@ typedef struct {
     float    t_lin;
 } bmp390_temp_calib_t;
 
-esp_err_t bmp390_read_raw_temp_coeffs(data_t *p_dev, bmp390_temp_calib_t *tcalib);
+retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib);
 
 typedef struct {
     float PAR_T1;   // Ej. ≈ 28159 / 2^8  ≈ 109.996
@@ -88,31 +83,31 @@ typedef struct {
     float PAR_T3;   // Ej. ≈ −7    / 2^48 ≈ −2.487e-14
 } bmp390_temp_params_t;
 
-esp_err_t bmp390_calibrate_temp_params(data_t *p_dev, bmp390_temp_params_t *out);
+retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out);
 
 #define BMP390_TEMP_RAW_REG    0x07
-esp_err_t bmp390_read_raw_temp(data_t *p_dev, uint32_t *raw_temp);
+retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp);
 
-float bmp390_compensate_temperature(uint32_t raw_temp, bmp390_temp_params_t *params);
+float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t *params);
 
 //------------------------READ PRESS--------------------------
 // Dirección inicial de los coeficientes de presión
 #define BMP390_PRESS_CALIB_REG_START  0x36
 typedef struct {
-    uint16_t par_p1;   // 0x36 (LSB), 0x37 (MSB)
-    uint16_t par_p2;   // 0x38 (LSB), 0x39 (MSB)
-    int8_t   par_p3;   // 0x3A
-    int8_t   par_p4;   // 0x3B
-    uint16_t  par_p5;   // 0x3C (LSB), 0x3D (MSB)
-    uint16_t   par_p6;   // 0x3E
-    int8_t   par_p7;   // 0x40
-    int8_t   par_p8;   // 0x41
-    int16_t  par_p9;   // 0x42 (LSB), 0x43 (MSB)
-    int8_t   par_p10;  // 0x44
-    int8_t   par_p11;  // 0x45
+    spp_uint16_t par_p1;   // 0x36 (LSB), 0x37 (MSB)
+    spp_uint16_t par_p2;   // 0x38 (LSB), 0x39 (MSB)
+    spp_int8_t   par_p3;   // 0x3A
+    spp_int8_t   par_p4;   // 0x3B
+    spp_uint16_t  par_p5;   // 0x3C (LSB), 0x3D (MSB)
+    spp_uint16_t   par_p6;   // 0x3E
+    spp_int8_t   par_p7;   // 0x40
+    spp_int8_t   par_p8;   // 0x41
+    spp_int16_t  par_p9;   // 0x42 (LSB), 0x43 (MSB)
+    spp_int8_t   par_p10;  // 0x44
+    spp_int8_t   par_p11;  // 0x45
 } bmp390_press_calib_t;
 
-esp_err_t bmp390_read_raw_press_coeffs(data_t *p_dev, bmp390_press_calib_t *pcalib);
+retval_t bmp390_read_raw_press_coeffs(void *p_spi, bmp390_press_calib_t *pcalib);
 
 typedef struct {
     float PAR_P1;   // = (raw.par_p1 - 2^14) / 2^20
@@ -128,12 +123,12 @@ typedef struct {
     float PAR_P11;  // = raw.par_p11 / 2^65
 } bmp390_press_params_t;
 
-esp_err_t bmp390_calibrate_press_params(data_t *p_dev, bmp390_press_params_t *out);
+retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out);
 
 #define BMP390_PRESS_RAW_REG    0x04
-esp_err_t bmp390_read_raw_press(data_t *p_dev, uint32_t *raw_press);
+retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press);
 
-float bmp390_compensate_pressure(uint32_t raw_press, float t_lin, bmp390_press_params_t *params);
+float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p);
 
 //-----------Aux Functions-----------
 esp_err_t bmp390_config(data_t *p_dev);
@@ -147,5 +142,7 @@ esp_err_t bmp390_read_temp(data_t *p_dev);
 esp_err_t bmp390_calc_altitude(data_t *p_dev);
 esp_err_t bmp390_read_measurements(data_t *p_dev);
 
+#define READ_OP            0x80
+#define EMPTY_MESSAGE      0x00
 
 #endif  // BMP390_H
