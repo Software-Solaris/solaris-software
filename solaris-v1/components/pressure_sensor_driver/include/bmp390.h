@@ -5,16 +5,29 @@
 #include "driver/spi_master.h" 
 #include "returntypes.h"
 #include "general.h"
+#include "osal/eventgroups.h"
+#include "hal/gpio/gpio.h" 
 
 //---------------------INIT------------------------------
 #define BMP_INIT_PRIO   4
 #define BMP_INIT_TASK_STACK_SIZE 1024
+#define BMP390_EVT_DRDY   (1u << 0)  // para el event groups
 
+typedef struct {
+    void* p_handler_spi;     // handler SPI que devuelve SPP_HAL_SPI_GetHandler()
 
-//---------------------INIT------------------------------
+    void* p_event_group;     // handle del EventGroup (void*)
+
+    spp_gpio_isr_ctx_t isr_ctx;  // contexto persistente para la ISR interna del HAL
+
+    spp_uint32_t int_pin;        // GPIO número
+    spp_uint32_t int_intr_type;  // se castea en el port (ej: GPIO_INTR_POSEDGE)
+    spp_uint32_t int_pull;       // 0 none, 1 pullup, 2 pulldown
+} bmp_data_t;
+
 #define PIN_NUM_CS   18
 
-void BmpInit(void* p_data);
+retval_t BmpInit(void* p_data);
 
 //--------------------CONFIG and CHECK---------------------------
 
@@ -58,10 +71,7 @@ retval_t bmp390_prepare_measure(void* p_spi);
 #define BMP390_STATUS_DRDY_TEMP   0x40
 #define BMP390_STATUS_DRDY_PRES  0x20
 
-esp_err_t bmp390_read_status(data_t *p_dev, uint8_t *status);
-esp_err_t bmp390_wait_temp_ready(data_t *p_dev);
-esp_err_t bmp390_wait_press_ready(data_t *p_dev);
-
+retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms);
 
 //------------------------READ TEMP--------------------------
 
