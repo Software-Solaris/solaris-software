@@ -28,35 +28,34 @@ float comp_press;
 
 void BmpInit(void* p_data)
 {
-    for(;;){
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        // Declare variables
-        retval_t ret = SPP_ERROR;
-        void* p_spi_bmp;
+    bmp_data_t* p_bmp = (bmp_data_t*)p_data;
 
-        ret = SPP_HAL_SPI_BusInit();
-        p_spi_bmp = SPP_HAL_SPI_GetHandler();
-        ret = SPP_HAL_SPI_DeviceInit(p_spi_bmp);
+    void* p_spi_bmp;
+    void* p_buffer_eg;
 
-        // Config
-        // if (bmp390_soft_reset(p_spi_bmp) != SPP_OK) 
-        // {
-        //     SPP_OSAL_TaskDelete(NULL);
-        // }
-        // if (bmp390_enable_spi_mode(p_spi_bmp) != SPP_OK)
-        // {
-        //     SPP_OSAL_TaskDelete(NULL);
-        // }
+    /* --- SPI bus + device --- */
+    SPP_HAL_SPI_BusInit();
 
-        // // Prepare Read 
-        // if (bmp390_prepare_measure(p_spi_bmp) != SPP_OK)
-        // {
-        //     SPP_OSAL_TaskDelete(NULL);
-        // }
-        SPP_OSAL_TaskDelete(NULL);
-    }  
+    p_spi_bmp = SPP_HAL_SPI_GetHandler();
+    SPP_HAL_SPI_DeviceInit(p_spi_bmp);
 
+    p_bmp->p_handler_spi = p_spi_bmp;
+
+    /* --- EventGroup + ISR context --- */
+    p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
+    p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
+
+    p_bmp->isr_ctx.event_group = p_bmp->p_event_group;
+    p_bmp->isr_ctx.bits        = BMP390_EVT_DRDY;
+
+    /* --- GPIO INT + ISR (interna fija del HAL) --- */
+    SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
+    SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
+
+    /* Fin del init */
+    SPP_OSAL_TaskDelete(NULL);
 }
+
 
 //--------------------CONFIG and CHECK---------------------------
 
@@ -122,33 +121,22 @@ retval_t bmp390_prepare_measure(void *p_spi)
     return ret;
 }
 
-//
-// esp_err_t bmp390_wait_temp_ready(data_t *p_dev)
-// {
-//     // Leer STATUS hasta que el bit DRDY_TEMP esté a 1
-//     do {
-//         ret = bmp390_read_status(p_dev, &st);
-//         if (ret != ESP_OK) { 
-//             ESP_LOGE(TAG, "wait temp ready: %d", ret); 
-//             break; 
-//         }
-//     } while ((st & BMP390_STATUS_DRDY_TEMP) == 0);
+retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms)
+{
+    osal_eventbits_t bits;
 
-//     return ESP_OK;
-// }
+    retval_t ret = OSAL_EventGroupWaitBits(
+        p_bmp->p_event_group,
+        BMP390_EVT_DRDY,
+        1,      // clear_on_exit
+        0,      // wait_for_all_bits
+        timeout_ms,
+        &bits
+    );
 
-// esp_err_t bmp390_wait_press_ready(data_t *p_dev)
-// {
-//     // Leer STATUS hasta que el bit DRDY_PRESS esté a 1
-//     do {
-//         ret = bmp390_read_status(p_dev, &st);
-//         if (ret != ESP_OK) { 
-//             ESP_LOGE(TAG, "wait press ready: %d", ret); 
-//             break; 
-//         }
-//     } while ((st & BMP390_STATUS_DRDY_PRES) == 0);
-//     return ESP_OK;
-// }
+    return ret;
+}
+
 
 //--------------------READ TEMP---------------------------
 
