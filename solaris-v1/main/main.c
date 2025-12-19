@@ -10,21 +10,34 @@ static icm_data_t icm_data;
 
 void app_main()
 {
-   /** Initialization of the sensors */
-   retval_t ret = SPP_ERROR;
-   ret = IcmInit((void*)&icm_data);
-   ret = IcmConfig((void*)&icm_data);
-   
-   /** Initialization of the task for reading data from sensors */
-   void *p_icm_init;
-   void * p_task_storage;
-   void * p_buffer_eg;
-   void *p_event_group = NULL;
-   p_task_storage = SPP_OSAL_GetTaskStorage();
-   p_icm_init = SPP_OSAL_TaskCreate(IcmGetSensorsData, "ICM Read Sensors Task", STACK_SIZE, (void*)&icm_data, ICM_READ_SENSORS_PRIORITY, p_task_storage);
-   if (p_icm_init == NULL){
-      return;
+
+
+   while(1)
+   {
+      printf("hello");
+      SPP_OSAL_TaskDelay(5000);
    }
+
+
+
+
+
+
+   // /** Initialization of the sensors */
+   // retval_t ret = SPP_ERROR;
+   // ret = IcmInit((void*)&icm_data);
+   // ret = IcmConfig((void*)&icm_data);
+   
+   // /** Initialization of the task for reading data from sensors */
+   // void *p_icm_init;
+   // void * p_task_storage;
+   // void * p_buffer_eg;
+   // void *p_event_group = NULL;
+   // p_task_storage = SPP_OSAL_GetTaskStorage();
+   // p_icm_init = SPP_OSAL_TaskCreate(IcmGetSensorsData, "ICM Read Sensors Task", STACK_SIZE, (void*)&icm_data, ICM_READ_SENSORS_PRIORITY, p_task_storage);
+   // if (p_icm_init == NULL){
+   //    return;
+   // }
    
    // p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
    
