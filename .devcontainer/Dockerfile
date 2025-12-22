@@ -41,7 +41,8 @@ RUN chmod +x /root/setup-terminal.sh
 
 # Update .bashrc for git completion and custom scripts
 RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
-    && echo "source /root/setup-terminal.sh" >> /root/.bashrc
+    && echo "source /root/setup-terminal.sh" >> /root/.bashrc \
+    && echo "source /opt/esp/idf/export.sh >/dev/null 2>&1" >> /root/.bashrc
 
 # Set locale to a UTF-8 compatible setting
 RUN apt-get update && apt-get install -y locales && \
