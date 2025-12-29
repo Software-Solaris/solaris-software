@@ -12,10 +12,6 @@ retval_t IcmInit(void *p_data)
     retval_t ret;
     void* p_handler_spi;
 
-    /* SPI bus initialization */
-    ret = SPP_HAL_SPI_BusInit();   /* Already initialized if BMP is used first */
-    if (ret != SPP_OK) return ret;
-
     p_handler_spi = SPP_HAL_SPI_GetHandler();
     ret = SPP_HAL_SPI_DeviceInit(p_handler_spi);
     if (ret != SPP_OK) return ret;

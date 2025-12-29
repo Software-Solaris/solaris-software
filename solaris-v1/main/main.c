@@ -11,6 +11,7 @@ static icm_data_t icm_data;
 void app_main()
 {
    /** Initialization of the sensors */
+   retval_t SPP_HAL_SPI_BusInit(void);
    retval_t ret = SPP_ERROR;
    ret = IcmInit((void*)&icm_data);
    ret = IcmConfig((void*)&icm_data);

@@ -2,7 +2,6 @@
 #define BMP390_H
 
 #include <stdint.h>
-#include "driver/spi_master.h" 
 #include "returntypes.h"
 #include "general.h"
 #include "osal/eventgroups.h"
@@ -27,7 +26,7 @@ typedef struct {
 
 #define PIN_NUM_CS   18
 
-retval_t BmpInit(void* p_data);
+void BmpInit(void* p_data);
 
 //--------------------CONFIG and CHECK---------------------------
 
@@ -43,7 +42,7 @@ retval_t BmpInit(void* p_data);
 retval_t bmp390_soft_reset(void *p_spi);
 retval_t bmp390_enable_spi_mode(void *p_spi);
 
-retval_t bmp390_config_check(void *p_spi, spp_uint8_t *p_if_conf, spp_uint8_t *p_soft_reset);
+retval_t bmp390_config_check(void *p_spi);
 
 //-----------------------PREPARE READ-----------------------
 

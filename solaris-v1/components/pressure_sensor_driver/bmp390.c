@@ -1,11 +1,6 @@
 #include "bmp390.h"
-#include "driver/spi_master.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "freertos/task.h"
 #include <string.h>
 #include <math.h>
-
 #include "core/returntypes.h"
 #include "spi.h"
 #include "task.h"
@@ -32,9 +27,6 @@ void BmpInit(void* p_data)
 
     void* p_spi_bmp;
     void* p_buffer_eg;
-
-    /* --- SPI bus + device --- */
-    SPP_HAL_SPI_BusInit();
 
     p_spi_bmp = SPP_HAL_SPI_GetHandler();
     SPP_HAL_SPI_DeviceInit(p_spi_bmp);
