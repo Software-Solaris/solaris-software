@@ -5,6 +5,7 @@
 #include "task.h"
 #include "macros.h"
 // #include "eventgroups.h"
+#include "spp_log.h"
 
 static icm_data_t icm_data;
 
@@ -32,4 +33,17 @@ void app_main()
    // if (ret != SPP_OK){
    //    //Event group failed to be created
    // }
+
+
+   retval_t ret2 = SPP_LOG_Init();
+   if (ret2 != SPP_OK) { 
+       printf("no inicia");
+   }
+
+   SPP_LOG_SetLevel(SPP_LOG_VERBOSE);
+   SPP_LOGE("TAG", "Error ejemplo");
+   SPP_LOGW("TAG", "Warning ejemplo");
+   SPP_LOGI("TAG", "Info ejemplo");
+   SPP_LOGD("TAG", "Debug ejemplo");
+   SPP_LOGV("TAG", "Verbose ejemplo");
 }  
