@@ -5,7 +5,7 @@
 #include "task.h"
 #include "macros.h"
 // #include "eventgroups.h"
-#include "spp_log.h"
+#include "../external/spp/services/spp_log.h"
 
 static icm_data_t icm_data;
 
