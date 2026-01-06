@@ -35,15 +35,32 @@ void app_main()
    // }
 
 
-   retval_t ret2 = SPP_LOG_Init();
-   if (ret2 != SPP_OK) { 
-       printf("no inicia");
+   // 1. INICIALIZAR LOGS PRIMERO (para poder debuggear lo demás)
+   retval_t log_ret = SPP_LOG_Init();
+   if (log_ret != SPP_OK) {
+       printf("ERROR: Log system init failed: %d\n", log_ret);
    }
-
+   
    SPP_LOG_SetLevel(SPP_LOG_VERBOSE);
-   SPP_LOGE("TAG", "Error ejemplo");
-   SPP_LOGW("TAG", "Warning ejemplo");
-   SPP_LOGI("TAG", "Info ejemplo");
-   SPP_LOGD("TAG", "Debug ejemplo");
-   SPP_LOGV("TAG", "Verbose ejemplo");
+   SPP_LOGI("APP", "Application starting...");
+   
+   /** Initialization of the sensors */
+   retval_t ret = SPP_ERROR;
+   ret = IcmInit((void*)&icm_data);
+   if (ret != SPP_OK) {
+       SPP_LOGE("APP", "IcmInit failed: %d", ret);
+   }
+   
+   ret = IcmConfig((void*)&icm_data);
+   if (ret != SPP_OK) {
+       SPP_LOGE("APP", "IcmConfig failed: %d", ret);
+   }
+   
+   /** Test all log levels */
+   SPP_LOGE("TEST", "Error ejemplo");
+   SPP_LOGW("TEST", "Warning ejemplo");
+   SPP_LOGI("TEST", "Info ejemplo");
+   SPP_LOGD("TEST", "Debug ejemplo");
+   SPP_LOGV("TEST", "Verbose ejemplo");
+   
 }  
