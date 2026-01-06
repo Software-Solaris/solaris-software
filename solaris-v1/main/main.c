@@ -43,19 +43,6 @@ void app_main()
    
    SPP_LOG_SetLevel(SPP_LOG_VERBOSE);
    SPP_LOGI("APP", "Application starting...");
-   
-   /** Initialization of the sensors */
-   retval_t ret = SPP_ERROR;
-   ret = IcmInit((void*)&icm_data);
-   if (ret != SPP_OK) {
-       SPP_LOGE("APP", "IcmInit failed: %d", ret);
-   }
-   
-   ret = IcmConfig((void*)&icm_data);
-   if (ret != SPP_OK) {
-       SPP_LOGE("APP", "IcmConfig failed: %d", ret);
-   }
-   
    /** Test all log levels */
    SPP_LOGE("TEST", "Error ejemplo");
    SPP_LOGW("TEST", "Warning ejemplo");
