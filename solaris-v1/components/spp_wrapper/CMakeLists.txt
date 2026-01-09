@@ -42,6 +42,14 @@ endif()
 # Solo .c directamente en external/spp (sin recursión)
 file(GLOB SPP_EXT_SOURCES "${SPP_ROOT}/*.c")
 
+list(APPEND SPP_EXT_SOURCES 
+    "${SPP_ROOT}/services/logging/spp_log.c"
+)
+
+# Verifica que existe
+if(NOT EXISTS "${SPP_ROOT}/services/logging/spp_log.c")
+    message(WARNING "spp_log.c no encontrado en: ${SPP_ROOT}/services/logging/")
+endif()
 # No cogemos ni external/spp/hal/*.c
 # ni external/spp/osal/*.c
 # ni ningún subdirectorio
