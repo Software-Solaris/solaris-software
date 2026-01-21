@@ -7,20 +7,24 @@
 #include "osal/eventgroups.h"
 #include "hal/gpio/gpio.h" 
 
+///--------------------Read/Write Operators------------------------------
+#define READ_OP            0x80
+#define EMPTY_MESSAGE      0x00
+
 //---------------------INIT------------------------------
 #define BMP_INIT_PRIO   4
 #define BMP_INIT_TASK_STACK_SIZE 1024
-#define BMP390_EVT_DRDY   (1u << 0)  // para el event groups
+#define BMP390_EVT_DRDY   (1u << 0) 
 
 typedef struct {
-    void* p_handler_spi;     // handler SPI que devuelve SPP_HAL_SPI_GetHandler()
+    void* p_handler_spi;    
 
-    void* p_event_group;     // handle del EventGroup (void*)
+    void* p_event_group;    
 
-    spp_gpio_isr_ctx_t isr_ctx;  // contexto persistente para la ISR interna del HAL
+    spp_gpio_isr_ctx_t isr_ctx; 
 
-    spp_uint32_t int_pin;        // GPIO número
-    spp_uint32_t int_intr_type;  // se castea en el port (ej: GPIO_INTR_POSEDGE)
+    spp_uint32_t int_pin;       
+    spp_uint32_t int_intr_type;  
     spp_uint32_t int_pull;       // 0 none, 1 pullup, 2 pulldown
 } bmp_data_t;
 
@@ -29,7 +33,6 @@ typedef struct {
 void BmpInit(void* p_data);
 
 //--------------------CONFIG and CHECK---------------------------
-
 #define BMP390_CHIP_ID_REG    0x00
 #define BMP390_CHIP_ID_VALUE  0x60
 
@@ -45,22 +48,21 @@ retval_t bmp390_enable_spi_mode(void *p_spi);
 retval_t bmp390_config_check(void *p_spi);
 
 //-----------------------PREPARE READ-----------------------
-
 //Modo
 #define BMP390_REG_PWRCTRL     0x1B
-#define BMP390_VALUE_PWRCTRL   0x33   //(0x30 | 0x01 | 0x02) = 0x33 (normal|press_en|temp_en)
+#define BMP390_VALUE_PWRCTRL   0x33   // (0x30 | 0x01 | 0x02) = 0x33 (normal|press_en|temp_en)
 
 //Oversampling
 #define BMP390_REG_OSR           0x1C
-#define BMP390_VALUE_OSR         0x00 //adaptar según que busquemos (precisión-tiempo-energía) con este +-0.2m
+#define BMP390_VALUE_OSR         0x00 // Adjust according to what we need (precision-time-energy) with this +-0.2m
 
 //Output Data Rate
 #define BMP390_REG_ODR         0x1D
-#define BMP390_VALUE_ODR       0x02 //50Hz
+#define BMP390_VALUE_ODR       0x02 // 50Hz
 
 //Filtro
 #define BMP390_REG_IIR      0x1F
-#define BMP390_VALUE_IIR    0x02 //coeficiente 1 (adaptar)
+#define BMP390_VALUE_IIR    0x02 // Coefficient 1
 
 retval_t bmp390_prepare_measure(void* p_spi);
 
@@ -73,13 +75,11 @@ retval_t bmp390_prepare_measure(void* p_spi);
 retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms);
 
 //------------------------READ TEMP--------------------------
-
-// Dirección inicial de los coeficientes de temperatura
 #define BMP390_TEMP_CALIB_REG_START  0x31
 typedef struct {
-    uint16_t par_t1;   // 0x31 (LSB), 0x32 (MSB)  → u16
-    int16_t  par_t2;   // 0x33 (LSB), 0x34 (MSB)  → s16
-    int8_t   par_t3;   // 0x35                  → s8
+    uint16_t par_t1;   // 0x31 (LSB), 0x32 (MSB)  -> u16
+    int16_t  par_t2;   // 0x33 (LSB), 0x34 (MSB)  -> s16
+    int8_t   par_t3;   // 0x35                    -> s8
 
     float    t_lin;
 } bmp390_temp_calib_t;
@@ -87,9 +87,9 @@ typedef struct {
 retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib);
 
 typedef struct {
-    float PAR_T1;   // Ej. ≈ 28159 / 2^8  ≈ 109.996
-    float PAR_T2;   // Ej. ≈ 19960 / 2^30 ≈ 1.859e-5
-    float PAR_T3;   // Ej. ≈ −7    / 2^48 ≈ −2.487e-14
+    float PAR_T1;   
+    float PAR_T2;   
+    float PAR_T3; 
 } bmp390_temp_params_t;
 
 retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out);
@@ -100,7 +100,6 @@ retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp);
 float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t *params);
 
 //------------------------READ PRESS--------------------------
-// Dirección inicial de los coeficientes de presión
 #define BMP390_PRESS_CALIB_REG_START  0x36
 typedef struct {
     spp_uint16_t par_p1;   // 0x36 (LSB), 0x37 (MSB)
@@ -139,19 +138,13 @@ retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press);
 
 float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p);
 
+//--------------------CALCULATE ALTITUDE---------------------------
+retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude);
+
 //-----------Aux Functions-----------
-esp_err_t bmp390_config(data_t *p_dev);
+retval_t bmp390_aux_config(void *p_spi);
+retval_t bmp390_aux_get_temp(void *p_spi, bmp390_temp_params_t *temp_params, spp_uint32_t *raw_temp, float *comp_temp);
+retval_t bmp390_aux_get_press(void *p_spi, bmp390_press_params_t *press_params, spp_uint32_t *raw_press, float *comp_press);
 
-void bmp390_prepare_mode(data_t *p_dev);
-void bmp390_prepare_temp(data_t *p_dev);
-void bmp390_prepare_press(data_t *p_dev);
-esp_err_t bmp390_prepare_read(data_t *p_dev);
-
-esp_err_t bmp390_read_temp(data_t *p_dev);
-esp_err_t bmp390_calc_altitude(data_t *p_dev);
-esp_err_t bmp390_read_measurements(data_t *p_dev);
-
-#define READ_OP            0x80
-#define EMPTY_MESSAGE      0x00
 
 #endif  // BMP390_H

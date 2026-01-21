@@ -21,6 +21,31 @@ float comp_press;
 
 //--------------------INIT (8 dummy bits and halfduplex)---------------------------
 
+/**
+ * @brief Initializes the BMP390 pressure sensor driver.
+ * 
+ * This function performs the complete initialization of the BMP390 sensor,
+ * including SPI communication setup, event group creation, and GPIO interrupt
+ * configuration. It must be called before any sensor operations.
+ * 
+ * @param[in,out] p_data Pointer to a bmp_data_t structure that will be
+ *                        populated with initialization data including:
+ *                        - SPI handler
+ *                        - Event group pointer
+ *                        - ISR context with event group and ready bits
+ * 
+ * @return void
+ * 
+ * @details
+ * The initialization sequence includes:
+ * 1. Retrieves and initializes the SPI handler
+ * 2. Obtains event group buffer and creates an event group
+ * 3. Configures ISR context with the event group and BMP390_EVT_DRDY bit
+ * 4. Sets up GPIO interrupt on the sensor's interrupt pin with specified
+ *    interrupt type and pull configuration
+ * 5. Registers the ISR callback for the interrupt pin
+ * 6. Deletes the current task upon completion
+ */
 void BmpInit(void* p_data)
 {
     bmp_data_t* p_bmp = (bmp_data_t*)p_data;
@@ -33,7 +58,6 @@ void BmpInit(void* p_data)
 
     p_bmp->p_handler_spi = p_spi_bmp;
 
-    /* --- EventGroup + ISR context --- */
     p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
     p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
 
@@ -44,13 +68,17 @@ void BmpInit(void* p_data)
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
     SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
 
-    /* Fin del init */
     SPP_OSAL_TaskDelete(NULL);
 }
 
 
 //--------------------CONFIG and CHECK---------------------------
-
+/**
+ * @brief Performs a soft reset of the BMP390 pressure sensor.
+ * 
+ * @param[in] p_spi Pointer to the SPI device handle.
+ * @return retval_t Status code indicating success or failure.
+ */
 retval_t bmp390_soft_reset(void *p_spi)
 {
     spp_uint8_t buf[2] = 
@@ -60,12 +88,17 @@ retval_t bmp390_soft_reset(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-
     vTaskDelay(pdMS_TO_TICKS(100));
 
     return ret;
 }
 
+/**
+ * @brief Enables SPI 4-wire mode on the BMP390 sensor.
+ * 
+ * @param[in] p_spi Pointer to the SPI device handle.
+ * @return retval_t Status code indicating success or failure.
+ */
 retval_t bmp390_enable_spi_mode(void *p_spi)
 {
     spp_uint8_t buf[2] = 
@@ -75,29 +108,61 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-
     vTaskDelay(pdMS_TO_TICKS(100));
 
     return ret;
 }
 
+/**
+ * @brief Verifies the configuration of the BMP390 sensor.
+ * 
+ * @param[in] p_spi Pointer to the SPI device handle.
+ * @return retval_t Status code indicating success or failure.
+ */
 retval_t bmp390_config_check(void *p_spi)
 {
-    retval_t ret;
-
     spp_uint8_t buf[4] = 
     {
         (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG),    EMPTY_MESSAGE,
         (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE
     };
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    return SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+}
 
-    return ret;
+/**
+ * @brief Auxiliar function for configuring the BMP390 sensor.
+ * 
+ * @param[in] p_spi Pointer to the SPI device handle.
+ * @return retval_t Status code from the initialization sequence.
+ */
+retval_t bmp390_aux_config(void *p_spi)
+{
+    retval_t ret;
+
+    ret = bmp390_soft_reset(p_spi);
+    if (ret != SPP_OK) return ret;
+
+    ret = bmp390_enable_spi_mode(p_spi);
+    if (ret != SPP_OK) return ret;
+
+    return bmp390_config_check(p_spi);
 }
 
 //--------------------PREPARE READ---------------------------
-
+/**
+ * @brief Prepares the BMP390 sensor for measurement by configuring its registers.
+ * 
+ * @details Configuration registers sent:
+ *   - BMP390_REG_OSR: Oversampling Settings Register
+ *   - BMP390_REG_ODR: Output Data Rate Register
+ *   - BMP390_REG_IIR: IIR Filter Register
+ *   - BMP390_REG_PWRCTRL: Power Control Register
+ * 
+ * @param[in] p_spi Pointer to the SPI device handler used for communication with the sensor.
+ * 
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_prepare_measure(void *p_spi)
 {
     spp_uint8_t buf[8] = 
@@ -113,6 +178,14 @@ retval_t bmp390_prepare_measure(void *p_spi)
     return ret;
 }
 
+/**
+ * @brief Wait for BMP390 data ready interrupt
+ * 
+ * @param[in] p_bmp Pointer to BMP390 device context
+ * @param[in] timeout_ms Timeout in milliseconds (0 = wait indefinitely)
+ * 
+ * @return SPP_OK if data ready event was signaled, error code otherwise
+ */
 retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms)
 {
     osal_eventbits_t bits;
@@ -131,7 +204,14 @@ retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms)
 
 
 //--------------------READ TEMP---------------------------
-
+/**
+ * @brief Reads raw temperature calibration coefficients from BMP390 sensor.
+ *
+ * @param[in] p_spi Pointer to SPI device handle.
+ * @param[out] tcalib Pointer to temperature calibration structure to be filled.
+ *
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib)
 {
     retval_t ret;
@@ -162,10 +242,17 @@ retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib)
 
     tcalib->t_lin = 0.0f;
 
-    return SPP_OK;
+    return ret;
 }
 
-
+/**
+ * @brief Calibrate temperature parameters from BMP390 sensor coefficients
+ * 
+ * @param[in] p_spi Pointer to SPI interface for sensor communication
+ * @param[out] out Pointer to temperature parameters structure to be populated
+ * 
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out)
 {
     retval_t ret;
@@ -180,9 +267,17 @@ retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out)
     out->PAR_T2 = raw.par_t2 / 1073741824.0f;            // 2^30
     out->PAR_T3 = raw.par_t3 / 281474976710656.0f;       // 2^48
 
-    return SPP_OK;
+    return ret;
 }
 
+/**
+ * @brief Read raw temperature data from BMP390 sensor via SPI.
+ *
+ * @param[in] p_spi Pointer to SPI device handle
+ * @param[out] raw_temp Pointer to store the 24-bit raw temperature value
+ *
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp)
 {
     retval_t ret;
@@ -204,9 +299,17 @@ retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp)
 
     *raw_temp = ((spp_uint32_t)msb << 16) | ((spp_uint32_t)lsb <<  8) | (spp_uint32_t)xlsb;
 
-    return SPP_OK;
+    return ret;
 }
 
+/**
+ * @brief Compensates raw temperature reading from BMP390 sensor
+ * 
+ * @param[in] raw_temp Raw temperature value from sensor ADC
+ * @param[in] params Pointer to BMP390 temperature calibration parameters
+ * 
+ * @return Compensated temperature value (float) in Celsius.
+ */
 float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t *params)
 {
     float partial1 = (float)raw_temp - params->PAR_T1;
@@ -216,8 +319,50 @@ float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t 
     return t_lin;
 }
 
-//--------------------READ PRESS---------------------------
+/**
+ * @brief Retrieves and compensates temperature data from BMP390 pressure sensor
+ *
+ * This function performs a complete temperature measurement cycle:
+ * 1. Calibrates temperature parameters from the sensor
+ * 2. Reads the raw temperature value
+ * 3. Applies compensation algorithm to convert raw value to actual temperature
+ *
+ * @param[in] p_spi Pointer to SPI interface handler for sensor communication
+ * @param[in] temp_params Pointer to temperature calibration parameters structure.
+ *                        Will be populated with calibration data from sensor
+ * @param[out] raw_temp Pointer to store the raw temperature reading from sensor
+ * @param[out] comp_temp Pointer to store the compensated temperature value in degrees Celsius
+ *
+ * @return retval_t Status code indicating operation result.
+ */
+retval_t bmp390_aux_get_temp(void *p_spi, bmp390_temp_params_t *temp_params, spp_uint32_t *raw_temp, float *comp_temp)
+{
+    retval_t ret;
 
+    ret = bmp390_calibrate_temp_params(p_spi, temp_params);
+    if (ret != SPP_OK) {
+        return ret;
+    }
+
+    ret = bmp390_read_raw_temp(p_spi, raw_temp);
+    if (ret != SPP_OK) {
+        return ret;
+    }
+
+    *comp_temp = bmp390_compensate_temperature(*raw_temp, temp_params);
+
+    return SPP_OK;
+}
+
+//--------------------READ PRESS---------------------------
+/**
+ * @brief Reads raw pressure calibration coefficients from BMP390 sensor.
+ *
+ * @param[in] p_spi Pointer to SPI device handle.
+ * @param[out] pcalib Pointer to pressure calibration structure to be filled.
+ *
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_read_raw_press_coeffs(void *p_spi, bmp390_press_calib_t *pcalib)
 {
     retval_t ret;
@@ -261,9 +406,17 @@ retval_t bmp390_read_raw_press_coeffs(void *p_spi, bmp390_press_calib_t *pcalib)
     pcalib->par_p10 = (spp_int8_t)   raw[14];
     pcalib->par_p11 = (spp_int8_t)   raw[15];
 
-    return SPP_OK;
+    return ret;
 }
 
+/**
+ * @brief Calibrate pressure parameters from BMP390 sensor coefficients
+ * 
+ * @param[in] p_spi Pointer to SPI interface for sensor communication
+ * @param[out] out Pointer to pressure parameters structure to be populated
+ * 
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
 {
     retval_t ret;
@@ -286,8 +439,16 @@ retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
     out->PAR_P10 =  raw.par_p10 / 281474976710656.0f;                 // / 2^48
     out->PAR_P11 =  raw.par_p11 / 36893488147419103232.0f;            // / 2^65
 
-    return SPP_OK;
+    return ret;
 }
+/**
+ * @brief Read raw pressure data from BMP390 sensor via SPI.
+ *
+ * @param[in] p_spi Pointer to SPI device handle
+ * @param[out] raw_press Pointer to store the 24-bit raw pressure value
+ *
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
+ */
 
 retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
 {
@@ -310,9 +471,17 @@ retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
 
     *raw_press = ((spp_uint32_t)msb << 16) | ((spp_uint32_t)lsb <<  8) | (spp_uint32_t)xlsb;
 
-    return SPP_OK;
+    return ret;
 }
 
+/**
+ * @brief Compensates raw pressure reading from BMP390 sensor
+ * 
+ * @param[in] raw_press Raw pressure value from sensor ADC
+ * @param[in] params Pointer to BMP390 pressure calibration parameters
+ * 
+ * @return Compensated pressure value (float) in Pascal.
+ */
 float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
 {
     partial_data1 = p->PAR_P6 * t_lin;
@@ -335,147 +504,85 @@ float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_pre
     return comp_press;
 }
 
-// //--------------------AUX FUNCTIONS (GENERAL)---------------------------
+/**
+ * @brief Retrieves and compensates pressure data from BMP390 pressure sensor
+ *
+ * This function performs a complete pressure measurement cycle:
+ * 1. Calibrates pressure parameters from the sensor
+ * 2. Reads the raw pressure value
+ * 3. Applies compensation algorithm to convert raw value to actual pressure
+ *
+ * @param[in] p_spi Pointer to SPI interface handler for sensor communication
+ * @param[in] press_params Pointer to pressure calibration parameters structure.
+ *                        Will be populated with calibration data from sensor
+ * @param[out] raw_press Pointer to store the raw pressure reading from sensor
+ * @param[out] comp_press Pointer to store the compensated pressure value in Pascal
+ *
+ * @return retval_t Status code indicating operation result.
+ */
+retval_t bmp390_aux_get_press(void *p_spi, bmp390_press_params_t *press_params, spp_uint32_t *raw_press, float *comp_press)
+{
+    retval_t ret;
 
-// esp_err_t bmp390_config(data_t *p_dev)
-// {
-//     ret = bmp390_soft_reset(p_dev);
+    ret = bmp390_calibrate_press_params(p_spi, press_params);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     ret = bmp390_enable_spi_mode(p_dev);
+    ret = bmp390_read_raw_press(p_spi, raw_press);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     vTaskDelay(pdMS_TO_TICKS(50));
-    
-//     ret = bmp390_read_chip_id(p_dev, &id);
+    *comp_press = bmp390_compensate_pressure(*raw_press, t_lin, press_params);
 
-//     ret = bmp390_read_if_conf(p_dev, &ifc);
+    return SPP_OK;
+}
 
-//     return ESP_OK;
-// }//End BMP config
+//--------------------CALCULATE ALTITUDE---------------------------
+/**
+ * @brief Calculates altitude based on barometric pressure measurement from BMP390 sensor.
+ *
+ * This function reads the current temperature and pressure values from the BMP390 sensor
+ * via SPI interface, compensates them using calibration parameters, and calculates the
+ * altitude using the standard atmosphere formula.
+ *
+ * @param[in] p_spi Pointer to SPI device handle for sensor communication.
+ * @param[in] p_bmp Pointer to BMP390 device structure containing configuration and state.
+ * @param[out] altitude Pointer to float where calculated altitude (in meters) will be stored.
+ *
+ * @return retval_t Status code indicating success or failure.
+ *         @retval SPP_OK Operation completed successfully.
+ *         @retval Other error codes if temperature/pressure reading or data ready wait fails.
+ */
+retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude)
+{
+    retval_t ret;
+    float comp_temp;
+    float comp_press;
+    static bmp390_temp_params_t temp_params_static;
+    static bmp390_press_params_t press_params_static;
+    static spp_uint32_t raw_temp_static;
+    static spp_uint32_t raw_press_static;
 
-// void bmp390_prepare_mode(data_t *p_dev)
-// {
-//     ret = bmp390_set_mode_normal(p_dev);
+    ret = bmp390_wait_drdy(p_bmp, 1000);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     ret = bmp390_set_osr_temp(p_dev);
+    ret = bmp390_aux_get_temp(p_spi, &temp_params_static, &raw_temp_static, &comp_temp);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     ret = bmp390_set_odr(p_dev);
+    t_lin = comp_temp;
 
-//     ret = bmp390_set_iir(p_dev);
+    ret = bmp390_aux_get_press(p_spi, &press_params_static, &raw_press_static, &comp_press);
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-//     vTaskDelay(pdMS_TO_TICKS(50)); // Dejar tiempo al primer dato en Normal mode
+    *altitude = 44330.0f * (1.0f - powf(comp_press / 101325.0f, 1.0f / 5.255f));
 
-// }//End BMP prepare mode
-
-// void bmp390_prepare_temp(data_t *p_dev)
-// {
-//     ret = bmp390_read_raw_temp_coeffs(p_dev, &raw_calib); //Raw coeffs
-//     ESP_LOGI(TAG, "Coef raw T1=%u, T2=%d, T3=%d",
-//                 raw_calib.par_t1,
-//                 raw_calib.par_t2,
-//                 raw_calib.par_t3);
-
-    
-//     ret = bmp390_calibrate_temp_params(p_dev, &temp_params); //Calib
-//     ESP_LOGI(TAG, "PAR_T1 calibrado: %.4f",  temp_params.PAR_T1);
-//     ESP_LOGI(TAG, "PAR_T2 calibrado: %.6e",  temp_params.PAR_T2);
-//     ESP_LOGI(TAG, "PAR_T3 calibrado: %.6e",  temp_params.PAR_T3);
-
-// }//End prepare temp
-
-// void bmp390_prepare_press(data_t *p_dev)
-// {
-//     ret = bmp390_read_raw_press_coeffs(p_dev, &raw_press_calib); //Raw coeffs
-
-//     ESP_LOGI(TAG, "Coef raw P1=%u, P2=%u, P3=%d, P4=%d, P5=%d, P6=%d, P7=%d, P8=%d, P9=%d, P10=%d, P11=%d",
-//                 raw_press_calib.par_p1,
-//                 raw_press_calib.par_p2,
-//                 raw_press_calib.par_p3,
-//                 raw_press_calib.par_p4,
-//                 raw_press_calib.par_p5,
-//                 raw_press_calib.par_p6,
-//                 raw_press_calib.par_p7,
-//                 raw_press_calib.par_p8,
-//                 raw_press_calib.par_p9,
-//                 raw_press_calib.par_p10,
-//                 raw_press_calib.par_p11);
-
-//     ret = bmp390_calibrate_press_params(p_dev, &press_params); //Calib
-//     ESP_LOGI(TAG, "PAR_P1 calibrado: %.6f", press_params.PAR_P1);
-//     ESP_LOGI(TAG, "PAR_P2 calibrado: %.6f", press_params.PAR_P2);
-//     ESP_LOGI(TAG, "PAR_P3 calibrado: %.6f", press_params.PAR_P3);
-//     ESP_LOGI(TAG, "PAR_P4 calibrado: %.6f", press_params.PAR_P4);
-//     ESP_LOGI(TAG, "PAR_P5 calibrado: %.6f", press_params.PAR_P5);
-//     ESP_LOGI(TAG, "PAR_P6 calibrado: %.6f", press_params.PAR_P6);
-//     ESP_LOGI(TAG, "PAR_P7 calibrado: %.6f", press_params.PAR_P7);
-//     ESP_LOGI(TAG, "PAR_P8 calibrado: %.6f", press_params.PAR_P8);
-//     ESP_LOGI(TAG, "PAR_P9 calibrado: %.6f", press_params.PAR_P9);
-//     ESP_LOGI(TAG, "PAR_P10 calibrado: %.6f", press_params.PAR_P10);
-//     ESP_LOGI(TAG, "PAR_P11 calibrado: %.6f", press_params.PAR_P11);
-
-// }//End prepare press
-
-// esp_err_t bmp390_prepare_read(data_t *p_dev)
-// {
-//     bmp390_prepare_mode(p_dev); 
-
-//     bmp390_prepare_temp(p_dev); 
-
-//     bmp390_prepare_press(p_dev);
-
-//     return ESP_OK;
-// }
-
-
-// esp_err_t bmp390_read_temp(data_t *p_dev)
-// {
-//     ret = bmp390_wait_temp_ready(p_dev);
-
-//     ret = bmp390_read_raw_temp(p_dev, &raw_temp);
-//     ESP_LOGI(TAG, "Raw temp: %u", raw_temp);
-
-//     float comp_temp = bmp390_compensate_temperature(raw_temp, &temp_params);
-//     ESP_LOGI(TAG, "Temp compensada: %.2f °C", comp_temp);
-
-//     return ESP_OK;
-// }//End read temp
-
-// esp_err_t bmp390_calc_altitude(data_t *p_dev)
-// {
-//     ret = bmp390_wait_press_ready(p_dev);
-
-
-//     ret = bmp390_read_raw_press(p_dev, &raw_press);
-
-//     ESP_LOGI(TAG, "Raw press: %u", raw_press);
-
-//     t_lin = bmp390_compensate_temperature(raw_temp, &temp_params);
-//     float p_pa = bmp390_compensate_pressure(raw_press, t_lin, &press_params);
-//     ESP_LOGI(TAG, "Presión comp.: %.2f Pa", p_pa);
-
-//     float altitude = 44330.0f * (1.0f - powf(p_pa/101325.0f, 1.0f/5.255f));
-//     ESP_LOGI(TAG, "Altura: %.2f m", altitude);
-
-//     // Delay para pruebas (5 s)
-//     vTaskDelay(pdMS_TO_TICKS(5000));
-
-//     return ESP_OK;
-// }//End calc altitude
-
-
-// esp_err_t bmp390_read_measurements(data_t *p_dev)
-// {
-//     ret = bmp390_read_temp(p_dev); //Temp
-//     if (ret != ESP_OK) 
-//     {
-//         ESP_LOGE(TAG, "Error read temp BMP390: %d", ret);
-
-//     }
-
-//     ret = bmp390_calc_altitude(p_dev); //Press and Alt
-//     if (ret != ESP_OK) 
-//     {
-//         ESP_LOGE(TAG, "Error calc altitude BMP390: %d", ret);  
-//     }
-
-//     return ESP_OK;
-// }//End BMP read
+    return SPP_OK;
+}
