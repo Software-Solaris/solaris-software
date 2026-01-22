@@ -5,3 +5,4 @@ sdkconfig.old
 solaris-v1/sdkconfig
 settings.json 
 /solaris-v1/sdkconfig
+.espidf/
