@@ -64,7 +64,6 @@ void BmpInit(void* p_data)
     p_bmp->isr_ctx.event_group = p_bmp->p_event_group;
     p_bmp->isr_ctx.bits        = BMP390_EVT_DRDY;
 
-    /* --- GPIO INT + ISR (interna fija del HAL) --- */
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
     SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
 
