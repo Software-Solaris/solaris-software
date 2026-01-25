@@ -420,7 +420,6 @@ retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
 
     return ret;
 }
-
 /**
  * @brief Read raw pressure data from BMP390 sensor via SPI.
  *
