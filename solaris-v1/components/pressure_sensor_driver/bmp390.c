@@ -50,13 +50,7 @@ void BmpInit(void* p_data)
 {
     bmp_data_t* p_bmp = (bmp_data_t*)p_data;
 
-    void* p_spi_bmp;
     void* p_buffer_eg;
-
-    p_spi_bmp = SPP_HAL_SPI_GetHandler();
-    SPP_HAL_SPI_DeviceInit(p_spi_bmp);
-
-    p_bmp->p_handler_spi = p_spi_bmp;
 
     p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
     p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
@@ -201,7 +195,6 @@ retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms)
     return ret;
 }
 
-
 //--------------------READ TEMP---------------------------
 /**
  * @brief Reads raw temperature calibration coefficients from BMP390 sensor.
@@ -238,8 +231,6 @@ retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib)
     tcalib->par_t1 = (spp_uint16_t)((raw[1] << 8) | raw[0]);
     tcalib->par_t2 = (spp_int16_t)((raw[3] << 8) | raw[2]);
     tcalib->par_t3 = (spp_int8_t)raw[4];
-
-    tcalib->t_lin = 0.0f;
 
     return ret;
 }
@@ -319,38 +310,27 @@ float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t 
 }
 
 /**
- * @brief Retrieves and compensates temperature data from BMP390 pressure sensor
+ * @brief Reads raw temperature and applies compensation to get actual temperature value.
  *
- * This function performs a complete temperature measurement cycle:
- * 1. Calibrates temperature parameters from the sensor
- * 2. Reads the raw temperature value
- * 3. Applies compensation algorithm to convert raw value to actual temperature
+ * @param[in] p_spi Pointer to SPI interface for communication with BMP390 sensor.
+ * @param[in] temp_params Pointer to temperature calibration parameters.
+ * @param[out] raw_temp Pointer to store raw temperature data from sensor.
+ * @param[out] comp_temp Pointer to store compensated temperature value in degrees Celsius.
  *
- * @param[in] p_spi Pointer to SPI interface handler for sensor communication
- * @param[in] temp_params Pointer to temperature calibration parameters structure.
- *                        Will be populated with calibration data from sensor
- * @param[out] raw_temp Pointer to store the raw temperature reading from sensor
- * @param[out] comp_temp Pointer to store the compensated temperature value in degrees Celsius
- *
- * @return retval_t Status code indicating operation result.
+ * @return SPP_OK on success, error code otherwise.
  */
-retval_t bmp390_aux_get_temp(void *p_spi, bmp390_temp_params_t *temp_params, spp_uint32_t *raw_temp, float *comp_temp)
+retval_t bmp390_aux_get_temp(void *p_spi, const bmp390_temp_params_t *temp_params, spp_uint32_t *raw_temp, float *comp_temp)
 {
     retval_t ret;
-
-    ret = bmp390_calibrate_temp_params(p_spi, temp_params);
-    if (ret != SPP_OK) {
-        return ret;
-    }
 
     ret = bmp390_read_raw_temp(p_spi, raw_temp);
     if (ret != SPP_OK) {
         return ret;
     }
 
-    *comp_temp = bmp390_compensate_temperature(*raw_temp, temp_params);
+    *comp_temp = bmp390_compensate_temperature(*raw_temp, (bmp390_temp_params_t*)temp_params);
 
-    return SPP_OK;
+    return ret;
 }
 
 //--------------------READ PRESS---------------------------
@@ -440,6 +420,7 @@ retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
 
     return ret;
 }
+
 /**
  * @brief Read raw pressure data from BMP390 sensor via SPI.
  *
@@ -448,7 +429,6 @@ retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out)
  *
  * @return retval_t Status code indicating success or failure of the SPI transmission.
  */
-
 retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
 {
     retval_t ret;
@@ -503,85 +483,86 @@ float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_pre
     return comp_press;
 }
 
+
 /**
- * @brief Retrieves and compensates pressure data from BMP390 pressure sensor
+ * @brief Reads and compensates raw pressure data from BMP390 sensor.
  *
- * This function performs a complete pressure measurement cycle:
- * 1. Calibrates pressure parameters from the sensor
- * 2. Reads the raw pressure value
- * 3. Applies compensation algorithm to convert raw value to actual pressure
+ * @param[in] p_spi Pointer to SPI interface handle.
+ * @param[in] press_params Pointer to pressure sensor parameters structure.
+ * @param[in] t_lin Linearized temperature value for compensation.
+ * @param[out] raw_press Pointer to store raw pressure reading.
+ * @param[out] comp_press Pointer to store compensated pressure value.
  *
- * @param[in] p_spi Pointer to SPI interface handler for sensor communication
- * @param[in] press_params Pointer to pressure calibration parameters structure.
- *                        Will be populated with calibration data from sensor
- * @param[out] raw_press Pointer to store the raw pressure reading from sensor
- * @param[out] comp_press Pointer to store the compensated pressure value in Pascal
- *
- * @return retval_t Status code indicating operation result.
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
  */
-retval_t bmp390_aux_get_press(void *p_spi, bmp390_press_params_t *press_params, spp_uint32_t *raw_press, float *comp_press)
+retval_t bmp390_aux_get_press(void *p_spi, const bmp390_press_params_t *press_params, float t_lin, spp_uint32_t *raw_press, float *comp_press)
 {
     retval_t ret;
-
-    ret = bmp390_calibrate_press_params(p_spi, press_params);
-    if (ret != SPP_OK) {
-        return ret;
-    }
 
     ret = bmp390_read_raw_press(p_spi, raw_press);
     if (ret != SPP_OK) {
         return ret;
     }
 
-    *comp_press = bmp390_compensate_pressure(*raw_press, t_lin, press_params);
+    *comp_press = bmp390_compensate_pressure(*raw_press, t_lin, (bmp390_press_params_t*)press_params);
 
-    return SPP_OK;
+    return ret;
 }
 
 //--------------------CALCULATE ALTITUDE---------------------------
+
 /**
- * @brief Calculates altitude based on barometric pressure measurement from BMP390 sensor.
- *
- * This function reads the current temperature and pressure values from the BMP390 sensor
- * via SPI interface, compensates them using calibration parameters, and calculates the
- * altitude using the standard atmosphere formula.
- *
- * @param[in] p_spi Pointer to SPI device handle for sensor communication.
- * @param[in] p_bmp Pointer to BMP390 device structure containing configuration and state.
- * @param[out] altitude Pointer to float where calculated altitude (in meters) will be stored.
- *
- * @return retval_t Status code indicating success or failure.
- *         @retval SPP_OK Operation completed successfully.
- *         @retval Other error codes if temperature/pressure reading or data ready wait fails.
+ * @brief Calculates altitude from barometric pressure readings
+ * 
+ * Retrieves calibrated temperature and pressure data from the BMP390 sensor,
+ * computes compensated pressure, and derives altitude using the barometric
+ * altitude formula.
+ * 
+ * @param[in] p_spi Pointer to SPI interface handle
+ * @param[in] p_bmp Pointer to BMP390 device structure
+ * @param[out] altitude Pointer to store calculated altitude in meters
+ * 
+ * @return retval_t Status code indicating success or failure of the SPI transmission.
  */
 retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude)
 {
     retval_t ret;
-    float comp_temp;
+    float t_lin;
     float comp_press;
+
+    static spp_bool_t s_inited = false;
     static bmp390_temp_params_t temp_params_static;
     static bmp390_press_params_t press_params_static;
     static spp_uint32_t raw_temp_static;
     static spp_uint32_t raw_press_static;
+
+    if (s_inited == false)
+    {
+        ret = bmp390_calibrate_temp_params(p_spi, &temp_params_static);
+        if (ret != SPP_OK) return ret;
+
+        ret = bmp390_calibrate_press_params(p_spi, &press_params_static);
+        if (ret != SPP_OK) return ret;
+
+        s_inited = true;
+    }
 
     ret = bmp390_wait_drdy(p_bmp, 1000);
     if (ret != SPP_OK) {
         return ret;
     }
 
-    ret = bmp390_aux_get_temp(p_spi, &temp_params_static, &raw_temp_static, &comp_temp);
+    ret = bmp390_aux_get_temp(p_spi, &temp_params_static, &raw_temp_static, &t_lin);
     if (ret != SPP_OK) {
         return ret;
     }
 
-    t_lin = comp_temp;
-
-    ret = bmp390_aux_get_press(p_spi, &press_params_static, &raw_press_static, &comp_press);
+    ret = bmp390_aux_get_press(p_spi, &press_params_static, t_lin, &raw_press_static, &comp_press);
     if (ret != SPP_OK) {
         return ret;
     }
 
     *altitude = 44330.0f * (1.0f - powf(comp_press / 101325.0f, 1.0f / 5.255f));
 
-    return SPP_OK;
+    return ret;
 }
