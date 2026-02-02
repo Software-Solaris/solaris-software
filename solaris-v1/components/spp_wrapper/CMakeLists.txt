@@ -40,7 +40,10 @@ endif()
 # ---------------------------------------------------------
 
 # Solo .c directamente en external/spp (sin recursión)
-file(GLOB SPP_EXT_SOURCES "${SPP_ROOT}/*.c")
+file(GLOB SPP_EXT_SOURCES
+  "${SPP_ROOT}/*.c"
+  "${SPP_ROOT}/services/logging/*.c"
+)
 
 # No cogemos ni external/spp/hal/*.c
 # ni external/spp/osal/*.c

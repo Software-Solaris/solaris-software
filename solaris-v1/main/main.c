@@ -8,6 +8,10 @@
 #include "gpio_int.h"      
 #include "driver/gpio.h"  
 
+#include "spp_log.h"
+
+#include <unistd.h>
+
 static bmp_data_t s_bmp;
 
 static void bmp_init_task(void *arg)
@@ -18,6 +22,22 @@ static void bmp_init_task(void *arg)
 void app_main(void)
 {
     retval_t ret;
+
+    sleep(5);
+
+    ret = SPP_LOG_Init();
+    if (ret != SPP_OK) {
+        return;
+    }
+    
+    SPP_LOG_SetLevel(SPP_LOG_VERBOSE);
+    SPP_LOGI("APP", "Application starting...");
+    /** Test all log levels */
+    SPP_LOGE("TEST", "Error ejemplo");
+    SPP_LOGW("TEST", "Warning ejemplo");
+    SPP_LOGI("TEST", "Info ejemplo");
+    SPP_LOGD("TEST", "Debug ejemplo");
+    SPP_LOGV("TEST", "Verbose ejemplo");
 
     // Step 1: Initialize SPI Bus
     ret = SPP_HAL_SPI_BusInit();
