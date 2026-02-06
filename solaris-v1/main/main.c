@@ -3,6 +3,7 @@
 
 #include "core/returntypes.h"
 #include "core/core.h"
+#include "databank.h"
 #include "spi.h"
 #include "bmp390.h"
 
@@ -24,7 +25,7 @@ void app_main(void)
 {
     retval_t ret;
 
-    sleep(5);
+    // sleep(5);
 
     ret = SPP_LOG_Init();
     if (ret != SPP_OK) {
@@ -41,6 +42,15 @@ void app_main(void)
     SPP_LOGV("TEST", "Verbose ejemplo");
 
     Core_Init();
+
+    spp_packet_t *p_packet;
+
+    p_packet = SPP_DATABANK_getPacket();
+
+    p_packet->primary_header.version = 0xFA;
+
+    ret = SPP_DATABANK_returnPacket(p_packet);
+
 
     // Step 1: Initialize SPI Bus
     ret = SPP_HAL_SPI_BusInit();
