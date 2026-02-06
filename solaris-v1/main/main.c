@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 
 #include "core/returntypes.h"
+#include "core/core.h"
 #include "spi.h"
 #include "bmp390.h"
 
@@ -38,6 +39,8 @@ void app_main(void)
     SPP_LOGI("TEST", "Info ejemplo");
     SPP_LOGD("TEST", "Debug ejemplo");
     SPP_LOGV("TEST", "Verbose ejemplo");
+
+    Core_Init();
 
     // Step 1: Initialize SPI Bus
     ret = SPP_HAL_SPI_BusInit();
