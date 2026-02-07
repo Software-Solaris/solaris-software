@@ -114,10 +114,11 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
  */
 retval_t bmp390_config_check(void *p_spi)
 {
-    spp_uint8_t buf[4] = 
+    spp_uint8_t buf[6] = 
     {
         (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG),    EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE
+        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG),    EMPTY_MESSAGE
     };
 
     return SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
