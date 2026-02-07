@@ -27,12 +27,7 @@ void app_main(void)
 
     // sleep(5);
 
-    ret = SPP_LOG_Init();
-    if (ret != SPP_OK) {
-        return;
-    }
     
-    SPP_LOG_SetLevel(SPP_LOG_VERBOSE);
     SPP_LOGI("APP", "Application starting...");
     /** Test all log levels */
     SPP_LOGE("TEST", "Error ejemplo");
@@ -43,14 +38,16 @@ void app_main(void)
 
     Core_Init();
 
-    spp_packet_t *p_packet;
+    // Getting one SPP packet
+    spp_packet_t *p_packet_1 = SPP_DATABANK_getPacket();
+    p_packet_1->primary_header.version = 0xFA;
+    ret = SPP_DATABANK_returnPacket(p_packet_1);
 
-    p_packet = SPP_DATABANK_getPacket();
-
-    p_packet->primary_header.version = 0xFA;
-
-    ret = SPP_DATABANK_returnPacket(p_packet);
-
+    // Following the logic this will have to return the same address of packet as p_packet_1
+    spp_packet_t *p_packet_2 = SPP_DATABANK_getPacket();
+    // We can check the new data is being written
+    p_packet_2->primary_header.version = 0xFE;
+    ret = SPP_DATABANK_returnPacket(p_packet_2);
 
     // Step 1: Initialize SPI Bus
     ret = SPP_HAL_SPI_BusInit();

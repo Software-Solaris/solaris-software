@@ -8,7 +8,7 @@
       "program": "${workspaceFolder}/solaris-v1/build/solaris-v1.elf",
       "cwd": "${workspaceFolder}/solaris-v1",
       "MIMode": "gdb",
-      "miDebuggerPath": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
+      "miDebuggerPath": "/home/user/.espressif/tools/xtensa-esp-elf-gdb/16.3_20250913/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
       "miDebuggerServerAddress": "192.168.20.236:3334",
       "externalConsole": false,
       "stopAtEntry": true,
