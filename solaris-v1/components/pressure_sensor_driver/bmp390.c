@@ -4,6 +4,7 @@
 #include "core/returntypes.h"
 #include "spi.h"
 #include "task.h"
+#include "spp_log.h"
 
 static const char* TAG = "BMP390";
 spp_uint8_t id, ifc;
@@ -81,7 +82,7 @@ retval_t bmp390_soft_reset(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    //vTaskDelay(pdMS_TO_TICKS(100));
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
     return ret;
 }
@@ -101,7 +102,7 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    //vTaskDelay(pdMS_TO_TICKS(100));
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
     return ret;
 }
@@ -120,8 +121,22 @@ retval_t bmp390_config_check(void *p_spi)
         (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE,
         (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG),    EMPTY_MESSAGE
     };
+    
+    retval_t ret;
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    
+    if (ret != SPP_OK) {
+        return ret;
+    }
 
-    return SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    SPP_LOGI(TAG, "ID: 0x%02X", buf[5]);
+
+    if (buf[5] != 0x60) {
+        SPP_LOGE(TAG, "BMP390 not detected! Expected ID: 0x%02X, Read ID: 0x%02X", 0x60, buf[5]);
+        return SPP_ERROR;
+    }
+
+    return ret;
 }
 
 /**
@@ -140,7 +155,10 @@ retval_t bmp390_aux_config(void *p_spi)
     ret = bmp390_enable_spi_mode(p_spi);
     if (ret != SPP_OK) return ret;
 
-    return bmp390_config_check(p_spi);
+    ret = bmp390_config_check(p_spi);
+    if (ret != SPP_OK) return ret;
+    
+    return ret;
 }
 
 //--------------------PREPARE READ---------------------------
