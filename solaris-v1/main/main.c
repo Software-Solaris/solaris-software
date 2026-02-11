@@ -38,9 +38,6 @@ void app_main(void)
     ret = SPP_HAL_SPI_DeviceInit(p_spi_icm);
     if (ret != SPP_OK) while (1) {}
 
-    ret = IcmInit((void *)&s_icm);
-    ret = IcmConfig((void*)&s_icm);
-
     // Step 3: Initialize BMP SPI Device
     void *p_spi_bmp = SPP_HAL_SPI_GetHandler();
     ret = SPP_HAL_SPI_DeviceInit(p_spi_bmp);
