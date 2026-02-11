@@ -42,5 +42,5 @@ list(REMOVE_DUPLICATES SPP_EXT_INCLUDE_DIRS)
 idf_component_register(
   SRCS         ${SPP_EXT_SOURCES}
   INCLUDE_DIRS ${SPP_EXT_INCLUDE_DIRS}
-  REQUIRES spp_wrapper esp_driver_spi esp_driver_gpio esp_driver_sdspi fatfs fatfs
+  REQUIRES spp_wrapper esp_driver_spi esp_driver_gpio esp_driver_sdspi fatfs fatfs freertos
 )
