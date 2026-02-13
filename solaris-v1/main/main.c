@@ -12,6 +12,7 @@ static const char* TAG = "MAIN";
 
 void app_main(void)
 {
+    Core_Init();
     retval_t ret;
     SPP_LOGI(TAG, "Starting application...");
     SPP_OSAL_TaskDelay(5000);
@@ -172,15 +173,15 @@ void app_main(void)
     p_packet_1->primary_header.version = 0xFA;
     ret = SPP_DATABANK_returnPacket(p_packet_1);
 
-    // Following the logic this will have to return the same address of packet as p_packet_1
-    spp_packet_t *p_packet_2 = SPP_DATABANK_getPacket();
-    // We can check the new data is being written
-    p_packet_2->primary_header.version = 0xFE;
-    ret = SPP_DATABANK_returnPacket(p_packet_2);
+    // // Following the logic this will have to return the same address of packet as p_packet_1
+    // spp_packet_t *p_packet_2 = SPP_DATABANK_getPacket();
+    // // We can check the new data is being written
+    // p_packet_2->primary_header.version = 0xFE;
+    // ret = SPP_DATABANK_returnPacket(p_packet_2);
 
     
 
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // vTaskDelay(pdMS_TO_TICKS(100));
 
     // Step 10: Read Altitude Measurement
     float altitude = 0.0f;
@@ -269,7 +270,7 @@ void app_main(void)
         SPP_LOGE(TAG, "Failed to read altitude from BMP390");
     }
 
-    vTaskDelay(pdMS_TO_TICKS(50));
+    // vTaskDelay(pdMS_TO_TICKS(50));
 
     // 3) Pedimos varios paquetes 
     spp_packet_t *p0 = SPP_DATABANK_getPacket();
