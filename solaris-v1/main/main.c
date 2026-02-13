@@ -13,6 +13,8 @@ static const char* TAG = "MAIN";
 void app_main(void)
 {
     retval_t ret;
+    SPP_LOGI(TAG, "Starting application...");
+    SPP_OSAL_TaskDelay(5000);
 
     // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
     Core_Init();
