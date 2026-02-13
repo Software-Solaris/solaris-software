@@ -59,13 +59,11 @@ void app_main(void)
         while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
-    //Step 8: Configure Interrupt Pin Settings
-    s_bmp.int_pin       = (spp_uint32_t)INT_GPIO;
-    s_bmp.int_intr_type = (spp_uint32_t)GPIO_INTR_POSEDGE;
-    s_bmp.int_pull      = 0;
+    SPP_LOGI(TAG, "pX=%p (esprado p2)", (void*)pX); // por ser LIFO
 
-    //Step 9: Create BMP Initialization Task
-    xTaskCreate(bmp_init_task, "bmp_init", BMP_INIT_TASK_STACK_SIZE, &s_bmp, BMP_INIT_PRIO, NULL);
+    // 7) Lo devolvemos y terminamos
+    ret = SPP_DATABANK_returnPacket(pX);
+    if (ret != SPP_OK) SPP_LOGE(TAG, "return pX fallo");
 
     
     SPP_LOGI("APP", "Application starting...");
