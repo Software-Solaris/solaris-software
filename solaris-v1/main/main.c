@@ -1,8 +1,7 @@
-#include "core/core.h"
 #include "core/returntypes.h"
-
-#include "spi.h"
-#include "spp_log.h"
+#include "core/core.h"
+#include "databank.h"
+#include "services/logging/spp_log.h"
 #include "osal/task.h"
 
 #include "services/databank/databank.h"
@@ -16,19 +15,26 @@ void app_main(void)
     SPP_LOGI(TAG, "Starting application...");
     SPP_OSAL_TaskDelay(5000);
 
+    // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
     Core_Init();
-    SPP_LOGI(TAG, "Boot");
 
+    // 2) Init databank explícito (para debuggear, luego se puede quitar porque el core ya lo inicializa)
     ret = SPP_DATABANK_init();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Databank init failed");
-        for (;;) { SPP_OSAL_TaskDelay(1000); }
+        SPP_LOGE(TAG, "SPP_DATABANK_init fallo");
+        while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
-    ret = DB_FLOW_Init();
-    if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "DB_FLOW init failed");
-        for (;;) { SPP_OSAL_TaskDelay(1000); }
+    SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
+
+    // 3) Pedimos varios paquetes 
+    spp_packet_t *p0 = SPP_DATABANK_getPacket();
+    spp_packet_t *p1 = SPP_DATABANK_getPacket();
+    spp_packet_t *p2 = SPP_DATABANK_getPacket();
+
+    if (!p0 || !p1 || !p2) {
+        SPP_LOGE(TAG, "No se pudieron obtener 3 punteros del databank");
+        while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
