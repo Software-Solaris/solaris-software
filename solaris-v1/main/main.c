@@ -1,8 +1,7 @@
-#include "core/core.h"
 #include "core/returntypes.h"
-
-#include "spi.h"
-#include "spp_log.h"
+#include "core/core.h"
+#include "databank.h"
+#include "services/logging/spp_log.h"
 #include "osal/task.h"
 
 #include "services/databank/databank.h"
@@ -23,14 +22,9 @@ void app_main(void)
 {
     Core_Init();
     retval_t ret;
-    SPP_LOGI(TAG, "Starting application...");
-    SPP_OSAL_TaskDelay(5000);
 
-    // Step 1: Initialize SPI Bus
-    ret = SPP_HAL_SPI_BusInit();
-    if (ret != SPP_OK){
-        SPP_LOGE(TAG, "Failed to initialize SPI bus");
-    }
+    // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
+    Core_Init();
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
 
