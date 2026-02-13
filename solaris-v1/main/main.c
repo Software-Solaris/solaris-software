@@ -12,6 +12,7 @@ static const char* TAG = "MAIN";
 
 void app_main(void)
 {
+    Core_Init();
     retval_t ret;
 
     // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
