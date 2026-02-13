@@ -12,51 +12,54 @@ static const char* TAG = "MAIN";
 void app_main(void)
 {
     retval_t ret;
-    SPP_LOGI(TAG, "Starting application...");
-    SPP_OSAL_TaskDelay(5000);
 
-    // Step 1: Initialize SPI Bus
-    ret = SPP_HAL_SPI_BusInit();
-    if (ret != SPP_OK){
-        SPP_LOGE(TAG, "Failed to initialize SPI bus");
-    }
+    // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
+    Core_Init();
 
-    // Step 2: Initialize ICM SPI Device
-    void *p_spi_icm = SPP_HAL_SPI_GetHandler();
-    ret = SPP_HAL_SPI_DeviceInit(p_spi_icm);
-    if (ret != SPP_OK){
-        SPP_LOGE(TAG, "Failed to initialize ICM SPI device");
-    }
-
-    // Step 3: Initialize BMP SPI Device
-    void *p_spi_bmp = SPP_HAL_SPI_GetHandler();
-    ret = SPP_HAL_SPI_DeviceInit(p_spi_bmp);
-    if (ret != SPP_OK){
-        SPP_LOGE(TAG, "Failed to initialize BMP SPI device");
-    }
-
-    // Step 4: Assign SPI Handler to BMP Structure
-    s_bmp.p_handler_spi = p_spi_bmp;
-
-    // Step 5: Configure BMP390 Auxiliary Settings
-    ret = bmp390_aux_config(p_spi_bmp);
+    // 2) Init databank explícito (para debuggear, luego se puede quitar porque el core ya lo inicializa)
+    ret = SPP_DATABANK_init();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Failed to configure BMP390");
+        SPP_LOGE(TAG, "SPP_DATABANK_init fallo");
+        while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
-    // Step 6: Prepare BMP390 Measurement
-    ret = bmp390_prepare_measure(p_spi_bmp);
-    if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Failed to prepare BMP390 measurement");
+    SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
+
+    // 3) Pedimos varios paquetes 
+    spp_packet_t *p0 = SPP_DATABANK_getPacket();
+    spp_packet_t *p1 = SPP_DATABANK_getPacket();
+    spp_packet_t *p2 = SPP_DATABANK_getPacket();
+
+    if (!p0 || !p1 || !p2) {
+        SPP_LOGE(TAG, "No se pudieron obtener 3 punteros del databank");
+        while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
-    // Step 7: Configure Control Register
-    {
-        spp_uint8_t buf[2] = { (spp_uint8_t)0x19u, (spp_uint8_t)(1u << 6) };
-        ret = SPP_HAL_SPI_Transmit(p_spi_bmp, buf, (spp_uint8_t)sizeof(buf));
-        if (ret != SPP_OK) {
-            SPP_LOGE(TAG, "Failed to configure BMP390 control register");
-        }
+    // 4) Cambiamos una variable random para luego chekear
+    p0->primary_header.version = 0xA0;
+    p1->primary_header.version = 0xA1;
+    p2->primary_header.version = 0xA2;
+
+    // Log de direcciones para comprobar que no devuelven el mismo puntero
+    SPP_LOGI(TAG, "p0=%p (version=0x%02X)", (void*)p0, p0->primary_header.version);
+    SPP_LOGI(TAG, "p1=%p (version=0x%02X)", (void*)p1, p1->primary_header.version);
+    SPP_LOGI(TAG, "p2=%p (version=0x%02X)", (void*)p2, p2->primary_header.version);
+
+    // 5) Devolvemos en orden (p0, p1, p2)
+    ret = SPP_DATABANK_returnPacket(p0);
+    if (ret != SPP_OK) SPP_LOGE(TAG, "return p0 fallo");
+
+    ret = SPP_DATABANK_returnPacket(p1);
+    if (ret != SPP_OK) SPP_LOGE(TAG, "return p1 fallo");
+
+    ret = SPP_DATABANK_returnPacket(p2);
+    if (ret != SPP_OK) SPP_LOGE(TAG, "return p2 fallo");
+
+    // 6) Volvemos a pedir 1 paquete
+    spp_packet_t *pX = SPP_DATABANK_getPacket();
+    if (!pX) {
+        SPP_LOGE(TAG, "Fallo pX despues del return");
+        while (1) { SPP_OSAL_TaskDelay(1000); }
     }
 
     // Step 8: Configure Interrupt Pin Settings
