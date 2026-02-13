@@ -10,17 +10,26 @@
 
 static const char* TAG = "MAIN";
 
+static bmp_data_t s_bmp;
+static icm_data_t s_icm;
+
+// static void bmp_init_task(void *arg)
+// {
+//     BmpInit(arg);
+//     SPP_OSAL_TaskDelete(NULL);
+// }
+
 void app_main(void)
 {
-    retval_t ret;
-
     Core_Init();
-    SPP_LOGI(TAG, "Boot");
+    retval_t ret;
+    SPP_LOGI(TAG, "Starting application...");
+    SPP_OSAL_TaskDelay(5000);
 
-    ret = SPP_DATABANK_init();
-    if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Databank init failed");
-        for (;;) { SPP_OSAL_TaskDelay(1000); }
+    // Step 1: Initialize SPI Bus
+    ret = SPP_HAL_SPI_BusInit();
+    if (ret != SPP_OK){
+        SPP_LOGE(TAG, "Failed to initialize SPI bus");
     }
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
