@@ -100,7 +100,7 @@ void app_main(void)
         SPP_LOGE(TAG, "Failed to read altitude from BMP390");
     }
 
-    vTaskDelay(pdMS_TO_TICKS(50));
+    SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
 
     // 3) Pedimos varios paquetes 
     spp_packet_t *p0 = SPP_DATABANK_getPacket();
