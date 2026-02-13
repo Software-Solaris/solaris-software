@@ -1,9 +1,8 @@
 #include "bmp390.h"
 #include <string.h>
 #include <math.h>
-#include "core/returntypes.h"
 #include "spi.h"
-#include "task.h"
+#include "osal/task.h"
 #include "spp_log.h"
 
 static const char* TAG = "BMP390";
@@ -61,8 +60,6 @@ void BmpInit(void* p_data)
 
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
     SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
-
-    SPP_OSAL_TaskDelete(NULL);
 }
 
 
@@ -82,7 +79,7 @@ retval_t bmp390_soft_reset(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+    SPP_OSAL_TaskDelay(100);
 
     return ret;
 }
@@ -102,7 +99,7 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+    SPP_OSAL_TaskDelay(100);
 
     return ret;
 }
