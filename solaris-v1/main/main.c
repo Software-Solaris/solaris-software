@@ -14,6 +14,7 @@ static const char* TAG = "MAIN";
 
 void app_main(void)
 {
+    Core_Init();
     retval_t ret;
 
     Core_Init();
