@@ -7,9 +7,7 @@
   },
 
   "runArgs": [
-    "--privileged",
-    "--device-cgroup-rule=c 166:* rmw",
-    "--device=/dev/bus/usb"
+    "--privileged"
   ],
 
   "settings": { "terminal.integrated.defaultProfile.linux": "bash" },
@@ -27,7 +25,6 @@
   "remoteUser": "root",
 
   "mounts": [
-    "source=/dev/serial/by-id,target=/dev/serial/by-id,type=bind",
     "source=${localEnv:HOME}/.ssh,target=/tmp/host-ssh,type=bind,consistency=cached,readonly",
     "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
   ],
