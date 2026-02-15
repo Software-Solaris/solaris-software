@@ -78,7 +78,7 @@ retval_t bmp390_soft_reset(void *p_spi)
         (spp_uint8_t)BMP390_SOFT_RESET_CMD
     };
 
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
     SPP_OSAL_TaskDelay(100);
 
     return ret;
