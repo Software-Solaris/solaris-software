@@ -117,9 +117,9 @@ retval_t bmp390_config_check(void *p_spi)
 {
     spp_uint8_t buf[9] = 
     {
-        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG),    EMPTY_MESSAGE, EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
         (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG),    EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG), EMPTY_MESSAGE, EMPTY_MESSAGE
     };
     
     retval_t ret;
@@ -131,7 +131,8 @@ retval_t bmp390_config_check(void *p_spi)
 
     SPP_LOGI(TAG, "Buffer: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X", buf[0], buf[2], buf[4], buf[1], buf[3], buf[5]);
 
-    if (buf[5] != 0x60) {
+
+    if (buf[8] != 0x60) {
         SPP_LOGE(TAG, "BMP390 not detected! Expected ID: 0x%02X, Read ID: 0x%02X", 0x60, buf[5]);
         return SPP_ERROR;
     }
@@ -153,7 +154,7 @@ retval_t bmp390_aux_config(void *p_spi)
     if (ret != SPP_OK) return ret;
 
     ret = bmp390_enable_spi_mode(p_spi);
-    if (ret != SPP_OK) return ret;
+    if (ret != SPP_OK) return ret;    
 
     ret = bmp390_config_check(p_spi);
     if (ret != SPP_OK) return ret;
