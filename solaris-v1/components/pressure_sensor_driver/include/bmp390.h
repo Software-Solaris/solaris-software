@@ -5,6 +5,7 @@
 #include "returntypes.h"
 #include "general.h"
 #include "osal/eventgroups.h"
+#include "osal/task.h"
 #include "hal/gpio/gpio.h" 
 
 ///--------------------Read/Write Operators------------------------------

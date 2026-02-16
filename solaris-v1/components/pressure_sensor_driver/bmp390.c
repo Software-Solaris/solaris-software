@@ -1,9 +1,8 @@
 #include "bmp390.h"
 #include <string.h>
 #include <math.h>
-#include "core/returntypes.h"
 #include "spi.h"
-#include "task.h"
+#include "osal/task.h"
 #include "spp_log.h"
 
 static const char* TAG = "BMP390";
@@ -61,8 +60,6 @@ void BmpInit(void* p_data)
 
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
     SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
-
-    SPP_OSAL_TaskDelete(NULL);
 }
 
 
@@ -81,8 +78,8 @@ retval_t bmp390_soft_reset(void *p_spi)
         (spp_uint8_t)BMP390_SOFT_RESET_CMD
     };
 
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    SPP_OSAL_TaskDelay(100);
 
     return ret;
 }
@@ -102,7 +99,7 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+    SPP_OSAL_TaskDelay(100);
 
     return ret;
 }
@@ -115,11 +112,11 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
  */
 retval_t bmp390_config_check(void *p_spi)
 {
-    spp_uint8_t buf[6] = 
+    spp_uint8_t buf[9] = 
     {
-        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG),    EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG),    EMPTY_MESSAGE
+        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
+        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG), EMPTY_MESSAGE, EMPTY_MESSAGE
     };
     
     retval_t ret;
@@ -129,9 +126,10 @@ retval_t bmp390_config_check(void *p_spi)
         return ret;
     }
 
-    SPP_LOGI(TAG, "ID: 0x%02X", buf[5]);
+    SPP_LOGI(TAG, "ID: 0x%02X", buf[8]);
 
-    if (buf[5] != 0x60) {
+
+    if (buf[8] != 0x60) {
         SPP_LOGE(TAG, "BMP390 not detected! Expected ID: 0x%02X, Read ID: 0x%02X", 0x60, buf[5]);
         return SPP_ERROR;
     }
@@ -153,7 +151,7 @@ retval_t bmp390_aux_config(void *p_spi)
     if (ret != SPP_OK) return ret;
 
     ret = bmp390_enable_spi_mode(p_spi);
-    if (ret != SPP_OK) return ret;
+    if (ret != SPP_OK) return ret;    
 
     ret = bmp390_config_check(p_spi);
     if (ret != SPP_OK) return ret;
