@@ -17,19 +17,26 @@
 
 void app_main(void)
 {
-    retval_t ret;
+    retval_t ret = SPP_ERROR;
 
     // sleep(5);
     icm_data_t s_icm;
 
-    ret = IcmInit((void*)s_icm);
-    if (ret != K_RET_OK){
-        return ret;
+    SPP_HAL_SPI_BusInit();
+
+    ret = IcmInit((void*)&s_icm);
+    if (ret != SPP_OK){
+        return;
     }
 
-    ret = IcmConfig((void*)s_icm);
-    if (ret != K_RET_OK){
-        return ret;
+    ret = IcmConfig((void*)&s_icm);
+    if (ret != SPP_OK){
+        return;
+    }
+
+    ret = IcmReadSensors((void*)&s_icm);
+    if (ret != SPP_OK){
+        return;
     }
 
 
