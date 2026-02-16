@@ -126,7 +126,7 @@ retval_t bmp390_config_check(void *p_spi)
         return ret;
     }
 
-    SPP_LOGI(TAG, "Buffer: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X", buf[0], buf[2], buf[4], buf[1], buf[3], buf[5]);
+    SPP_LOGI(TAG, "ID: 0x%02X", buf[8]);
 
 
     if (buf[8] != 0x60) {
