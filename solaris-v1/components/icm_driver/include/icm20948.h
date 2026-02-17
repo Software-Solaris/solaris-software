@@ -20,10 +20,21 @@
 #define WRITE_OP           0x00
 
 //-----------------------------ICM REGISTERS-----------------------------
+// -- general --
 #define REG_WHO_AM_I       0x00
 #define REG_USER_CTRL      0x03
-#define REG_LP_CONFIG      0x05
 #define REG_PWR_MGMT_1     0x06
+
+// -- fifo config --
+#define REG_FIFO_EN_1      0x66
+#define REG_FIFO_EN_2      0x67
+#define REG_FIFO_RST       0x68
+#define REG_FIFO_MODE      0x69
+#define REG_FIFO_COUNTH    0x70
+#define REG_FIFO_COUNTL    0x71
+#define REG_FIFO_R_W       0x72
+
+// -- i2c master --
 #define REG_I2C_CTRL       0x01 // On data bank 3
 #define REG_SLV0_ADDR      0x03 // On data bank 3
 #define REG_SLV0_REG       0x04 // On data bank 3
@@ -34,6 +45,8 @@
 #define REG_SLV4_CTRL      0x15 // On data bank 3
 #define REG_SLV4_DO        0x16 // On data bank 3
 #define REG_SLV4_DI        0x17 // On data bank 3
+
+// -- sensor config --
 #define REG_ACCEL_CONFIG   0X14 // On data bank 2
 #define REG_GYRO_CONFIG    0x01 // On data bank 2
 
@@ -66,7 +79,7 @@
 
 //-----------------------------MESSAGES-----------------------------
 #define BIT_H_RESET        0x80
-#define USER_CTRL_CONFIG   0x30
+#define USER_CTRL_CONFIG   0x70
 #define I2C_DM_DEAC        0x00
 #define I2C_SP_CONFIG      0x07
 #define MAGNETO_WR_ADDR    0x0C
