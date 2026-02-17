@@ -34,10 +34,7 @@ void app_main(void)
         return;
     }
 
-    ret = IcmReadSensors((void*)&s_icm);
-    if (ret != SPP_OK){
-        return;
-    }
+    IcmGetSensorsData((void*)&s_icm);
 
 
     vTaskDelay(pdMS_TO_TICKS(50));

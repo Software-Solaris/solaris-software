@@ -2,6 +2,26 @@
 #include "driver/spi_common.h"
 #include "spi.h"
 
+/* USO DE INTERRUPCIONES Y FIFO
+: v1 solo con FIFO activada
+
+-- CONFIG INTERRUPCIONES --
+-> Activar DMP y FIFO en USER_CTRL
+-> Escribir en INT_PIN_CFG: 0x18 ?? -> MODIFICABLE
+-> Activar el ENABLE correspondiente a OVERFLOW o a WATERMARK
+-> Leer INT_STATUS como comprobación de lo que voy haciendo (2 o 3)
+
+-- CONFIG FIFO --
+-> Activar escrituras en FIFO de los 3 sensores con FIFO_EN
+-> Mirar el tipo de FIFO_RST que nos interesa
+-> Activar Snapshot Mode en FIFO_MODE
+-> Leer numero de datos escritos de la FIFO con FIFO_COUNT (high y low)
+-> Usar FIFO_R_W para escribir los datos (se puede hacer de forma automática??)
+*/
+
+
+
+
 /* -------------------------------------------------------------------------- */
 /*                               INITIALIZATION                               */
 /* -------------------------------------------------------------------------- */
@@ -61,13 +81,38 @@ retval_t IcmConfig(void *p_data)
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
 
-    /* 5) Switch to bank 3 */
+    /* 5) FIFO configuration */
+    /* -- reset register requires two write operations to clear the FIFO -- */
+    data[0] = WRITE_OP | REG_FIFO_RST;
+    data[1] = 0x1F;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    data[0] = WRITE_OP | REG_FIFO_RST;
+    data[1] = 0x00;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    data[0] = WRITE_OP | REG_FIFO_EN_1;
+    data[1] = 0x01;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    data[0] = WRITE_OP | REG_FIFO_EN_2;
+    data[1] = 0x1F;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+
+    /* 6) Switch to bank 3 */
     data[0] = WRITE_OP | REG_BANK_SEL;
     data[1] = 0x30;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
 
-    /* 6) Internal I2C speed configuration */
+    /* 7) Internal I2C speed configuration */
     data[0] = WRITE_OP | REG_I2C_CTRL;
     data[1] = I2C_SP_CONFIG;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
@@ -182,14 +227,37 @@ retval_t IcmReadSensors(void *p_data)
     int16_t magneto_x_raw, magneto_y_raw, magneto_z_raw;
     float magneto_x, magneto_y, magneto_z;
 
-    float ax_offset = 1.622f;
-    float ay_offset = 0.288f;
-    float az_offset = -8.682f;
-    float gx_offset = -0.262f;
-    float gy_offset = -2.372f;
-    float gz_offset = 0.014f;
+    float ax_offset = 0.0f;
+    float ay_offset = 0.0f;
+    float az_offset = 0.0f;
+    float gx_offset = 0.0f;
+    float gy_offset = 0.0f;
+    float gz_offset = 0.0f;
+    float mx_offset;
+    float my_offset;
+    float mz_offset;
 
-    /* ---------- ACCEL X ---------- */
+    spp_uint8_t countH[2];
+    spp_uint8_t countL[2];
+
+    // Prueba de escritura a FIFO
+    countH[0] = WRITE_OP | REG_FIFO_R_W;
+    countH[1] = 0x77;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countH, 2);
+    if (ret != SPP_OK) return ret;
+
+    // Lectura del número de bytes ocupados en FIFO
+    countH[0] = READ_OP | REG_FIFO_COUNTH;
+    countH[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countH, 2);
+    if (ret != SPP_OK) return ret;
+    countL[0] = READ_OP | REG_FIFO_COUNTL;
+    countL[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countL, 2);
+    if (ret != SPP_OK) return ret;
+    spp_uint16_t totalBytes = (countH[1] << 8) | countL[1];
+
+    /*---------- ACCEL X ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_X_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_X_L), EMPTY_MESSAGE };
@@ -204,7 +272,7 @@ retval_t IcmReadSensors(void *p_data)
         accel_x = (((float)accel_x_raw / 16384.0f) * 9.80665f) + ax_offset;
     }
 
-    /* ---------- ACCEL Y ---------- */
+    ---------- ACCEL Y ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_Y_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_Y_L), EMPTY_MESSAGE };
@@ -219,7 +287,7 @@ retval_t IcmReadSensors(void *p_data)
         accel_y = (((float)accel_y_raw / 16384.0f) * 9.80665f) + ay_offset;
     }
 
-    /* ---------- ACCEL Z ---------- */
+    ---------- ACCEL Z ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_Z_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_ACCEL_Z_L), EMPTY_MESSAGE };
@@ -234,7 +302,7 @@ retval_t IcmReadSensors(void *p_data)
         accel_z = (((float)accel_z_raw / 16384.0f) * 9.80665f) + az_offset;
     }
 
-    /* ---------- GYRO X ---------- */
+    ---------- GYRO X ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_X_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_X_L), EMPTY_MESSAGE };
@@ -249,7 +317,7 @@ retval_t IcmReadSensors(void *p_data)
         gyro_x = ((float)gyro_x_raw / 131.0f) + gx_offset;
     }
 
-    /* ---------- GYRO Y ---------- */
+    ---------- GYRO Y ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_Y_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_Y_L), EMPTY_MESSAGE };
@@ -264,7 +332,7 @@ retval_t IcmReadSensors(void *p_data)
         gyro_y = ((float)gyro_y_raw / 131.0f) + gy_offset;
     }
 
-    /* ---------- GYRO Z ---------- */
+    ---------- GYRO Z ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_Z_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_GYRO_Z_L), EMPTY_MESSAGE };
@@ -279,7 +347,7 @@ retval_t IcmReadSensors(void *p_data)
         gyro_z = ((float)gyro_z_raw / 131.0f) + gz_offset;
     }
 
-    /* ---------- MAGNETOMETER X ---------- */
+    ---------- MAGNETOMETER X ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_X_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_X_L), EMPTY_MESSAGE };
@@ -294,7 +362,7 @@ retval_t IcmReadSensors(void *p_data)
         magneto_x = ((float)magneto_x_raw * 0.15f);
     }
 
-    /* ---------- MAGNETOMETER Y ---------- */
+    ---------- MAGNETOMETER Y ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_Y_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_Y_L), EMPTY_MESSAGE };
@@ -309,7 +377,7 @@ retval_t IcmReadSensors(void *p_data)
         magneto_y = ((float)magneto_y_raw * 0.15f);
     }
 
-    /* ---------- MAGNETOMETER Z ---------- */
+    ---------- MAGNETOMETER Z ---------- 
     {
         spp_uint8_t h[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_Z_H), EMPTY_MESSAGE };
         spp_uint8_t l[2] = { (spp_uint8_t)(READ_OP | REG_MAGNETO_Z_L), EMPTY_MESSAGE };
@@ -322,7 +390,7 @@ retval_t IcmReadSensors(void *p_data)
 
         magneto_z_raw = (h[1] << 8) | l[1];
         magneto_z = ((float)magneto_z_raw * 0.15f);
-    }
+    } */
 
     return SPP_OK;
 }
