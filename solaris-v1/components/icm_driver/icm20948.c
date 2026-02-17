@@ -1,6 +1,8 @@
 #include "icm20948.h"
 #include "driver/spi_common.h"
 #include "spi.h"
+#include "task.h"
+
 
 /* USO DE INTERRUPCIONES Y FIFO
 : v1 solo con FIFO activada
@@ -77,8 +79,11 @@ retval_t IcmConfig(void *p_data)
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
 
-    /* Written twice to match reference working code */
+    /* Read the register to check data */
+    data[0] = READ_OP | REG_USER_CTRL;
+    data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    /* Should return 0xF0 */
     if (ret != SPP_OK) return ret;
 
     /* 5) FIFO configuration */
@@ -247,15 +252,25 @@ retval_t IcmReadSensors(void *p_data)
     if (ret != SPP_OK) return ret;
 
     // Lectura del número de bytes ocupados en FIFO
-    countH[0] = READ_OP | REG_FIFO_COUNTH;
+    countH[0] = READ_OP | REG_FIFO_R_W;
     countH[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countH, 2);
     if (ret != SPP_OK) return ret;
-    countL[0] = READ_OP | REG_FIFO_COUNTL;
-    countL[1] = EMPTY_MESSAGE;
-    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countL, 2);
-    if (ret != SPP_OK) return ret;
-    spp_uint16_t totalBytes = (countH[1] << 8) | countL[1];
+    
+
+    spp_uint8_t totalBytes = 0;
+    while(true){
+        countL[0] = READ_OP | REG_FIFO_COUNTL;
+        countL[1] = EMPTY_MESSAGE;
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, countL, 2);
+        if (ret != SPP_OK) return ret;
+        totalBytes = countL[1];
+        if (totalBytes != 0){
+            break;
+        }
+        SPP_OSAL_TaskDelay(pdMS_TO_TICKS(1000));
+    }
+
 
     /*---------- ACCEL X ---------- 
     {

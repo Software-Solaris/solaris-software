@@ -79,7 +79,7 @@
 
 //-----------------------------MESSAGES-----------------------------
 #define BIT_H_RESET        0x80
-#define USER_CTRL_CONFIG   0x70
+#define USER_CTRL_CONFIG   0xF0
 #define I2C_DM_DEAC        0x00
 #define I2C_SP_CONFIG      0x07
 #define MAGNETO_WR_ADDR    0x0C
