@@ -594,5 +594,9 @@ retval_t bmp390_int_enable_drdy(void *p_spi)
     if (ret != SPP_OK) {
         return ret;
     }
+
+    *altitude = 44330.0f * (1.0f - powf(comp_press / 101325.0f, 1.0f / 5.255f));
+    SPP_LOGI(TAG, "Altitude: %.2f m, Pressure: %.2f Pa, Temperature: %.2f C", *altitude, comp_press, t_lin);
+
     return ret;
 }
