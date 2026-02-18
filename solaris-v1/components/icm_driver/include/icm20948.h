@@ -23,6 +23,7 @@
 // -- general --
 #define REG_WHO_AM_I       0x00
 #define REG_USER_CTRL      0x03
+#define REG_LP_CONF        0x05
 #define REG_PWR_MGMT_1     0x06
 
 // -- fifo config --
@@ -51,6 +52,7 @@
 #define REG_GYRO_CONFIG    0x01 // On data bank 2
 
 #define REG_BANK_SEL       0x7F
+#define REG_BANK_2         0x20
 
 //-----------------------------ACCELEROMETER-----------------------------
 #define REG_ACCEL_X_H     0x2D
@@ -102,6 +104,7 @@ typedef struct{
 
 retval_t IcmInit(void *p_data);
 retval_t IcmConfig(void *p_data);
+retval_t IcmConfigDmp(void *p_data);
 retval_t IcmReadSensors(void *p_data);
 void IcmGetSensorsData(void * p_data);
 

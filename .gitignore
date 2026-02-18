@@ -8,3 +8,4 @@ settings.json
 .espidf/
 *.cache*
 launch.json
+solaris-v1/components/icm_driver/drivers/*

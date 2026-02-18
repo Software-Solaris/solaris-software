@@ -1,7 +1,10 @@
 #include "icm20948.h"
 #include "driver/spi_common.h"
+#include "drivers/Icm20948Defs.h"
+#include "returntypes.h"
 #include "spi.h"
 #include "task.h"
+#include "types.h"
 
 
 /* USO DE INTERRUPCIONES Y FIFO
@@ -46,6 +49,110 @@ retval_t IcmInit(void *p_data)
 /* -------------------------------------------------------------------------- */
 /*                               ICM CONFIG                                   */
 /* -------------------------------------------------------------------------- */
+retval_t IcmConfigDmp(void *p_data){
+    icm_data_t *p_data_icm = (icm_data_t*)p_data;
+    retval_t ret = SPP_ERROR;
+    spp_uint8_t data[2];
+
+    /* Read WHO AM I register */
+    /* First we go to bank 0 */
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_0;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Read the WHO AM I register */
+    data[0] = READ_OP | REG_WHO_AM_I;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if (data[1] != 0xEA){
+        return SPP_ERROR;
+    }
+
+    /* Software reset - write in PWR_MGT_1 */
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = BIT_H_RESET;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+
+    /* Configure the low power mode registers */    
+    /* We write the value we want 0111 0000*/
+    data[0] = WRITE_OP | REG_LP_CONF;
+    data[1] = 0x70;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* We now read read them */
+    data[0] = READ_OP | REG_LP_CONF;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if ((data[1] & 0x70) != 0x70 ){
+        return SPP_ERROR;
+    }
+
+    /* Configure accelerometer and gyroscope */
+    /* Switch to bank 2 */
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_2;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Read the actual config of the accelerometer */
+    data[0] = READ_OP | REG_ACCEL_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* We now write to [1:2] b00 to have +-2g */
+    spp_uint8_t valueSend = data[1] &= ~(0x06); // Cleans bits [2:1]
+    data[0] = WRITE_OP | REG_ACCEL_CONFIG;
+    data[1] = valueSend;  
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* We now read again to check write was ok*/
+    data[0] = READ_OP | REG_ACCEL_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if ((data[1] & 0x06) != 0x06 ){
+        return SPP_ERROR;
+    }
+    /* Same procedure with the gyroscope */
+    /* Read the actual config of the gyroscope */
+    data[0] = READ_OP | REG_GYRO_CONFIG_1;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* We now write to [1:2] b00 to have +-250dps */
+    valueSend = data[1] &= ~(0x06); // Cleans bits [2:1]
+    data[0] = WRITE_OP | REG_GYRO_CONFIG_1;
+    data[1] = valueSend;  
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* We now read again to check write was ok*/
+    data[0] = READ_OP | REG_GYRO_CONFIG_1;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if ((data[1] & 0x06) != 0x06 ){
+        return SPP_ERROR;
+    }
+
+    /* Configure the Low Pass Filter for accelerometer and gyroscope */
+    /* Start with the accelerometer */
+    /* Read the accelerometer config register */
+    data[0] = READ_OP | REG_ACCEL_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /*Write the configuration for the LPF of the accelerometer */
+
+
+
+
+
+    return SPP_OK;
+}
 
 retval_t IcmConfig(void *p_data)
 {

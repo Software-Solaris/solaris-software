@@ -29,7 +29,7 @@ void app_main(void)
         return;
     }
 
-    ret = IcmConfig((void*)&s_icm);
+    ret = IcmConfigDmp((void*)&s_icm);
     if (ret != SPP_OK){
         return;
     }
