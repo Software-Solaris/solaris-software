@@ -7,7 +7,9 @@
   },
 
   "runArgs": [
+    "--device=/dev/ttyACM0",
     "--privileged"
+
   ],
 
   "settings": { "terminal.integrated.defaultProfile.linux": "bash" },

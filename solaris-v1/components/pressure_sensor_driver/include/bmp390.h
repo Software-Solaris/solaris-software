@@ -14,7 +14,7 @@
 
 //---------------------INIT------------------------------
 #define BMP_INIT_PRIO   4
-#define BMP_INIT_TASK_STACK_SIZE 1024
+#define BMP_INIT_TASK_STACK_SIZE 4096
 #define BMP390_EVT_DRDY   (1u << 0) 
 
 typedef struct {
