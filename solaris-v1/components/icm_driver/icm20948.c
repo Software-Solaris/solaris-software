@@ -5,8 +5,12 @@
 #include "task.h"
 #include "types.h"
 
-static DMA_ATTR spp_uint8_t data[2];
-static DMA_ATTR spp_uint8_t data_2[2];
+static spp_uint8_t data[2];
+static spp_uint8_t data_2[2];
+
+static const spp_uint8_t dmp3_image[] = {
+    #include "icm20948_img.dmp3a.h"
+};
 
 
 /* USO DE INTERRUPCIONES Y FIFO
@@ -51,6 +55,128 @@ retval_t IcmInit(void *p_data)
 /* -------------------------------------------------------------------------- */
 /*                               ICM CONFIG                                   */
 /* -------------------------------------------------------------------------- */
+retval_t IcmLoadDmp(void *p_data)
+{
+    icm_data_t  *p_data_icm = (icm_data_t *)p_data;
+    retval_t     ret        = SPP_ERROR;
+    spp_uint8_t  data[2]    = {0};
+
+    /* If firmware is already loaded, skip the whole process */
+    if (p_data_icm->firmware_loaded)
+        return SPP_OK;
+
+    /* ------------------------------------------------------------------ */
+    /* 1. Make sure the chip is fully awake before accessing DMP memory    */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_0;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = 0x01;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* Disable low power mode - required for DMP memory access */
+    data[0] = WRITE_OP | REG_LP_CONF;
+    data[1] = 0x00;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* ------------------------------------------------------------------ */
+    /* 2. Switch to bank 0 - DMP memory registers live here               */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_0;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* ------------------------------------------------------------------ */
+    /* 3. Write firmware byte by byte into DMP internal RAM               */
+    /*    DMP_LOAD_START = 0x1000                                         */
+    /*    For each address: high byte -> MEM_BANK_SEL                     */
+    /*                      low byte  -> MEM_START_ADDR                   */
+    /*                      data byte -> MEM_R_W                          */
+    /* ------------------------------------------------------------------ */
+    spp_uint16_t       fw_size  = sizeof(dmp3_image);
+    spp_uint16_t       memaddr  = DMP_LOAD_START;
+    const spp_uint8_t *fw_ptr   = dmp3_image;
+
+    while (fw_size > 0)
+    {
+        /* Select DMP memory bank (high byte of the 16-bit address) */
+        data[0] = WRITE_OP | REG_MEM_BANK_SEL;
+        data[1] = (spp_uint8_t)(memaddr >> 8);
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        /* Select byte offset within that bank (low byte of the address) */
+        data[0] = WRITE_OP | REG_MEM_START_ADDR;
+        data[1] = (spp_uint8_t)(memaddr & 0xFF);
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        /* Write the firmware byte through the memory window register */
+        data[0] = WRITE_OP | REG_MEM_R_W;
+        data[1] = *fw_ptr;
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        fw_ptr++;
+        fw_size--;
+        memaddr++;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* 4. Verify - read back every byte and compare with original         */
+    /* ------------------------------------------------------------------ */
+    fw_size = sizeof(dmp3_image);
+    memaddr = DMP_LOAD_START;
+    fw_ptr  = dmp3_image;
+
+    while (fw_size > 0)
+    {
+        /* Select DMP memory bank */
+        data[0] = WRITE_OP | REG_MEM_BANK_SEL;
+        data[1] = (spp_uint8_t)(memaddr >> 8);
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        /* Select byte offset within that bank */
+        data[0] = WRITE_OP | REG_MEM_START_ADDR;
+        data[1] = (spp_uint8_t)(memaddr & 0xFF);
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        /* Read the byte back through the memory window register */
+        data[0] = READ_OP | REG_MEM_R_W;
+        data[1] = EMPTY_MESSAGE;
+        ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+        if (ret != SPP_OK) return ret;
+
+        /* If it does not match the original, the write failed */
+        if (data[1] != *fw_ptr)
+            return SPP_ERROR;
+
+        fw_ptr++;
+        fw_size--;
+        memaddr++;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* 5. Restore low power mode and mark firmware as loaded              */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_LP_CONF;
+    data[1] = 0x40;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    p_data_icm->firmware_loaded = true;
+
+    return SPP_OK;
+}
+
 retval_t IcmConfigDmp(void *p_data){
     icm_data_t *p_data_icm = (icm_data_t*)p_data;
     retval_t ret = SPP_ERROR;
@@ -330,6 +456,13 @@ retval_t IcmConfigDmp(void *p_data){
     data[1] = 0x00;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
+
+    /* Load DMP firmware */
+    ret = IcmLoadDmp((void*)p_data_icm);
+    if (ret!= SPP_OK){
+        return ret;
+    }
+    
 
     
     return SPP_OK;

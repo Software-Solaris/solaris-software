@@ -3,6 +3,7 @@
 
 #include "returntypes.h"
 #include "general.h"
+#include "types.h"
 
 #define ICM_TASK_PRIORITY  4 
 #define ICM_CONFIG_TASK_PRIORITY 5
@@ -29,6 +30,12 @@
 #define REG_INT_ENABLE_1   0x11
 #define REG_DMP_ADDR_MSB   0x50
 #define REG_DMP_ADDR_LSB   0x51
+
+//-----------------------------DMP REGISTERS-----------------------------
+#define REG_MEM_BANK_SEL    0x7E    
+#define REG_MEM_START_ADDR  0x7C    
+#define REG_MEM_R_W         0x7D   
+#define DMP_LOAD_START      0x1000 
 
 
 // -- fifo config --
@@ -115,6 +122,7 @@
 
 typedef struct{
     void *p_handler_spi;
+    spp_bool_t firmware_loaded;
 }icm_data_t;
 
 
