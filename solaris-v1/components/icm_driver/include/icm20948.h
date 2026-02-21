@@ -41,18 +41,26 @@
 #define REG_SLV0_REG       0x04 // On data bank 3
 #define REG_SLV0_CTRL      0x05 // On data bank 3
 #define REG_SLV0_DO        0x06 // On data bank 3
+#define I2C_SLV1_ADDR      0x07
+#define I2C_SLV1_REG       0x08
+#define I2C_SLV1_CTRL      0x09
+#define I2C_SLV1_DO        0x0A
 #define REG_SLV4_ADDR      0x13 // On data bank 3
 #define REG_SLV4_REG       0x14 // On data bank 3
 #define REG_SLV4_CTRL      0x15 // On data bank 3
 #define REG_SLV4_DO        0x16 // On data bank 3
 #define REG_SLV4_DI        0x17 // On data bank 3
+#define I2C_SLV2_ADDR      0x0B
+#define PERIPH1_DO         0x01
 
 // -- sensor config --
 #define REG_ACCEL_CONFIG   0X14 // On data bank 2
 #define REG_GYRO_CONFIG    0x01 // On data bank 2
 
 #define REG_BANK_SEL       0x7F
+#define REG_BANK_0         0x00
 #define REG_BANK_2         0x20
+#define REG_BANK_3         0x30
 
 //-----------------------------ACCELEROMETER-----------------------------
 #define REG_ACCEL_X_H     0x2D
@@ -77,6 +85,7 @@
 #define REG_MAGNETO_Y_L   0x3E
 #define REG_MAGNETO_Z_H   0x41
 #define REG_MAGNETO_Z_L   0x40
+#define REG_CNTL2             0x31
 
 
 //-----------------------------MESSAGES-----------------------------

@@ -1,10 +1,12 @@
 #include "icm20948.h"
 #include "driver/spi_common.h"
-#include "drivers/Icm20948Defs.h"
 #include "returntypes.h"
 #include "spi.h"
 #include "task.h"
 #include "types.h"
+
+static DMA_ATTR spp_uint8_t data[2];
+static DMA_ATTR spp_uint8_t data_2[2];
 
 
 /* USO DE INTERRUPCIONES Y FIFO
@@ -52,7 +54,7 @@ retval_t IcmInit(void *p_data)
 retval_t IcmConfigDmp(void *p_data){
     icm_data_t *p_data_icm = (icm_data_t*)p_data;
     retval_t ret = SPP_ERROR;
-    spp_uint8_t data[2];
+    spp_uint8_t data[2] = {0};
 
     /* Read WHO AM I register */
     /* First we go to bank 0 */
@@ -76,21 +78,37 @@ retval_t IcmConfigDmp(void *p_data){
     if (ret != SPP_OK) return ret;
     SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
-    /* Configure the low power mode registers */    
-    /* We write the value we want 0111 0000*/
-    data[0] = WRITE_OP | REG_LP_CONF;
-    data[1] = 0x70;
+    /* Wake up sensor */
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = 0x00;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
-    /* We now read read them */
-    data[0] = READ_OP | REG_LP_CONF;
+    data[0] = READ_OP| REG_PWR_MGMT_1;
     data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
-    if ((data[1] & 0x70) != 0x70 ){
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+    if (data[1] != 0x0){
         return SPP_ERROR;
     }
+
+    /* Configure the low power mode registers */    
+    /* We write the value we want 0111 0000*/
+    // data[0] = WRITE_OP | REG_LP_CONF;
+    // data[1] = 0x70;
+    // ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    // if (ret != SPP_OK) return ret;
+
+    // /* We now read read them */
+    // data[0] = READ_OP | REG_LP_CONF;
+    // data[1] = EMPTY_MESSAGE;
+    // ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    // if (ret != SPP_OK) return ret;
+    // if ((data[1] & 0x70) != 0x70 ){
+    //     return SPP_ERROR;
+    // }
 
     /* Configure accelerometer and gyroscope */
     /* Switch to bank 2 */
@@ -114,27 +132,27 @@ retval_t IcmConfigDmp(void *p_data){
     data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
-    if ((data[1] & 0x06) != 0x06 ){
+    if ((data[1] & 0x06) != 0x00 ){
         return SPP_ERROR;
     }
     /* Same procedure with the gyroscope */
     /* Read the actual config of the gyroscope */
-    data[0] = READ_OP | REG_GYRO_CONFIG_1;
+    data[0] = READ_OP | REG_GYRO_CONFIG;
     data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
     /* We now write to [1:2] b00 to have +-250dps */
     valueSend = data[1] &= ~(0x06); // Cleans bits [2:1]
-    data[0] = WRITE_OP | REG_GYRO_CONFIG_1;
+    data[0] = WRITE_OP | REG_GYRO_CONFIG;
     data[1] = valueSend;  
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
     /* We now read again to check write was ok*/
-    data[0] = READ_OP | REG_GYRO_CONFIG_1;
+    data[0] = READ_OP | REG_GYRO_CONFIG;
     data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
-    if ((data[1] & 0x06) != 0x06 ){
+    if ((data[1] & 0x06) != 0x00 ){
         return SPP_ERROR;
     }
 
@@ -146,6 +164,95 @@ retval_t IcmConfigDmp(void *p_data){
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
     /*Write the configuration for the LPF of the accelerometer */
+    valueSend = data[1] &= ~(0x38); /* Clean de bits [3:5] */
+    valueSend |= (0x07 << 3); /* DLPCFG 7 0b111 */
+    data[0] = WRITE_OP | REG_ACCEL_CONFIG;
+    data[1] = valueSend;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Read back to check bits are high */
+    data[0] = READ_OP | REG_ACCEL_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if ((data[1] & 0x38) != (0x07 << 3) ){
+        return SPP_ERROR;
+    }
+    /* Continue with the gyroscope */
+    /* Read the gyroscope config register */
+    data[0] = READ_OP | REG_GYRO_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /*Write the configuration for the LPF of the gyroscope */
+    valueSend = data[1] &= ~(0x38); /* Clean de bits [3:5] */
+    valueSend |= (0x07 << 3); /* DLPCFG 7 0b111 */
+    data[0] = WRITE_OP | REG_GYRO_CONFIG;
+    data[1] = 0x3F;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Read back to check bits are high */
+    data[0] = READ_OP | REG_GYRO_CONFIG;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if ((data[1] & 0x38) != (0x07 << 3) ){
+        return SPP_ERROR;
+    }
+
+    /* Configure the DMP */
+    /* Init the default config for the DMP */
+    /* Switch to bank 3*/
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_3;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    data[0] = WRITE_OP | REG_SLV0_ADDR;
+    data[1] = (READ_OP | MAGNETO_WR_ADDR);
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /*Read from register 0x03 (RSVD register!)*/
+    data[0] = WRITE_OP | REG_SLV0_REG;
+    data[1] = 0x03;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Secret sauce & some magic! */
+    data[0] = WRITE_OP | REG_SLV0_CTRL;
+    /*  Enable reads from magneto at sample rate established
+        Swap little endian to big endian when reading 
+        Group tougether the bytes read
+        Read 10 bytes at a time */
+    data[1] = 0xDA; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /*  Configure the trigger of the magnetometer 
+        Write 0x01 in CNTL2 in each sample rate */
+    /* Say we will perform write operations on magnetometer */
+    data[0] = WRITE_OP | I2C_SLV1_ADDR;
+    data[1] = (WRITE_OP | MAGNETO_WR_ADDR);
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Register to write */
+    data[0] = WRITE_OP | I2C_SLV1_REG;
+    data[1] = REG_CNTL2;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* We command it to write 0x01 to register CNTL_2*/
+    data[0] = WRITE_OP | I2C_SLV1_DO;
+    data[1] = 0x01; /* SINGLE_MODE */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    data[0] = WRITE_OP | I2C_SLV1_CTRL;
+    data[1] = 0x81;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+
+
+    
+
 
 
 
