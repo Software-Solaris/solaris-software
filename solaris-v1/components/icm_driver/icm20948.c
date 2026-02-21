@@ -251,7 +251,7 @@ retval_t IcmConfigDmp(void *p_data){
     if (ret != SPP_OK) return ret;
     /* Select clouck source */
     data[0] = WRITE_OP | REG_PWR_MGMT_1;
-    data[1] = 0x06; 
+    data[1] = 0x01; 
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
     /* Enable sensors */
