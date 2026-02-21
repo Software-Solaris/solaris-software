@@ -78,12 +78,18 @@ retval_t IcmConfigDmp(void *p_data){
     if (ret != SPP_OK) return ret;
     SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
-    /* Wake up sensor */
-    data[0] = WRITE_OP | REG_PWR_MGMT_1;
-    data[1] = 0x00;
+    data[0] = READ_OP| REG_PWR_MGMT_1;
+    data[1] = EMPTY_MESSAGE;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
     SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
+
+    /* Wake up sensor */
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = 0x00; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(500));
 
     data[0] = READ_OP| REG_PWR_MGMT_1;
     data[1] = EMPTY_MESSAGE;
@@ -93,22 +99,6 @@ retval_t IcmConfigDmp(void *p_data){
     if (data[1] != 0x0){
         return SPP_ERROR;
     }
-
-    /* Configure the low power mode registers */    
-    /* We write the value we want 0111 0000*/
-    // data[0] = WRITE_OP | REG_LP_CONF;
-    // data[1] = 0x70;
-    // ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
-    // if (ret != SPP_OK) return ret;
-
-    // /* We now read read them */
-    // data[0] = READ_OP | REG_LP_CONF;
-    // data[1] = EMPTY_MESSAGE;
-    // ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
-    // if (ret != SPP_OK) return ret;
-    // if ((data[1] & 0x70) != 0x70 ){
-    //     return SPP_ERROR;
-    // }
 
     /* Configure accelerometer and gyroscope */
     /* Switch to bank 2 */
@@ -248,16 +238,100 @@ retval_t IcmConfigDmp(void *p_data){
     data[1] = 0x81;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
     if (ret != SPP_OK) return ret;
+    /* Cosnfigure the rate at which the ICM will talk to the magnetometer */
+    data[0] = WRITE_OP | I2C_MST_ODR_CONFIG;
+    data[1] = 0x04; /* 68.75Hz */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
 
+    /* Switch to bank 0*/
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_0;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Select clouck source */
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = 0x06; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Enable sensors */
+    data[0] = WRITE_OP | REG_PWR_MGMT_2;
+    data[1] = 0x40; /* Enable gyro, accel and secret register to deactivate a pressure sensor it does not have*/
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /*Set I2C Master to low power */
+    data[0] = WRITE_OP | REG_LP_CONF;
+    data[1] = 0x40; /* Put I2C in duty cycle mode */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Write USER_CTRL register to disable DMP and FIFO*/
+    data[0] = WRITE_OP | REG_USER_CTRL;
+    data[1] = 0x00; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Disable FIFO */
+    data[0] = WRITE_OP | REG_FIFO_EN_1;
+    data[1] = 0x00; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    data[0] = WRITE_OP | REG_FIFO_EN_2;
+    data[1] = 0x00; 
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
 
+    /* Read INT_ENABLE_1 */
+    data[0] = READ_OP | REG_INT_ENABLE_1;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Clear bit RAW_DATA_0_RDY_EN and write back */
+    data[0] = WRITE_OP | REG_INT_ENABLE_1;
+    data[1] = data[1] & ~(0x01);
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Readback to verify */
+    data[0] = READ_OP | REG_INT_ENABLE_1;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if (data[1] & 0x01) return SPP_ERROR;
+
+    /* Assert FIFO reset */
+    data[0] = WRITE_OP | REG_FIFO_RST;
+    data[1] = 0x1F; /* bits 4:0 todos a 1 */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* De-assert FIFO reset */
+    data[0] = WRITE_OP | REG_FIFO_RST;
+    data[1] = 0x00; /* bits 4:0 todos a 0 */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* Switch to bank 2*/
+    data[0] = WRITE_OP | REG_BANK_SEL;
+    data[1] = REG_BANK_2;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Set measurement frecuency gyro*/
+    data[0] = WRITE_OP | REG_GYRO_SMPLRT_DIV;
+    data[1] = 0x13; /* 55Hz */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    /* Set frequency measurement accel */
+    data[0] = WRITE_OP | REG_ACCEL_SMPLRT_DIV_2;
+    data[1] = 0x13; /* 56.25Hz */
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* Write DMP start address to secret register 0x1000 */
+    data[0] = WRITE_OP | REG_DMP_ADDR_MSB;
+    data[1] = 0x10;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    data[0] = WRITE_OP | REG_DMP_ADDR_LSB;
+    data[1] = 0x00;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
 
     
-
-
-
-
-
-
     return SPP_OK;
 }
 

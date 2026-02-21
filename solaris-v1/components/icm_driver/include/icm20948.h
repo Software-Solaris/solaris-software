@@ -25,6 +25,11 @@
 #define REG_USER_CTRL      0x03
 #define REG_LP_CONF        0x05
 #define REG_PWR_MGMT_1     0x06
+#define REG_PWR_MGMT_2     0x07
+#define REG_INT_ENABLE_1   0x11
+#define REG_DMP_ADDR_MSB   0x50
+#define REG_DMP_ADDR_LSB   0x51
+
 
 // -- fifo config --
 #define REG_FIFO_EN_1      0x66
@@ -36,6 +41,7 @@
 #define REG_FIFO_R_W       0x72
 
 // -- i2c master --
+#define I2C_MST_ODR_CONFIG 0x00
 #define REG_I2C_CTRL       0x01 // On data bank 3
 #define REG_SLV0_ADDR      0x03 // On data bank 3
 #define REG_SLV0_REG       0x04 // On data bank 3
@@ -69,6 +75,7 @@
 #define REG_ACCEL_Y_L     0x30
 #define REG_ACCEL_Z_H     0x31
 #define REG_ACCEL_Z_L     0x32
+#define REG_ACCEL_SMPLRT_DIV_2 0x11
 
 //-----------------------------GYROSCOPE-----------------------------
 #define REG_GYRO_X_H      0x33
@@ -77,6 +84,7 @@
 #define REG_GYRO_Y_L      0x36
 #define REG_GYRO_Z_H      0x37
 #define REG_GYRO_Z_L      0x38
+#define REG_GYRO_SMPLRT_DIV 0x00
 
 //-----------------------------MAGNETOMETER-----------------------------
 #define REG_MAGNETO_X_H   0x3D
