@@ -57,9 +57,93 @@ retval_t IcmInit(void *p_data)
 /* -------------------------------------------------------------------------- */
 retval_t IcmLoadDmp(void *p_data)
 {
-    icm_data_t  *p_data_icm = (icm_data_t *)p_data;
-    retval_t     ret        = SPP_ERROR;
-    spp_uint8_t  data[2]    = {0};
+    icm_data_t *p_data_icm = (icm_data_t *)p_data;
+    retval_t    ret        = SPP_ERROR;
+    spp_uint8_t data[2]   = {0};
+
+    /* ------------------------------------------------------------------ */
+    /* 1. Despertar chip                                                   */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_PWR_MGMT_1;
+    data[1] = 0x01;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* ------------------------------------------------------------------ */
+    /* 2. LP_CONFIG — modo duty cycled (requerido por doc InvenSense)      */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_LP_CONF;
+    data[1] = 0x70;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* ------------------------------------------------------------------ */
+    /* 3. USER_CTRL — deshabilitar I2C, activar modo SPI exclusivo         */
+    /* ------------------------------------------------------------------ */
+    data[0] = WRITE_OP | REG_USER_CTRL;
+    data[1] = 0x10;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* Verificar que USER_CTRL vale 0x10 antes de continuar */
+    data[0] = READ_OP | REG_USER_CTRL;
+    data[1] = 0x00;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return ret;
+    if (data[1] != 0x10) return SPP_ERROR;   /* Si no es 0x10, algo falla antes de llegar a la RAM */
+
+    /* ------------------------------------------------------------------ */
+    /* TEST: Escribir 0xFA, 0xBA, 0xDA en DMP RAM y leer de vuelta        */
+    /* Direcciones 0x0090, 0x0091, 0x0092                                 */
+    /* ------------------------------------------------------------------ */
+    {
+        volatile const spp_uint8_t test_pattern[3] = {0xFA, 0xBA, 0xDA};
+        volatile spp_uint8_t       read_back[3]    = {0x00, 0x00, 0x00};
+
+        /* --- ESCRIBIR 3 bytes --- */
+        for (int i = 0; i < 3; i++)
+        {
+            data[0] = WRITE_OP | REG_MEM_BANK_SEL;
+            data[1] = (spp_uint8_t)((DMP_LOAD_START + i) >> 8);   /* 0x00 para los 3 */
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+
+            data[0] = WRITE_OP | REG_MEM_START_ADDR;
+            data[1] = (spp_uint8_t)((DMP_LOAD_START + i) & 0xFF); /* 0x90, 0x91, 0x92 */
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+
+            data[0] = WRITE_OP | REG_MEM_R_W;
+            data[1] = test_pattern[i];
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+        }
+
+        /* --- LEER 3 bytes de vuelta --- */
+        for (int i = 0; i < 3; i++)
+        {
+            data[0] = WRITE_OP | REG_MEM_BANK_SEL;
+            data[1] = (spp_uint8_t)((DMP_LOAD_START + i) >> 8);
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+
+            data[0] = WRITE_OP | REG_MEM_START_ADDR;
+            data[1] = (spp_uint8_t)((DMP_LOAD_START + i) & 0xFF);
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+
+            data[0] = READ_OP | REG_MEM_R_W;
+            data[1] = 0x00;
+            ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, data, 2);
+            if (ret != SPP_OK) return ret;
+
+            read_back[i] = data[1];   /* ← breakpoint aquí para inspeccionar */
+        }
+
+        /* Esperado: 0xFA, 0xBA, 0xDA */
+        if (read_back[0] != 0xFA || read_back[1] != 0xBA || read_back[2] != 0xDA)
+            return SPP_ERROR;
+    }
 
     /* If firmware is already loaded, skip the whole process */
     if (p_data_icm->firmware_loaded)

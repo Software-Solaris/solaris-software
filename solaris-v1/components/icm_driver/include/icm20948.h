@@ -35,7 +35,7 @@
 #define REG_MEM_BANK_SEL    0x7E    
 #define REG_MEM_START_ADDR  0x7C    
 #define REG_MEM_R_W         0x7D   
-#define DMP_LOAD_START      0x1000 
+#define DMP_LOAD_START      0x0090 
 
 
 // -- fifo config --
