@@ -12,13 +12,12 @@ static const char* TAG = "MAIN";
 
 void app_main(void)
 {
-    Core_Init();
     retval_t ret;
     SPP_LOGI(TAG, "Starting application...");
     SPP_OSAL_TaskDelay(5000);
 
-    // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
     Core_Init();
+    SPP_LOGI(TAG, "Starting BMP390 INT test...");
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
 
@@ -95,7 +94,8 @@ void app_main(void)
     float altitude = 0.0f;
     ret = bmp390_get_altitude(p_spi_bmp, &s_bmp, &altitude);
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Failed to read altitude from BMP390");
+        SPP_LOGE(TAG, "SPP_HAL_SPI_DeviceInit(ICM dummy) failed");
+        while (1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
     }
 
     // Step 2: Initialize ICM SPI Device
