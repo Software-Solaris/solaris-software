@@ -583,3 +583,15 @@ retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude)
 
     return ret;
 }
+
+//--------------------INT---------------------------
+retval_t bmp390_int_enable_drdy(void *p_spi)
+{
+    retval_t ret;
+    spp_uint8_t buf[2] = { BMP390_REG_INT_CTRL, (spp_uint8_t)(BMP390_INT_CTRL_LEVEL | BMP390_INT_CTRL_DRDY_EN) }; // NO latch
+    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    if (ret != SPP_OK) {
+        return ret;
+    }
+    return SPP_OK;
+}
