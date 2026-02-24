@@ -540,17 +540,24 @@ retval_t bmp390_aux_get_press(void *p_spi, const bmp390_press_params_t *press_pa
  * 
  * @return retval_t Status code indicating success or failure of the SPI transmission.
  */
-retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude)
+retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude_m, float *pressure_pa, float *temperature_c)
 {
+    (void)p_bmp; // DRDY wait is handled outside
+
+    if ((p_spi == NULL) || (altitude_m == NULL) || (pressure_pa == NULL) || (temperature_c == NULL)) {
+        return SPP_ERROR_NULL_POINTER;
+    }
+
     retval_t ret;
-    float t_lin;
-    float comp_press;
 
     static spp_bool_t s_inited = false;
     static bmp390_temp_params_t temp_params_static;
     static bmp390_press_params_t press_params_static;
     static spp_uint32_t raw_temp_static;
     static spp_uint32_t raw_press_static;
+
+    float t_lin = 0.0f;
+    float comp_press = 0.0f;
 
     if (s_inited == false)
     {
@@ -563,25 +570,19 @@ retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude)
         s_inited = true;
     }
 
-    ret = bmp390_wait_drdy(p_bmp, 1000);
-    if (ret != SPP_OK) {
-        return ret;
-    }
+    // No wait here, DRDY is managed by caller task
 
     ret = bmp390_aux_get_temp(p_spi, &temp_params_static, &raw_temp_static, &t_lin);
-    if (ret != SPP_OK) {
-        return ret;
-    }
+    if (ret != SPP_OK) return ret;
 
     ret = bmp390_aux_get_press(p_spi, &press_params_static, t_lin, &raw_press_static, &comp_press);
-    if (ret != SPP_OK) {
-        return ret;
-    }
+    if (ret != SPP_OK) return ret;
 
-    *altitude = 44330.0f * (1.0f - powf(comp_press / 101325.0f, 1.0f / 5.255f));
-    SPP_LOGI(TAG, "Altitude: %.2f m, Pressure: %.2f Pa, Temperature: %.2f C", *altitude, comp_press, t_lin);
+    *temperature_c = t_lin;
+    *pressure_pa   = comp_press;
+    *altitude_m    = 44330.0f * (1.0f - powf(comp_press / 101325.0f, 1.0f / 5.255f));
 
-    return ret;
+    return SPP_OK;
 }
 
 //--------------------INT---------------------------
