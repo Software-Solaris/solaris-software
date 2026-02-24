@@ -29,12 +29,33 @@ void app_main(void)
         return;
     }
 
-    ret = IcmConfigDmp((void*)&s_icm);
+    ret = IcmConfigDmpInit((void*)&s_icm);
     if (ret != SPP_OK){
         return;
     }
 
-    IcmGetSensorsData((void*)&s_icm);
+    // IcmGetSensorsData((void*)&s_icm);
+    while(true){
+        spp_uint8_t data[2] = {0};
+        data[0] = READ_OP | REG_FIFO_COUNTH;
+        data[1] = EMPTY_MESSAGE;
+        ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, data, 2);
+        if (ret != SPP_OK) return;
+        spp_uint8_t count_h = data[1];
+
+        data[0] = READ_OP | REG_FIFO_COUNTL;
+        data[1] = EMPTY_MESSAGE;
+        ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, data, 2);
+        if (ret != SPP_OK) return;
+        spp_uint8_t count_l = data[1];
+
+        spp_uint16_t fifo_count = ((spp_uint16_t)count_h << 8) | count_l;
+
+        if (fifo_count > 0)
+        {
+            return;
+        }
+    }
 
 
     vTaskDelay(pdMS_TO_TICKS(50));
