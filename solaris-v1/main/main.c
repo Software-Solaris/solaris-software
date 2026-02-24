@@ -17,7 +17,19 @@ void app_main(void)
     SPP_OSAL_TaskDelay(5000);
 
     Core_Init();
-    SPP_LOGI(TAG, "Starting BMP390 INT test...");
+    SPP_LOGI(TAG, "Starting BMP390 -> DataBank -> DB_FLOW (loop)");
+
+    ret = SPP_DATABANK_init();
+    if (ret != SPP_OK) {
+        SPP_LOGE(TAG, "SPP_DATABANK_init failed");
+        for (;;) { SPP_OSAL_TaskDelay(1000); }
+    }
+
+    ret = DB_FLOW_Init();
+    if (ret != SPP_OK) {
+        SPP_LOGE(TAG, "DB_FLOW_Init failed");
+        for (;;) { SPP_OSAL_TaskDelay(1000); }
+    }
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
 
@@ -95,7 +107,7 @@ void app_main(void)
     ret = bmp390_get_altitude(p_spi_bmp, &s_bmp, &altitude);
     if (ret != SPP_OK) {
         SPP_LOGE(TAG, "SPP_HAL_SPI_DeviceInit(ICM dummy) failed");
-        while (1) { vTaskDelay(pdMS_TO_TICKS(1000)); }
+        for (;;) { SPP_OSAL_TaskDelay(1000); }
     }
 
     // Step 2: Initialize ICM SPI Device
