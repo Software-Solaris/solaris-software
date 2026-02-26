@@ -46,8 +46,14 @@
 #define REG_MEM_START_ADDR          0x7C
 #define REG_MEM_R_W                 0x7D
 #define DMP_LOAD_START              0x0090
+#define REG_HW_FIX_DISABLE          0x75  /* Bank 0 */
+#define REG_SINGLE_FIFO_PRIORITY_SEL 0x26  /* Bank 0 */
+#define REG_FIFO_CFG                0x76  /* Bank 0 */
+#define REG_PERIPH_SENS_DATA_00     0x3B  /* Bank 0 - datos leídos por I2C master */
+#define REG_DMP_INT_STATUS          0x18  /* Bank 0 */
+#define REG_INT_STATUS              0x19  /* Bank 0 */
+#define REG_ACCEL_CONFIG_2          0x15  /* Bank 2 */
 
-// -- DMP internal RAM addresses (written via MEM_BANK_SEL/START_ADDR/R_W) --
 #define DMP_DATA_OUT_CTL1           (4  * 16)        /* 0x0040 */
 #define DMP_DATA_OUT_CTL2           (4  * 16 + 2)    /* 0x0042 */
 #define DMP_DATA_INTR_CTL           (4  * 16 + 12)   /* 0x004C */
@@ -68,6 +74,27 @@
 #define DMP_CPASS_MTX_20            (24 * 16 + 8)    /* 0x0188 */
 #define DMP_CPASS_MTX_21            (24 * 16 + 12)   /* 0x018C */
 #define DMP_CPASS_MTX_22            (25 * 16)         /* 0x0190 */
+
+#define DMP_FIFO_WATERMARK          (31 * 16 + 14)   /* 0x01FE */
+#define DMP_BAC_RATE                (48 * 16 + 10)   /* 0x030A */
+#define DMP_B2S_RATE                (48 * 16 + 8)    /* 0x0308 */
+#define DMP_GYRO_FULLSCALE          (72 * 16 + 12)   /* 0x048C */
+#define DMP_ACCEL_ONLY_GAIN         (16 * 16 + 12)   /* 0x010C */
+#define DMP_ACCEL_ALPHA_VAR         (91 * 16)         /* 0x05B0 */
+#define DMP_ACCEL_A_VAR             (92 * 16)         /* 0x05C0 */
+#define DMP_ACCEL_CAL_INIT          (94 * 16 + 4)    /* 0x05E4 */
+#define DMP_ODR_QUAT6               (10 * 16 + 12)   /* 0x00AC */
+
+// -- B2S mounting matrix (nueva) --
+#define DMP_B2S_MTX_00              (208 * 16)        /* 0x0D00 */
+#define DMP_B2S_MTX_01              (208 * 16 + 4)   /* 0x0D04 */
+#define DMP_B2S_MTX_02              (208 * 16 + 8)   /* 0x0D08 */
+#define DMP_B2S_MTX_10              (208 * 16 + 12)  /* 0x0D0C */
+#define DMP_B2S_MTX_11              (209 * 16)        /* 0x0D10 */
+#define DMP_B2S_MTX_12              (209 * 16 + 4)   /* 0x0D14 */
+#define DMP_B2S_MTX_20              (209 * 16 + 8)   /* 0x0D18 */
+#define DMP_B2S_MTX_21              (209 * 16 + 12)  /* 0x0D1C */
+#define DMP_B2S_MTX_22              (210 * 16)        /* 0x0D20 */
 
 //-----------------------------FIFO-----------------------------
 #define REG_FIFO_EN_1      0x66
