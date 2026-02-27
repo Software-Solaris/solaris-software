@@ -66,20 +66,51 @@ void app_main(void)
 
             spp_uint16_t fifo_count = ((spp_uint16_t)data[1] << 8) | data[2];
 
-            if (fifo_count >= 16)  /* un paquete Quat6 son exactamente 16 bytes */
+            if (fifo_count >= 34)   // ← correcto para accel+gyro_cal+compass_cal
             {
-                /* Leer FIFO_R_W (0x72) — 1 byte cmd + 16 bytes datos */
-                spp_uint8_t fifo_buf[17] = {0};
-                fifo_buf[0] = READ_OP | REG_FIFO_R_W;  /* 0xF2 */
-                ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, fifo_buf, 17);
+                spp_uint8_t fifo_buf[35] = {0};
+                fifo_buf[0] = READ_OP | REG_FIFO_R_W;
+                ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, fifo_buf, 35);
                 if (ret != SPP_OK) return;
 
-                /* fifo_buf[1..2]  = Header  (debe ser 0x0808) */
-                /* fifo_buf[3..6]  = Q1      (4 bytes, big-endian) */
-                /* fifo_buf[7..10] = Q2 */
-                /* fifo_buf[11..14]= Q3 */
-                /* fifo_buf[15..16]= Footer  (gyro count) */
-                break;
+                // Parsear el paquete
+                // fifo_buf[0] = comando SPI, datos empiezan en [1]
+
+                uint16_t header = (fifo_buf[1] << 8) | fifo_buf[2];
+
+                int16_t accel_x = (fifo_buf[3]  << 8) | fifo_buf[4];
+                int16_t accel_y = (fifo_buf[5]  << 8) | fifo_buf[6];
+                int16_t accel_z = (fifo_buf[7]  << 8) | fifo_buf[8];
+
+                int32_t gyro_x  = (fifo_buf[9]  << 24) | (fifo_buf[10] << 16) 
+                                | (fifo_buf[11] << 8)  |  fifo_buf[12];
+                int32_t gyro_y  = (fifo_buf[13] << 24) | (fifo_buf[14] << 16) 
+                                | (fifo_buf[15] << 8)  |  fifo_buf[16];
+                int32_t gyro_z  = (fifo_buf[17] << 24) | (fifo_buf[18] << 16) 
+                                | (fifo_buf[19] << 8)  |  fifo_buf[20];
+
+                int32_t mag_x   = (fifo_buf[21] << 24) | (fifo_buf[22] << 16) 
+                                | (fifo_buf[23] << 8)  |  fifo_buf[24];
+                int32_t mag_y   = (fifo_buf[25] << 24) | (fifo_buf[26] << 16) 
+                                | (fifo_buf[27] << 8)  |  fifo_buf[28];
+                int32_t mag_z   = (fifo_buf[29] << 24) | (fifo_buf[30] << 16) 
+                                | (fifo_buf[31] << 8)  |  fifo_buf[32];
+
+                // Footer
+                uint16_t footer = (fifo_buf[33] << 8) | fifo_buf[34];
+
+                // Convertir a unidades físicas
+                float accel_x_g = accel_x / 8192.0f;   // FSR 4g
+                float accel_y_g = accel_y / 8192.0f;
+                float accel_z_g = accel_z / 8192.0f;
+
+                float gyro_x_dps = gyro_x / 32768.0f;  // 2^15
+                float gyro_y_dps = gyro_y / 32768.0f;
+                float gyro_z_dps = gyro_z / 32768.0f;
+
+                float mag_x_uT = mag_x / 65536.0f;     // 2^16
+                float mag_y_uT = mag_y / 65536.0f;
+                float mag_z_uT = mag_z / 65536.0f;
             }
         }
 
