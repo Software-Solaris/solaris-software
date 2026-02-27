@@ -220,12 +220,7 @@ retval_t IcmConfigDmpInit(void *p_data)
 
     /* --- 2. Disable gyro during firmware load --- */
     buf[0] = WRITE_OP | REG_PWR_MGMT_2;
-    buf[1] = 0x47;
-    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
-    if (ret != SPP_OK) return ret;
-
-    buf[0] = READ_OP | REG_WHO_AM_I;
-    buf[1] = EMPTY_MESSAGE;
+    buf[1] = 0x47; /* Enable last bit, this does something special too */
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
     if (ret != SPP_OK) return ret;
 
@@ -244,7 +239,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmLoadDmp((void *)p_data);
     if (ret != SPP_OK) return ret;
 
-    /* --- 6. Set DMP execution start address 0x1000 (load addr is 0x0090) --- */
+    /* --- 6. Set DMP execution start address 0x1000 (DMP main function starts there) (load addr is 0x0090) --- */
     buf[0] = WRITE_OP | REG_BANK_SEL;
     buf[1] = REG_BANK_2;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
@@ -277,8 +272,8 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS,  0x0000);
     if (ret != SPP_OK) return ret;
 
-    /* --- 8. FIFO watermark = 800 bytes --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 0x0320);
+    /* --- 8. FIFO watermark = 33 bytes --- */
+    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 0x0021);
     if (ret != SPP_OK) return ret;
 
     /* --- 9. Enable DMP interrupt on INT1 pin --- */
@@ -917,7 +912,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     }
 
     /* --- 27. Final DMP output configuration --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x0808);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x0808);
     if (ret != SPP_OK) return ret;
@@ -983,7 +978,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmLpWakeCycle(p_data_icm);
     if (ret != SPP_OK) return ret;
 
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x0808);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x0808);
     if (ret != SPP_OK) return ret;
