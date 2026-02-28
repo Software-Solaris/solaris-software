@@ -17,17 +17,17 @@ void app_main(void)
     SPP_OSAL_TaskDelay(5000);
 
     Core_Init();
-    SPP_LOGI(TAG, "Starting BMP390 -> DataBank -> DB_FLOW (loop)");
+    SPP_LOGI(TAG, "Boot");
 
     ret = SPP_DATABANK_init();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "SPP_DATABANK_init failed");
+        SPP_LOGE(TAG, "Databank init failed");
         for (;;) { SPP_OSAL_TaskDelay(1000); }
     }
 
     ret = DB_FLOW_Init();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "DB_FLOW_Init failed");
+        SPP_LOGE(TAG, "DB_FLOW init failed");
         for (;;) { SPP_OSAL_TaskDelay(1000); }
     }
 
@@ -106,7 +106,7 @@ void app_main(void)
     float altitude = 0.0f;
     ret = bmp390_get_altitude(p_spi_bmp, &s_bmp, &altitude);
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "SPP_HAL_SPI_DeviceInit(ICM dummy) failed");
+        SPP_LOGE(TAG, "SPI dev init ICM dummy failed");
         for (;;) { SPP_OSAL_TaskDelay(1000); }
     }
 
