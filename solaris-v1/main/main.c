@@ -23,6 +23,8 @@ void app_main(void)
     // sleep(5);
     icm_data_t s_icm;
 
+    Core_Init();
+
     SPP_HAL_SPI_BusInit();
 
     ret = IcmInit((void*)&s_icm);
