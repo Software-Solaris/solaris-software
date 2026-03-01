@@ -28,7 +28,7 @@ static void log_packet_basic(const char* prefix, const spp_packet_t* pkt)
         return;
     }
 
-    SPP_LOGE(TAG, "%s pkt=%p ver=%u apid=0x%04X seq=%u len=%u crc=%u",
+    SPP_LOGI(TAG, "%s pkt=%p ver=%u apid=0x%04X seq=%u len=%u crc=%u",
              prefix,
              (void*)pkt,
              (unsigned)pkt->primary_header.version,
@@ -43,7 +43,7 @@ static void log_packet_payload_floats(const char* prefix, const spp_packet_t* pk
     if (pkt == NULL) return;
 
     if (pkt->primary_header.payload_len < 12u) {
-        SPP_LOGE(TAG, "%s payload too small len=%u", prefix, (unsigned)pkt->primary_header.payload_len);
+        SPP_LOGI(TAG, "%s payload too small len=%u", prefix, (unsigned)pkt->primary_header.payload_len);
         return;
     }
 
@@ -55,7 +55,7 @@ static void log_packet_payload_floats(const char* prefix, const spp_packet_t* pk
     memcpy(&p,   &pkt->payload[4],  sizeof(float));
     memcpy(&t,   &pkt->payload[8],  sizeof(float));
 
-    SPP_LOGE(TAG, "%s payload alt=%.2f p=%.2f t=%.2f", prefix, alt, p, t);
+    SPP_LOGI(TAG, "%s payload alt=%.2f p=%.2f t=%.2f", prefix, alt, p, t);
 }
 
 static void bmp_service_task(void* arg)
@@ -72,16 +72,16 @@ static void bmp_service_task(void* arg)
             SPP_LOGE(TAG, "DRDY wait failed ret=%d", (int)ret);
             continue;
         }
-        SPP_LOGE(TAG, "DRDY received");
+        SPP_LOGI(TAG, "DRDY received");
 
         // Get free packet
-        SPP_LOGE(TAG, "Requesting free packet...");
+        SPP_LOGI(TAG, "Requesting free packet...");
         spp_packet_t* pkt = SPP_DATABANK_getPacket();
         if (pkt == NULL) {
-            SPP_LOGE(TAG, "No free packet");
+            SPP_LOGI(TAG, "No free packet");
             continue;
         }
-        SPP_LOGE(TAG, "Got free packet ptr=%p", (void*)pkt);
+        SPP_LOGI(TAG, "Got free packet ptr=%p", (void*)pkt);
         log_packet_basic("FREE_PKT", pkt);
 
         // Read BMP measures
@@ -96,7 +96,7 @@ static void bmp_service_task(void* arg)
             continue;
         }
 
-        SPP_LOGE(TAG, "BMP read alt=%.2f p=%.2f t=%.2f", alt, p, t);
+        SPP_LOGI(TAG, "BMP read alt=%.2f p=%.2f t=%.2f", alt, p, t);
 
         // Fill packet header (CRC=0)
         pkt->primary_header.version     = SPP_PKT_VERSION;
@@ -120,17 +120,17 @@ static void bmp_service_task(void* arg)
         log_packet_payload_floats("FILLED", pkt);
 
         // Publish to ready FIFO
-        SPP_LOGE(TAG, "Publishing to DB_FLOW...");
+        SPP_LOGI(TAG, "Publishing to DB_FLOW...");
         ret = DB_FLOW_PushReady(pkt);
         if (ret != SPP_OK) {
             SPP_LOGE(TAG, "DB_FLOW_PushReady failed ret=%d -> return packet", (int)ret);
             (void)SPP_DATABANK_returnPacket(pkt);
             continue;
         }
-        SPP_LOGE(TAG, "Published ok ready=%lu", (unsigned long)DB_FLOW_ReadyCount());
+        SPP_LOGI(TAG, "Published ok ready=%lu", (unsigned long)DB_FLOW_ReadyCount());
 
         // Simulated consumer pop
-        SPP_LOGE(TAG, "Consumer pop...");
+        SPP_LOGI(TAG, "Consumer pop...");
         spp_packet_t* pkt_rx = NULL;
         ret = DB_FLOW_PopReady(&pkt_rx);
         if ((ret != SPP_OK) || (pkt_rx == NULL)) {
@@ -138,12 +138,12 @@ static void bmp_service_task(void* arg)
             continue;
         }
 
-        SPP_LOGE(TAG, "Consumer got ptr=%p ready=%lu", (void*)pkt_rx, (unsigned long)DB_FLOW_ReadyCount());
+        SPP_LOGI(TAG, "Consumer got ptr=%p ready=%lu", (void*)pkt_rx, (unsigned long)DB_FLOW_ReadyCount());
         log_packet_basic("RECEIVED", pkt_rx);
         log_packet_payload_floats("RECEIVED", pkt_rx);
 
         // Return to databank (databank clears it)
-        SPP_LOGE(TAG, "Returning packet to databank...");
+        SPP_LOGI(TAG, "Returning packet to databank...");
         ret = SPP_DATABANK_returnPacket(pkt_rx);
         if (ret != SPP_OK) {
             SPP_LOGE(TAG, "SPP_DATABANK_returnPacket failed ret=%d", (int)ret);
