@@ -1,7 +1,7 @@
 #include "driver/gpio.h"
 #include "esp_err.h"
 
-#define INT_GPIO GPIO_NUM_17
+#define INT_GPIO 5
 #define FLAG ESP_INTR_FLAG_IRAM //caso crítico, hai mais niveles de prioridades; ESP_INTR_FLAG_EDGE para flancos pode estar ben
 
 

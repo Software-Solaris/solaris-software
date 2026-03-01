@@ -140,12 +140,16 @@ retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press);
 float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p);
 
 //--------------------CALCULATE ALTITUDE---------------------------
-retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude);
+retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude_m, float *pressure_pa, float *temperature_c);
 
 //-----------Aux Functions-----------
 retval_t bmp390_aux_config(void *p_spi);
 retval_t bmp390_aux_get_temp(void *p_spi, const bmp390_temp_params_t *temp_params, spp_uint32_t *raw_temp, float *comp_temp);
 retval_t bmp390_aux_get_press(void *p_spi, const bmp390_press_params_t *press_params, float t_lin, spp_uint32_t *raw_press, float *comp_press);
 
-
+//-----------INT-----------
+#define BMP390_REG_INT_CTRL     0x19
+#define BMP390_INT_CTRL_DRDY_EN 0x40
+#define BMP390_INT_CTRL_LEVEL   0x02   
+retval_t bmp390_int_enable_drdy(void *p_spi);
 #endif  // BMP390_H
