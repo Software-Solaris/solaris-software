@@ -1,7 +1,8 @@
-#include "core/returntypes.h"
 #include "core/core.h"
-#include "databank.h"
-#include "services/logging/spp_log.h"
+#include "core/returntypes.h"
+
+#include "spi.h"
+#include "spp_log.h"
 #include "osal/task.h"
 
 #include "services/databank/databank.h"
@@ -9,18 +10,8 @@
 
 static const char* TAG = "MAIN";
 
-static bmp_data_t s_bmp;
-static icm_data_t s_icm;
-
-// static void bmp_init_task(void *arg)
-// {
-//     BmpInit(arg);
-//     SPP_OSAL_TaskDelete(NULL);
-// }
-
 void app_main(void)
 {
-    Core_Init();
     retval_t ret;
 
     // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
