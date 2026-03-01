@@ -1,7 +1,8 @@
-#include "core/returntypes.h"
 #include "core/core.h"
-#include "databank.h"
-#include "services/logging/spp_log.h"
+#include "core/returntypes.h"
+
+#include "spi.h"
+#include "spp_log.h"
 #include "osal/task.h"
 
 #include "services/databank/databank.h"
@@ -13,14 +14,13 @@ void app_main(void)
 {
     retval_t ret;
 
-    // 1) Init core (si aquí inicializas cosas comunes del proyecto, déjalo)
     Core_Init();
+    SPP_LOGI(TAG, "Boot");
 
-    // 2) Init databank explícito (para debuggear, luego se puede quitar porque el core ya lo inicializa)
     ret = SPP_DATABANK_init();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "SPP_DATABANK_init fallo");
-        while (1) { SPP_OSAL_TaskDelay(1000); }
+        SPP_LOGE(TAG, "Databank init failed");
+        for (;;) { SPP_OSAL_TaskDelay(1000); }
     }
 
     SPP_LOGI(TAG, "=== TEST DATABANK: START ===");
