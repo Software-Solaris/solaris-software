@@ -272,8 +272,8 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS,  0x0000);
     if (ret != SPP_OK) return ret;
 
-    /* --- 8. FIFO watermark = 33 bytes --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 0x0021);
+    /* --- 8. FIFO watermark = 800 bytes --- */
+    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 33U);
     if (ret != SPP_OK) return ret;
 
     /* --- 9. Enable DMP interrupt on INT1 pin --- */
@@ -914,7 +914,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     /* --- 27. Final DMP output configuration --- */
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x0808);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x8060);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;
@@ -980,7 +980,7 @@ retval_t IcmConfigDmpInit(void *p_data)
 
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x0808);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x8060);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;

@@ -57,8 +57,7 @@ void app_main(void)
         /* 3. Solo si DMP generó INT1, leer el FIFO */
         if (int_status & 0x02)
         {
-            /* Leer FIFO_COUNTH + FIFO_COUNTL en una sola transacción */
-            data[0] = READ_OP | REG_FIFO_COUNTH;  /* 0xF0 */
+            data[0] = READ_OP | REG_FIFO_COUNTH;
             data[1] = EMPTY_MESSAGE;
             data[2] = EMPTY_MESSAGE;
             ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, data, 3);
@@ -66,15 +65,27 @@ void app_main(void)
 
             spp_uint16_t fifo_count = ((spp_uint16_t)data[1] << 8) | data[2];
 
-            if (fifo_count >= 34)   // ← correcto para accel+gyro_cal+compass_cal
+            // Overflow: resetear y continuar
+            if (fifo_count > 512)
+            {
+                data[0] = WRITE_OP | REG_FIFO_RST;
+                data[1] = 0x1F;
+                SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, data, 2);
+                data[1] = 0x1E;
+                SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, data, 2);
+                continue;
+            }
+
+            // Calcular cuántos paquetes COMPLETOS hay
+            spp_uint16_t num_packets = fifo_count / 34;
+
+            // Leer TODOS los paquetes de una vez
+            for (spp_uint16_t i = 0; i < num_packets; i++)
             {
                 spp_uint8_t fifo_buf[35] = {0};
                 fifo_buf[0] = READ_OP | REG_FIFO_R_W;
                 ret = SPP_HAL_SPI_Transmit(s_icm.p_handler_spi, fifo_buf, 35);
                 if (ret != SPP_OK) return;
-
-                // Parsear el paquete
-                // fifo_buf[0] = comando SPI, datos empiezan en [1]
 
                 uint16_t header = (fifo_buf[1] << 8) | fifo_buf[2];
 
@@ -82,42 +93,35 @@ void app_main(void)
                 int16_t accel_y = (fifo_buf[5]  << 8) | fifo_buf[6];
                 int16_t accel_z = (fifo_buf[7]  << 8) | fifo_buf[8];
 
-                int32_t gyro_x  = (fifo_buf[9]  << 24) | (fifo_buf[10] << 16) 
+                int32_t gyro_x  = ((int32_t)fifo_buf[9]  << 24) | (fifo_buf[10] << 16)
                                 | (fifo_buf[11] << 8)  |  fifo_buf[12];
-                int32_t gyro_y  = (fifo_buf[13] << 24) | (fifo_buf[14] << 16) 
+                int32_t gyro_y  = ((int32_t)fifo_buf[13] << 24) | (fifo_buf[14] << 16)
                                 | (fifo_buf[15] << 8)  |  fifo_buf[16];
-                int32_t gyro_z  = (fifo_buf[17] << 24) | (fifo_buf[18] << 16) 
+                int32_t gyro_z  = ((int32_t)fifo_buf[17] << 24) | (fifo_buf[18] << 16)
                                 | (fifo_buf[19] << 8)  |  fifo_buf[20];
 
-                int32_t mag_x   = (fifo_buf[21] << 24) | (fifo_buf[22] << 16) 
+                int32_t mag_x   = ((int32_t)fifo_buf[21] << 24) | (fifo_buf[22] << 16)
                                 | (fifo_buf[23] << 8)  |  fifo_buf[24];
-                int32_t mag_y   = (fifo_buf[25] << 24) | (fifo_buf[26] << 16) 
+                int32_t mag_y   = ((int32_t)fifo_buf[25] << 24) | (fifo_buf[26] << 16)
                                 | (fifo_buf[27] << 8)  |  fifo_buf[28];
-                int32_t mag_z   = (fifo_buf[29] << 24) | (fifo_buf[30] << 16) 
+                int32_t mag_z   = ((int32_t)fifo_buf[29] << 24) | (fifo_buf[30] << 16)
                                 | (fifo_buf[31] << 8)  |  fifo_buf[32];
 
-                // Footer
                 uint16_t footer = (fifo_buf[33] << 8) | fifo_buf[34];
 
-                // Convertir a unidades físicas
-                float accel_x_g = accel_x / 8192.0f;   // FSR 4g
-                float accel_y_g = accel_y / 8192.0f;
-                float accel_z_g = accel_z / 8192.0f;
+                float accel_x_g  = accel_x / 8192.0f;
+                float accel_y_g  = accel_y / 8192.0f;
+                float accel_z_g  = accel_z / 8192.0f;
 
-                float gyro_x_dps = gyro_x / 32768.0f;  // 2^15
+                float gyro_x_dps = gyro_x / 32768.0f;
                 float gyro_y_dps = gyro_y / 32768.0f;
                 float gyro_z_dps = gyro_z / 32768.0f;
 
-                float mag_x_uT = mag_x / 65536.0f;     // 2^16
-                float mag_y_uT = mag_y / 65536.0f;
-                float mag_z_uT = mag_z / 65536.0f;
+                float mag_x_uT   = mag_x / 65536.0f;
+                float mag_y_uT   = mag_y / 65536.0f;
+                float mag_z_uT   = mag_z / 65536.0f;
             }
         }
-
-        SPP_OSAL_TaskDelay(pdMS_TO_TICKS(1));
     }
-
-
-    vTaskDelay(pdMS_TO_TICKS(50));
-
+    return;
 }
