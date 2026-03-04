@@ -111,13 +111,13 @@ void app_main(void)
 
                 uint16_t footer = (fifo_buf[33] << 8) | fifo_buf[34];
 
-                float accel_x_g  = accel_x / 8192.0f;
-                float accel_y_g  = accel_y / 8192.0f;
-                float accel_z_g  = accel_z / 8192.0f;
+                float accel_x_g  = accel_x / 16384.0f;
+                float accel_y_g  = accel_y / 16384.0f;
+                float accel_z_g  = accel_z / 16384.0f;
 
-                float gyro_x_dps = gyro_x / 32768.0f;
-                float gyro_y_dps = gyro_y / 32768.0f;
-                float gyro_z_dps = gyro_z / 32768.0f;
+                float gyro_x_dps = gyro_x / 65536.0f;
+                float gyro_y_dps = gyro_y / 65536.0f;
+                float gyro_z_dps = gyro_z / 65536.0f;
 
                 float mag_x_uT   = mag_x / 65536.0f;
                 float mag_y_uT   = mag_y / 65536.0f;
