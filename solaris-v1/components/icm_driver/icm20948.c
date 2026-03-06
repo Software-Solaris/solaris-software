@@ -128,7 +128,7 @@ retval_t IcmLoadDmp(void *p_data)
     spp_uint16_t       memaddr    = DMP_LOAD_START;
     const spp_uint8_t *fw_ptr     = dmp3_image;
 
-    if (p_data_icm->firmware_loaded) return SPP_OK;
+    // if (p_data_icm->firmware_loaded) return SPP_OK;
 
     buf[0] = WRITE_OP | REG_BANK_SEL;
     buf[1] = REG_BANK_0;
@@ -273,7 +273,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     if (ret != SPP_OK) return ret;
 
     /* --- 8. FIFO watermark = 800 bytes --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 33U);
+    ret = IcmDmpWrite16(p_data_icm, DMP_FIFO_WATERMARK, 800U);
     if (ret != SPP_OK) return ret;
 
     /* --- 9. Enable DMP interrupt on INT1 pin --- */
@@ -912,9 +912,9 @@ retval_t IcmConfigDmpInit(void *p_data)
     }
 
     /* --- 27. Final DMP output configuration --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x8060);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;
@@ -978,9 +978,9 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmLpWakeCycle(p_data_icm);
     if (ret != SPP_OK) return ret;
 
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0x8060);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0x8060);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;
@@ -997,11 +997,120 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x0003);
     if (ret != SPP_OK) return ret;
 
-    /* --- 33. Start DMP: LP mode on, polling begins after this --- */
+
+
+    /* --- 33. Configurar I2C SLV0/SLV1 para leer magnetómetro continuamente --- */
+    buf[0] = WRITE_OP | REG_BANK_SEL;
+    buf[1] = REG_BANK_3;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV0_ADDR: read + AK09916 addr 0x0C
+    buf[0] = WRITE_OP | 0x03;
+    buf[1] = 0x8C;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV0_REG: 0x03 (RSV2 - secret sauce)
+    buf[0] = WRITE_OP | 0x04;
+    buf[1] = 0x03;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV0_CTRL: EN=1, BYTE_SW=1, GRP=1, LEN=10
+    buf[0] = WRITE_OP | 0x05;
+    buf[1] = 0xDA;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV1_ADDR: write + AK09916 addr 0x0C
+    buf[0] = WRITE_OP | 0x07;
+    buf[1] = 0x0C;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV1_REG: 0x31 (CNTL2)
+    buf[0] = WRITE_OP | 0x08;
+    buf[1] = 0x31;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV1_DO: 0x01 (Single Measurement)
+    buf[0] = WRITE_OP | 0x0A;
+    buf[1] = 0x01;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // SLV1_CTRL: EN=1, 1 byte
+    buf[0] = WRITE_OP | 0x09;
+    buf[1] = 0x81;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    // I2C_MST_ODR_CONFIG: 68.75Hz
+    buf[0] = WRITE_OP | 0x00;
+    buf[1] = 0x04;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    buf[0] = WRITE_OP | REG_BANK_SEL;
+    buf[1] = REG_BANK_0;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* --- 34. USER_CTRL con I2C_MST_EN --- */
+    buf[0] = WRITE_OP | REG_USER_CTRL;
+    buf[1] = 0xF0;  // DMP_EN + FIFO_EN + I2C_MST_EN + I2C_IF_DIS
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* --- 35. Reset DMP --- */
+    buf[0] = WRITE_OP | REG_USER_CTRL;
+    buf[1] = 0xF8;  // igual + DMP_RST (bit 3)
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+    SPP_OSAL_TaskDelay(pdMS_TO_TICKS(1));
+
+    /* --- 36. Reset FIFO --- */
+    buf[0] = WRITE_OP | REG_FIFO_RST;
+    buf[1] = 0x1F;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+    buf[0] = WRITE_OP | REG_FIFO_RST;
+    buf[1] = 0x1E;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* --- 37. PWR_MGMT_1 sin LP_EN --- */
     buf[0] = WRITE_OP | REG_PWR_MGMT_1;
-    buf[1] = 0x21;
+    buf[1] = 0x01;  // solo CLKSEL auto
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+
+    /* --- 38. DATA_RDY_STATUS con compass --- */
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x0007);  // accel + gyro + compass
+    if (ret != SPP_OK) return ret;
+
+    /* --- 39. Re-escribir config DMP después de todo --- */
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
+    if (ret != SPP_OK) return ret;
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
+    if (ret != SPP_OK) return ret;
+    ret = IcmDmpWrite16(p_data_icm, DMP_MOTION_EVENT_CTL, 0x0300);
+    if (ret != SPP_OK) return ret;
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS,  0x0007);
+    if (ret != SPP_OK) return ret;
+
+    /* --- 40. Reset FIFO una vez más para empezar limpio --- */
+    buf[0] = WRITE_OP | REG_FIFO_RST;
+    buf[1] = 0x1F;
+    ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
+    if (ret != SPP_OK) return ret;
+    buf[0] = WRITE_OP | REG_FIFO_RST;
+    buf[1] = 0x1E;
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
     if (ret != SPP_OK) return ret;
 
     return SPP_OK;
+
 }
