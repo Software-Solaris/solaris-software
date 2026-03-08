@@ -175,5 +175,7 @@ retval_t IcmLoadDmp(void *p_data);
 retval_t IcmDmpStart(void *p_data);
 retval_t IcmReadSensors(void *p_data);
 void     IcmGetSensorsData(void *p_data);
+void     ICM_checkFifoData(void* p_data);
+
 
 #endif

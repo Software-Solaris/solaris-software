@@ -5,6 +5,9 @@
 #include "task.h"
 #include "types.h"
 #include <string.h>
+#include "spp_log.h"
+#include "math.h"
+
 
 /* ── DMP firmware image ──────────────────────────────────────────────── */
 static const spp_uint8_t dmp3_image[] = {
@@ -563,7 +566,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     }
 
     /* ── 21. DMP output config: accel + gyro + compass (16-bit) ───── */
-    ret = IcmDmpWriteOutputConfig(p, 0xE000, 0x0300);
+    ret = IcmDmpWriteOutputConfig(p, 0xE400, 0x0048);
     if (ret != SPP_OK) return ret;
 
     /* ── 22. Accel calibration for 225 Hz ─────────────────────────── */
@@ -661,7 +664,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     if (ret != SPP_OK) return ret;
 
     /* ── 29. Final DMP config (after all resets) ──────────────────── */
-    ret = IcmDmpWriteOutputConfig(p, 0xE000, 0x0300);
+    ret = IcmDmpWriteOutputConfig(p, 0xE400, 0x0048);
     if (ret != SPP_OK) return ret;
 
     ret = IcmDmpWrite16(p, DMP_DATA_RDY_STATUS, 0x000B);
@@ -672,4 +675,117 @@ retval_t IcmConfigDmpInit(void *p_data)
     if (ret != SPP_OK) return ret;
 
     return SPP_OK;
+}
+
+void ICM_checkFifoData(void* p_data){
+    if (p_data == NULL){
+        return;
+    }
+    icm_data_t *p = (icm_data_t *)p_data;
+    spp_uint8_t data[3] = {0};
+    retval_t ret = SPP_ERROR;
+
+    data[0] = READ_OP | REG_INT_STATUS; 
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return;
+
+    spp_uint8_t int_status = data[1];
+
+    data[0] = READ_OP | REG_DMP_INT_STATUS;
+    data[1] = EMPTY_MESSAGE;
+    ret = SPP_HAL_SPI_Transmit(p->p_handler_spi, data, 2);
+    if (ret != SPP_OK) return;
+
+    if (int_status & 0x02)
+    {
+        data[0] = READ_OP | REG_FIFO_COUNTH;
+        data[1] = EMPTY_MESSAGE;
+        data[2] = EMPTY_MESSAGE;
+        ret = SPP_HAL_SPI_Transmit(p->p_handler_spi, data, 3);
+        if (ret != SPP_OK) return;
+
+        spp_uint16_t fifo_count = ((spp_uint16_t)data[1] << 8) | data[2];
+
+        if (fifo_count > 512)
+        {
+            data[0] = WRITE_OP | REG_FIFO_RST;
+            data[1] = 0x1F;
+            SPP_HAL_SPI_Transmit(p->p_handler_spi, data, 2);
+            data[1] = 0x1E;
+            SPP_HAL_SPI_Transmit(p->p_handler_spi, data, 2);
+            return;
+        }
+        spp_uint16_t num_packets = fifo_count / 42;
+
+        for (spp_uint16_t i = 0; i < num_packets; i++)
+        {
+            spp_uint8_t fb[43] = {0};
+            fb[0] = READ_OP | REG_FIFO_R_W;
+            ret = SPP_HAL_SPI_Transmit(p->p_handler_spi, fb, 43);
+            if (ret != SPP_OK) return;
+
+            /* Header (bytes 1-2) */
+            uint16_t header = (fb[1] << 8) | fb[2];
+
+            /* Accel raw 16-bit (bytes 3-8) */
+            int16_t accel_x = (fb[3] << 8) | fb[4];
+            int16_t accel_y = (fb[5] << 8) | fb[6];
+            int16_t accel_z = (fb[7] << 8) | fb[8];
+
+            /* Gyro raw 16-bit (bytes 9-14) */
+            int16_t gyro_x = (fb[9] << 8) | fb[10];
+            int16_t gyro_y = (fb[11] << 8) | fb[12];
+            int16_t gyro_z = (fb[13] << 8) | fb[14];
+
+            /* Bytes 15-20: gyro padding (skip) */
+
+            /* Compass raw 16-bit (bytes 21-26) */
+            int16_t mag_x = (fb[21] << 8) | fb[22];
+            int16_t mag_y = (fb[23] << 8) | fb[24];
+            int16_t mag_z = (fb[25] << 8) | fb[26];
+
+            /* Quaternion 9-axis Q30 (bytes 27-38) */
+            int32_t q1_raw = ((int32_t)fb[27] << 24) | (fb[28] << 16)
+                        | (fb[29] << 8) | fb[30];
+            int32_t q2_raw = ((int32_t)fb[31] << 24) | (fb[32] << 16)
+                        | (fb[33] << 8) | fb[34];
+            int32_t q3_raw = ((int32_t)fb[35] << 24) | (fb[36] << 16)
+                        | (fb[37] << 8) | fb[38];
+
+            /* Heading accuracy (bytes 39-40) */
+            int16_t accuracy = (fb[39] << 8) | fb[40];
+
+            /* Footer (bytes 41-42) */
+            uint16_t footer = (fb[41] << 8) | fb[42];
+
+            /* Conversions */
+            float ax = accel_x / 8192.0f;
+            float ay = accel_y / 8192.0f;
+            float az = accel_z / 8192.0f;
+
+            float gx = gyro_x / 16.4f;
+            float gy = gyro_y / 16.4f;
+            float gz = gyro_z / 16.4f;
+
+            float mx = mag_x * 0.15f;
+            float my = mag_y * 0.15f;
+            float mz = mag_z * 0.15f;
+
+            /* Quaternion: Q30 → float normalized (-1.0 a 1.0) */
+            float qx = q1_raw / 1073741824.0f;
+            float qy = q2_raw / 1073741824.0f;
+            float qz = q3_raw / 1073741824.0f;
+            float qw_sq = 1.0f - (qx * qx) - (qy * qy) - (qz * qz);
+            float qw = (qw_sq > 0.0f) ? sqrtf(qw_sq) : 0.0f;
+
+            /* Print sensors raw */
+            SPP_LOGI("ICM", "A:[%.2f %.2f %.2f]g G:[%.1f %.1f %.1f]dps M:[%.1f %.1f %.1f]uT",
+                    ax, ay, az, gx, gy, gz, mx, my, mz);
+
+            /* Print quaternion */
+            SPP_LOGI("ICM", "Q:[w=%.4f x=%.4f y=%.4f z=%.4f] acc:%d",
+                    qw, qx, qy, qz, accuracy);
+        }
+    }
 }
