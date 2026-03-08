@@ -912,9 +912,9 @@ retval_t IcmConfigDmpInit(void *p_data)
     }
 
     /* --- 27. Final DMP output configuration --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xE000);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xE000);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;
@@ -978,9 +978,9 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = IcmLpWakeCycle(p_data_icm);
     if (ret != SPP_OK) return ret;
 
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xE000);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xE000);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL2,    0x0000);
     if (ret != SPP_OK) return ret;
@@ -994,7 +994,7 @@ retval_t IcmConfigDmpInit(void *p_data)
     ret = SPP_HAL_SPI_Transmit(p_data_icm->p_handler_spi, buf, 2);
     if (ret != SPP_OK) return ret;
 
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x0003);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x000B);
     if (ret != SPP_OK) return ret;
 
 
@@ -1088,17 +1088,17 @@ retval_t IcmConfigDmpInit(void *p_data)
     if (ret != SPP_OK) return ret;
 
     /* --- 38. DATA_RDY_STATUS con compass --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x0007);  // accel + gyro + compass
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS, 0x000B);  // accel + gyro + compass
     if (ret != SPP_OK) return ret;
 
     /* --- 39. Re-escribir config DMP después de todo --- */
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_OUT_CTL1,    0xE000);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xC000);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_INTR_CTL,    0xE000);
     if (ret != SPP_OK) return ret;
     ret = IcmDmpWrite16(p_data_icm, DMP_MOTION_EVENT_CTL, 0x0300);
     if (ret != SPP_OK) return ret;
-    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS,  0x0007);
+    ret = IcmDmpWrite16(p_data_icm, DMP_DATA_RDY_STATUS,  0x000B);
     if (ret != SPP_OK) return ret;
 
     /* --- 40. Reset FIFO una vez más para empezar limpio --- */
