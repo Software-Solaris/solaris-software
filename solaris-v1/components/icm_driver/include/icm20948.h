@@ -632,31 +632,10 @@ typedef union
     } bits;
 } ICM20948_RegI2cMstOdrConfig_t;
 
-/* ----------------------------------------------------------------
- * Driver data structures
- * ---------------------------------------------------------------- */
-
-/**
- * @brief Driver context for the ICM20948 device.
- */
-typedef struct
-{
-    void *p_handlerSpi;         /**< SPI handler associated with the device. */
-    spp_bool_t firmwareLoaded;  /**< Indicates whether the DMP firmware is loaded. */
-} ICM20948_Data_t;
 
 /* ----------------------------------------------------------------
  * Public API
  * ---------------------------------------------------------------- */
-
-/**
- * @brief Initializes the ICM20948 driver and stores the SPI handler.
- *
- * @param[in,out] p_data Pointer to the driver context.
- *
- * @return SPP_OK on success, or an error code otherwise.
- */
-retval_t ICM20948_init(void *p_data);
 
 /**
  * @brief Performs the generic device configuration sequence.
