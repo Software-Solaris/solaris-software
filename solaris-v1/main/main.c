@@ -38,9 +38,7 @@ void app_main(void)
     /* sleep(5); */
 
     Core_Init();
-    retval_t ret;
 
-    Core_Init();
     SPP_LOGI(TAG, "Boot");
 
     SPP_HAL_SPI_BusInit();
@@ -57,10 +55,6 @@ void app_main(void)
         return;
     }
 
-    while (true)
-    {
-        ICM20948_checkFifoData((void *)&s_icm20948Data);
-    }
     ret = SPP_DATABANK_init();
     if (ret != SPP_OK) {
         SPP_LOGE(TAG, "Databank init failed");
@@ -109,5 +103,9 @@ void app_main(void)
     }
 
     SPP_LOGI(TAG, "Main idle");
-    for (;;) { SPP_OSAL_TaskDelay(1000); }
+        while (true)
+    {
+        ICM20948_checkFifoData((void *)&s_icm20948Data);
+    }
+
 }
