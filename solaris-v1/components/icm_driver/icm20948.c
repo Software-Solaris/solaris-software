@@ -1436,7 +1436,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_DO, 0x08U);
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_DO, 0x01U);
     if (ret != SPP_OK)
     {
         return ret;
@@ -1448,7 +1448,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_MST_ODR_CONFIG, 0x03U);
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_MST_ODR_CONFIG, 0x04U);
     if (ret != SPP_OK)
     {
         return ret;
