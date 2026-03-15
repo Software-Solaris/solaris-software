@@ -87,25 +87,25 @@ void app_main(void)
     /* ----------------------------------------------------------------
      * Common services init
      * ---------------------------------------------------------------- */
-    ret = SPP_DATABANK_init();
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "Databank init failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
+    // ret = SPP_DATABANK_init();
+    // if (ret != SPP_OK)
+    // {
+    //     SPP_LOGE(TAG, "Databank init failed");
+    //     for (;;)
+    //     {
+    //         SPP_OSAL_TaskDelay(1000);
+    //     }
+    // }
 
-    ret = DB_FLOW_Init();
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "DB_FLOW init failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
+    // ret = DB_FLOW_Init();
+    // if (ret != SPP_OK)
+    // {
+    //     SPP_LOGE(TAG, "DB_FLOW init failed");
+    //     for (;;)
+    //     {
+    //         SPP_OSAL_TaskDelay(1000);
+    //     }
+    // }
 
     /* ----------------------------------------------------------------
      * BMP SPI device init
@@ -130,27 +130,27 @@ void app_main(void)
         }
     }
 
-    SPP_LOGI(TAG, "BMP service init");
-    ret = BMP_ServiceInit(p_spiBmp);
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "BMP_ServiceInit failed ret=%d", (int)ret);
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
+    // SPP_LOGI(TAG, "BMP service init");
+    // ret = BMP_ServiceInit(p_spiBmp);
+    // if (ret != SPP_OK)
+    // {
+    //     SPP_LOGE(TAG, "BMP_ServiceInit failed ret=%d", (int)ret);
+    //     for (;;)
+    //     {
+    //         SPP_OSAL_TaskDelay(1000);
+    //     }
+    // }
 
-    SPP_LOGI(TAG, "BMP service start");
-    ret = BMP_ServiceStart();
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "BMP_ServiceStart failed ret=%d", (int)ret);
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
+    // SPP_LOGI(TAG, "BMP service start");
+    // ret = BMP_ServiceStart();
+    // if (ret != SPP_OK)
+    // {
+    //     SPP_LOGE(TAG, "BMP_ServiceStart failed ret=%d", (int)ret);
+    //     for (;;)
+    //     {
+    //         SPP_OSAL_TaskDelay(1000);
+    //     }
+    // }
 
     SPP_LOGI(TAG, "Main idle");
 
