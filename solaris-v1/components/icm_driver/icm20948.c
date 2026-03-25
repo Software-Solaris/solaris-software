@@ -588,9 +588,9 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
+        /* Only I2C master in cycled mode. Accel and gyro must NOT be in
+         * low-power cycled mode when using the DMP. */
         lpConfReg.bits.i2cMstCyc = 1U;
-        lpConfReg.bits.accelCyc = 1U;
-        lpConfReg.bits.gyroCyc = 1U;
         ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_LP_CONF, lpConfReg.value);
         if (ret != SPP_OK)
         {
@@ -815,12 +815,16 @@ retval_t ICM20948_configDmpInit(void *p_data)
         SPP_OSAL_TaskDelay(pdMS_TO_TICKS(1));
     }
 
+    /* ----------------------------------------------------------------
+     * AK09916 magnetometer: soft-reset, then disable all peripherals.
+     * ---------------------------------------------------------------- */
     ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_3);
     if (ret != SPP_OK)
     {
         return ret;
     }
 
+    /* Disable all I2C peripherals */
     ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_SLV0_CTRL, 0x00U);
     if (ret != SPP_OK)
     {
@@ -845,100 +849,33 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
-    {
-        ICM20948_RegI2cCtrl_t i2cCtrlReg = { .value = 0U };
-        ICM20948_RegI2cMstOdrConfig_t mstOdrReg = { .value = 0U };
-        ICM20948_RegI2cSlvAddr_t slv0AddrReg = { .value = 0U };
-        ICM20948_RegI2cSlvCtrl_t slv0CtrlReg = { .value = 0U };
-
-        i2cCtrlReg.value = 0x10U;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_I2C_CTRL, i2cCtrlReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-
-        mstOdrReg.value = 0x04U;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_MST_ODR_CONFIG, mstOdrReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-
-        slv0AddrReg.value = K_ICM20948_MAG_RD_ADDR;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_SLV0_ADDR, slv0AddrReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_SLV0_REG, 0x00U);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-
-        slv0CtrlReg.value = 0x81U;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_SLV0_CTRL, slv0CtrlReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-    }
-
-    ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_0);
+    /* I2C master: CLK=7 (345.6 kHz), P_NSR=1 */
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_I2C_CTRL, 0x17U);
     if (ret != SPP_OK)
     {
         return ret;
     }
 
-    {
-        ICM20948_RegUserCtrl_t userCtrlReg = { .value = 0U };
-
-        userCtrlReg.bits.i2cIfDis = 1U;
-        userCtrlReg.bits.i2cMstEn = 1U;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_USER_CTRL, userCtrlReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-
-        SPP_OSAL_TaskDelay(pdMS_TO_TICKS(60));
-
-        userCtrlReg.value = 0U;
-        userCtrlReg.bits.i2cIfDis = 1U;
-        ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_USER_CTRL, userCtrlReg.value);
-        if (ret != SPP_OK)
-        {
-            return ret;
-        }
-    }
-
-    ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_3);
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_MST_ODR_CONFIG, 0x04U);
     if (ret != SPP_OK)
     {
         return ret;
     }
 
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_REG_SLV0_CTRL, 0x00U);
-    if (ret != SPP_OK)
-    {
-        return ret;
-    }
-
+    /* SLV1: write CNTL3=0x01 (SRST) to AK09916 to soft-reset it */
     ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_ADDR, K_ICM20948_MAG_WR_ADDR);
     if (ret != SPP_OK)
     {
         return ret;
     }
 
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_REG, K_ICM20948_MAG_CTRL_2);
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_REG, 0x32U);
     if (ret != SPP_OK)
     {
         return ret;
     }
 
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_DO, 0x00U);
+    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_DO, 0x01U);
     if (ret != SPP_OK)
     {
         return ret;
@@ -950,6 +887,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
+    /* Enable I2C master to send the reset, wait, then disable */
     ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_0);
     if (ret != SPP_OK)
     {
@@ -967,7 +905,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
-        SPP_OSAL_TaskDelay(pdMS_TO_TICKS(60));
+        SPP_OSAL_TaskDelay(pdMS_TO_TICKS(100));
 
         userCtrlReg.value = 0U;
         userCtrlReg.bits.i2cIfDis = 1U;
@@ -978,13 +916,8 @@ retval_t ICM20948_configDmpInit(void *p_data)
         }
     }
 
+    /* Disable all peripherals after reset */
     ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_3);
-    if (ret != SPP_OK)
-    {
-        return ret;
-    }
-
-    ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_SLV1_CTRL, 0x00U);
     if (ret != SPP_OK)
     {
         return ret;
@@ -1334,6 +1267,13 @@ retval_t ICM20948_configDmpInit(void *p_data)
     }
 
     ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ACCEL_CAL_INIT, 0x0000U);
+    if (ret != SPP_OK)
+    {
+        return ret;
+    }
+
+    /* Compass time buffer: 69 matches the I2C master ODR of 68.75 Hz. */
+    ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_CPASS_TIME_BUFFER, 0x0045U);
     if (ret != SPP_OK)
     {
         return ret;

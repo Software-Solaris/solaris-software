@@ -185,6 +185,8 @@ typedef enum
 #define K_ICM20948_DMP_MOTION_EVENT_CTL      (4U   * 16U + 14U)
 #define K_ICM20948_DMP_DATA_RDY_STATUS       (8U   * 16U + 10U)
 #define K_ICM20948_DMP_ODR_QUAT6             (10U  * 16U + 12U)
+#define K_ICM20948_DMP_ODR_QUAT9             (10U  * 16U + 8U)
+#define K_ICM20948_DMP_CPASS_TIME_BUFFER     (29U  * 16U + 8U)
 #define K_ICM20948_DMP_GYRO_SF               (19U  * 16U)
 #define K_ICM20948_DMP_ACC_SCALE             (30U  * 16U)
 #define K_ICM20948_DMP_FIFO_WATERMARK        (31U  * 16U + 14U)
@@ -287,9 +289,9 @@ typedef union
     struct
     {
         spp_uint8_t reserved0 : 4; /**< Reserved bits [3:0]. */
-        spp_uint8_t i2cMstCyc : 1; /**< Duty-cycle I2C master. */
-        spp_uint8_t accelCyc  : 1; /**< Duty-cycle accelerometer. */
-        spp_uint8_t gyroCyc   : 1; /**< Duty-cycle gyroscope. */
+        spp_uint8_t gyroCyc   : 1; /**< Duty-cycle gyroscope (bit 4). */
+        spp_uint8_t accelCyc  : 1; /**< Duty-cycle accelerometer (bit 5). */
+        spp_uint8_t i2cMstCyc : 1; /**< Duty-cycle I2C master (bit 6). */
         spp_uint8_t reserved1 : 1; /**< Reserved bit [7]. */
     } bits;
 } ICM20948_RegLpConf_t;
