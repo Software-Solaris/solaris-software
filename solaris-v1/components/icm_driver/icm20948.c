@@ -1309,7 +1309,32 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
+    /* Set all DMP ODR registers to 0 (maximum rate = DMP running rate). */
+    ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_QUAT9, 0x0000U);
+    if (ret != SPP_OK)
+    {
+        return ret;
+    }
+
     ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_QUAT6, 0x0000U);
+    if (ret != SPP_OK)
+    {
+        return ret;
+    }
+
+    ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_ACCEL, 0x0000U);
+    if (ret != SPP_OK)
+    {
+        return ret;
+    }
+
+    ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_GYRO, 0x0000U);
+    if (ret != SPP_OK)
+    {
+        return ret;
+    }
+
+    ret = ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_CPASS, 0x0000U);
     if (ret != SPP_OK)
     {
         return ret;
@@ -1388,6 +1413,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         return ret;
     }
 
+    /* I2C master ODR: 0x04 → 1100/2^4 = 68.75 Hz */
     ret = ICM20948_writeReg(p_spi, K_ICM20948_I2C_MST_ODR_CONFIG, 0x04U);
     if (ret != SPP_OK)
     {
