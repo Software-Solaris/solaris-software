@@ -555,6 +555,8 @@ retval_t ICM20948_configDmpInit(void *p_data)
 
     if (whoAmIValue != K_ICM20948_WHO_AM_I_VALUE)
     {
+        SPP_LOGI(K_ICM20948_LOG_TAG, "CHIP ID error: expected 0x%02X | got 0x%02X",
+                K_ICM20948_WHO_AM_I_VALUE, whoAmIValue);
         return SPP_ERROR;
     }
 
