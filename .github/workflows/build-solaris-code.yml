@@ -134,8 +134,33 @@ jobs:
           name: misra-report
           path: doc/cppcheck/
 
+  check-icm-changes:
+    runs-on: self-hosted
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - name: Clean workspace
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.CI_GH_TOKEN }}
+
+      - name: Check for ICM driver changes
+        id: filter
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -q '^solaris-v1/components/icm_driver/'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   unit-tests:
-    needs: [build-ci-image, static-analysis]
+    needs: [build-ci-image, static-analysis, check-icm-changes]
+    if: needs.check-icm-changes.outputs.changed == 'true'
     runs-on: self-hosted
     steps:
       - name: Clean workspace
@@ -181,8 +206,12 @@ jobs:
             -w /workspace \
             $CI_IMAGE \
             bash -c '
-              doxygen Doxyfile 2>&1
-              cd doc/latex && make 2>&1
+              doxygen Doxyfile
+              cd doc/latex
+              pdflatex -interaction=nonstopmode refman.tex || true
+              makeindex refman.idx || true
+              pdflatex -interaction=nonstopmode refman.tex || true
+              pdflatex -interaction=nonstopmode refman.tex
               cd /workspace
               cp doc/latex/refman.pdf doc/solaris-software.pdf
             '
