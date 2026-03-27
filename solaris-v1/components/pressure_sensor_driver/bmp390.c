@@ -55,7 +55,7 @@ void BmpInit(void* p_data)
     p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
     p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
 
-    p_bmp->isr_ctx.event_group = p_bmp->p_event_group;
+    p_bmp->isr_ctx.p_event_group = p_bmp->p_event_group;
     p_bmp->isr_ctx.bits        = BMP390_EVT_DRDY;
 
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
@@ -473,8 +473,9 @@ retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
  * @brief Compensates raw pressure reading from BMP390 sensor
  * 
  * @param[in] raw_press Raw pressure value from sensor ADC
- * @param[in] params Pointer to BMP390 pressure calibration parameters
- * 
+ * @param[in] t_lin Linearized temperature value from compensate_temperature
+ * @param[in] p Pointer to BMP390 pressure calibration parameters
+ *
  * @return Compensated pressure value (float) in Pascal.
  */
 float bmp390_compensate_pressure(spp_uint32_t raw_press, float t_lin, bmp390_press_params_t *p)
@@ -536,7 +537,9 @@ retval_t bmp390_aux_get_press(void *p_spi, const bmp390_press_params_t *press_pa
  * 
  * @param[in] p_spi Pointer to SPI interface handle
  * @param[in] p_bmp Pointer to BMP390 device structure
- * @param[out] altitude Pointer to store calculated altitude in meters
+ * @param[out] altitude_m Pointer to store calculated altitude in meters
+ * @param[out] pressure_pa Pointer to store compensated pressure in Pascal
+ * @param[out] temperature_c Pointer to store compensated temperature in Celsius
  * 
  * @return retval_t Status code indicating success or failure of the SPI transmission.
  */

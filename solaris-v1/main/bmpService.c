@@ -270,16 +270,7 @@ static void BMP_ServiceTask(void *p_arg)
  * Public API
  * ---------------------------------------------------------------- */
 
-/**
- * @brief Initializes the BMP service.
- *
- * This function stores the SPI handler, configures the BMP390 interrupt
- * context and performs the initial BMP390 setup sequence.
- *
- * @param[in] p_spi_bmp Pointer to the SPI handler assigned to the BMP390.
- *
- * @return SPP_OK on success, or an error code otherwise.
- */
+/** @copydoc BMP_ServiceInit */
 retval_t BMP_ServiceInit(void *p_spi_bmp)
 {
     retval_t ret;
