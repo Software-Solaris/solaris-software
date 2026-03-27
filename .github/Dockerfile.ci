@@ -1,0 +1,15 @@
+FROM espressif/idf:v6.0-dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    doxygen \
+    graphviz \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    latexmk \
+    libcgreen1-dev \
+    cmake \
+    clang-format \
+    clang-tidy \
+    cppcheck \
+    && rm -rf /var/lib/apt/lists/*
