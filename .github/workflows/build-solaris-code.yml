@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Fix permissions from previous Docker runs
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Fix permissions
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: Fix permissions
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -127,14 +127,12 @@ jobs:
                 --source-dir=.
             '
 
-      - name: Commit and push MISRA report
-        run: |
-          git config --global --add safe.directory "${{ github.workspace }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/${{ github.repository }}.git"
-          git add doc/cppcheck/
-          git diff --cached --quiet && echo "No report changes" || (git commit -m "docs: update MISRA-C report [skip ci]" && git push origin HEAD:${{ github.ref_name }})
+      - name: Upload MISRA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: misra-report
+          path: doc/cppcheck/
 
   unit-tests:
     needs: [build-ci-image, static-analysis]
@@ -142,7 +140,7 @@ jobs:
     steps:
       - name: Fix permissions
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -166,15 +164,14 @@ jobs:
     steps:
       - name: Fix permissions
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           submodules: false
           clean: false
-          persist-credentials: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Generate documentation
@@ -191,12 +188,9 @@ jobs:
               rm -rf doc/latex
             '
 
-      - name: Commit and push documentation
-        run: |
-          git config --global --add safe.directory "${{ github.workspace }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/${{ github.repository }}.git"
-          git pull --rebase origin ${{ github.ref_name }} || true
-          git add doc/solaris-software.pdf
-          git diff --cached --quiet && echo "No doc changes" || (git commit -m "docs: update generated documentation [skip ci]" && git push origin HEAD:${{ github.ref_name }})
+      - name: Upload documentation PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen-documentation
+          path: doc/solaris-software.pdf
