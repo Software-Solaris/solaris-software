@@ -32,21 +32,9 @@ jobs:
   build-solaris-code:
     needs: build-ci-image
     runs-on: self-hosted
-
-    container:
-      image: solaris-ci:latest
-      options: >-
-        --security-opt label=disable
-
     steps:
-      - name: Fix permissions for GitHub workspace
-        run: |
-          chmod -R 777 "$GITHUB_WORKSPACE" || true
-          chmod -R 777 /__w || true
-
-      - name: Wipe workspace
-        run: |
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+      - name: Fix permissions
+        run: sudo chmod -R 777 "${{ github.workspace }}" || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,17 +45,11 @@ jobs:
           token: ${{ secrets.CI_GH_TOKEN }}
           clean: true
 
-      - name: Mark workspace as safe for Git
+      - name: Prepare submodules
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Purge submodule cache
-        run: |
+          git config --global --add safe.directory "${{ github.workspace }}"
           rm -rf .git/modules/* || true
           rm -rf solaris-v1/external/esp-idf solaris-v1/external/spp solaris-v1/external/spp-ports || true
-
-      - name: Force HTTPS for submodules and authenticate
-        run: |
           if [ -f .gitmodules ]; then
             sed -i \
               -e 's#git@github.com:#https://github.com/#g' \
@@ -78,9 +60,6 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
           git submodule sync --recursive
-
-      - name: Initialize submodules
-        run: |
           git submodule update --init solaris-v1/external/spp
           git submodule update --init solaris-v1/external/spp-ports
           git submodule add -f https://github.com/espressif/esp-idf.git solaris-v1/external/esp-idf
@@ -89,28 +68,18 @@ jobs:
 
       - name: Build firmware
         run: |
-          cd solaris-v1
-          . /opt/esp/idf/export.sh
-          idf.py build
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/solaris-v1 \
+            $CI_IMAGE \
+            bash -c '. /opt/esp/idf/export.sh && idf.py build'
 
   static-analysis:
     needs: build-ci-image
     runs-on: self-hosted
-
-    container:
-      image: solaris-ci:latest
-      options: >-
-        --security-opt label=disable
-
     steps:
-      - name: Fix permissions for GitHub workspace
-        run: |
-          chmod -R 777 "$GITHUB_WORKSPACE" || true
-          chmod -R 777 /__w || true
-
-      - name: Wipe workspace
-        run: |
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+      - name: Fix permissions
+        run: sudo chmod -R 777 "${{ github.workspace }}" || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -119,44 +88,44 @@ jobs:
           submodules: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
-      - name: Mark workspace as safe for Git
+      - name: Run cppcheck with MISRA
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Run cppcheck with MISRA (XML output)
-        run: |
-          mkdir -p doc/cppcheck
-          cppcheck \
-            --addon=misra \
-            --enable=all \
-            --std=c11 \
-            --error-exitcode=0 \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            --xml \
-            -I solaris-v1/components/icm_driver/include \
-            -I solaris-v1/components/general \
-            -I solaris-v1/components/pressure_sensor_driver/include \
-            -I solaris-v1/external/spp/core \
-            -I solaris-v1/external/spp/hal/spi \
-            -I solaris-v1/external/spp/osal \
-            -I solaris-v1/external/spp/services/logging \
-            solaris-v1/main/*.c \
-            solaris-v1/components/icm_driver/*.c \
-            solaris-v1/components/pressure_sensor_driver/*.c \
-            solaris-v1/components/general/*.c \
-            2> cppcheck-result.xml
-
-      - name: Generate HTML report
-        run: |
-          cppcheck-htmlreport \
-            --file=cppcheck-result.xml \
-            --title="Solaris MISRA-C Report" \
-            --report-dir=doc/cppcheck \
-            --source-dir=.
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            $CI_IMAGE \
+            bash -c '
+              mkdir -p doc/cppcheck
+              cppcheck \
+                --addon=misra \
+                --enable=all \
+                --std=c11 \
+                --error-exitcode=0 \
+                --suppress=missingIncludeSystem \
+                --suppress=unusedFunction \
+                --xml \
+                -I solaris-v1/components/icm_driver/include \
+                -I solaris-v1/components/general \
+                -I solaris-v1/components/pressure_sensor_driver/include \
+                -I solaris-v1/external/spp/core \
+                -I solaris-v1/external/spp/hal/spi \
+                -I solaris-v1/external/spp/osal \
+                -I solaris-v1/external/spp/services/logging \
+                solaris-v1/main/*.c \
+                solaris-v1/components/icm_driver/*.c \
+                solaris-v1/components/pressure_sensor_driver/*.c \
+                solaris-v1/components/general/*.c \
+                2> cppcheck-result.xml
+              cppcheck-htmlreport \
+                --file=cppcheck-result.xml \
+                --title="Solaris MISRA-C Report" \
+                --report-dir=doc/cppcheck \
+                --source-dir=.
+            '
 
       - name: Commit and push MISRA report
         run: |
+          git config --global --add safe.directory "${{ github.workspace }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/${{ github.repository }}.git"
@@ -166,21 +135,9 @@ jobs:
   unit-tests:
     needs: [build-ci-image, static-analysis]
     runs-on: self-hosted
-
-    container:
-      image: solaris-ci:latest
-      options: >-
-        --security-opt label=disable
-
     steps:
-      - name: Fix permissions for GitHub workspace
-        run: |
-          chmod -R 777 "$GITHUB_WORKSPACE" || true
-          chmod -R 777 /__w || true
-
-      - name: Wipe workspace
-        run: |
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+      - name: Fix permissions
+        run: sudo chmod -R 777 "${{ github.workspace }}" || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -191,30 +148,18 @@ jobs:
 
       - name: Build and run tests
         run: |
-          cd solaris-v1/components/icm_driver/tests
-          mkdir -p build && cd build
-          cmake ..
-          make
-          ctest --output-on-failure
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace/solaris-v1/components/icm_driver/tests \
+            $CI_IMAGE \
+            bash -c 'mkdir -p build && cd build && cmake .. && make && ctest --output-on-failure'
 
   generate-docs:
     needs: [build-ci-image, static-analysis]
     runs-on: self-hosted
-
-    container:
-      image: solaris-ci:latest
-      options: >-
-        --security-opt label=disable
-
     steps:
-      - name: Fix permissions for GitHub workspace
-        run: |
-          chmod -R 777 "$GITHUB_WORKSPACE" || true
-          chmod -R 777 /__w || true
-
-      - name: Wipe workspace
-        run: |
-          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+      - name: Fix permissions
+        run: sudo chmod -R 777 "${{ github.workspace }}" || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -225,23 +170,23 @@ jobs:
           token: ${{ secrets.CI_GH_TOKEN }}
           clean: true
 
-      - name: Mark workspace as safe for Git
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       - name: Generate documentation
         run: |
-          doxygen Doxyfile
-          cd doc/latex
-          make pdf
-
-      - name: Copy PDF to doc/
-        run: |
-          cp doc/latex/refman.pdf doc/solaris-software.pdf
-          rm -rf doc/latex
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            -w /workspace \
+            $CI_IMAGE \
+            bash -c '
+              doxygen Doxyfile
+              cd doc/latex && make pdf
+              cd /workspace
+              cp doc/latex/refman.pdf doc/solaris-software.pdf
+              rm -rf doc/latex
+            '
 
       - name: Commit and push documentation
         run: |
+          git config --global --add safe.directory "${{ github.workspace }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/${{ github.repository }}.git"
