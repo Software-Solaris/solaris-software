@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Fix permissions from previous Docker runs
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" alpine chmod -R 777 /workspace || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev chmod -R 777 /workspace || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
