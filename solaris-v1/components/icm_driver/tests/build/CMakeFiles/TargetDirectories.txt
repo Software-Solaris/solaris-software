@@ -1,0 +1,4 @@
+/home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build/CMakeFiles/test_icm20948.dir
+/home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build/CMakeFiles/test.dir
+/home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build/CMakeFiles/edit_cache.dir
+/home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build/CMakeFiles/rebuild_cache.dir
