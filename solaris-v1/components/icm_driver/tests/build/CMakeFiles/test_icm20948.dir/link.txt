@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_icm20948.dir/link.d CMakeFiles/test_icm20948.dir/test_icm20948.c.o -o test_icm20948  /usr/lib/x86_64-linux-gnu/libcgreen.so -lm

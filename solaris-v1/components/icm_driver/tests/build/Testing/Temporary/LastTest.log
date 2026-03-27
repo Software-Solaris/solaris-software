@@ -1,0 +1,21 @@
+Start testing: Mar 27 18:24 CET
+----------------------------------------------------------
+1/1 Testing: icm20948_tests
+1/1 Test: icm20948_tests
+Command: "/home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build/test_icm20948"
+Directory: /home/user/Documents/solaris-software/solaris-v1/components/icm_driver/tests/build
+"icm20948_tests" start time: Mar 27 18:24 CET
+Output:
+----------------------------------------------------------
+Running "main" (46 tests)...
+  "main": 55 passes in 30990ms.
+Completed "main": 55 passes in 30990ms.
+<end of output>
+Test time =  30.99 sec
+----------------------------------------------------------
+Test Passed.
+"icm20948_tests" end time: Mar 27 18:25 CET
+"icm20948_tests" time elapsed: 00:00:30
+----------------------------------------------------------
+
+End testing: Mar 27 18:25 CET
