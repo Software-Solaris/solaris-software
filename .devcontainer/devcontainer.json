@@ -21,7 +21,8 @@
     "cschlosser.doxdocgen",
     "samubarb.vscode-doxyfile",
     "openai.tu-extension-codex",
-    "github.vscode-pull-request-github"
+    "github.vscode-pull-request-github",
+    "llvm-vs-code-extensions.vscode-clangd"
   ],
 
   "remoteUser": "root",
