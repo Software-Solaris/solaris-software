@@ -2,13 +2,11 @@ name: ESP-IDF Build
 on: [push]
 
 env:
-  CI_IMAGE: ghcr.io/software-solaris/solaris-software/solaris-ci:latest
+  CI_IMAGE: solaris-ci:latest
 
 jobs:
   build-ci-image:
     runs-on: self-hosted
-    permissions:
-      packages: write
     steps:
       - name: Fix permissions from previous Docker runs
         run: |
@@ -20,38 +18,23 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.CI_GH_TOKEN }}
 
-      - name: Check if image needs rebuild
-        id: check
+      - name: Build CI image if needed
         run: |
-          if docker pull "$CI_IMAGE" 2>/dev/null; then
-            LOCAL_HASH=$(sha256sum .github/Dockerfile.ci | cut -d' ' -f1)
-            REMOTE_HASH=$(docker inspect "$CI_IMAGE" --format '{{index .Config.Labels "dockerfile.hash"}}' 2>/dev/null || echo "")
-            if [ "$LOCAL_HASH" = "$REMOTE_HASH" ]; then
-              echo "rebuild=false" >> "$GITHUB_OUTPUT"
-            else
-              echo "rebuild=true" >> "$GITHUB_OUTPUT"
-            fi
+          LOCAL_HASH=$(sha256sum .github/Dockerfile.ci | cut -d' ' -f1)
+          REMOTE_HASH=$(docker inspect "$CI_IMAGE" --format '{{index .Config.Labels "dockerfile.hash"}}' 2>/dev/null || echo "")
+          if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
+            echo "Rebuilding CI image..."
+            docker build -f .github/Dockerfile.ci --label "dockerfile.hash=$LOCAL_HASH" -t "$CI_IMAGE" .
           else
-            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            echo "CI image is up to date"
           fi
-
-      - name: Build and push CI image
-        if: steps.check.outputs.rebuild == 'true'
-        run: |
-          HASH=$(sha256sum .github/Dockerfile.ci | cut -d' ' -f1)
-          echo "${{ secrets.CI_GH_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker build -f .github/Dockerfile.ci --label "dockerfile.hash=$HASH" -t "$CI_IMAGE" .
-          docker push "$CI_IMAGE"
 
   build-solaris-code:
     needs: build-ci-image
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/${{ github.repository }}/solaris-ci:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.CI_GH_TOKEN }}
+      image: solaris-ci:latest
       options: >-
         --security-opt label=disable
 
@@ -115,10 +98,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/${{ github.repository }}/solaris-ci:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.CI_GH_TOKEN }}
+      image: solaris-ci:latest
       options: >-
         --security-opt label=disable
 
@@ -188,10 +168,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/${{ github.repository }}/solaris-ci:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.CI_GH_TOKEN }}
+      image: solaris-ci:latest
       options: >-
         --security-opt label=disable
 
@@ -225,10 +202,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: ghcr.io/${{ github.repository }}/solaris-ci:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.CI_GH_TOKEN }}
+      image: solaris-ci:latest
       options: >-
         --security-opt label=disable
 
