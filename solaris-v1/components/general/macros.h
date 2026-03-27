@@ -8,8 +8,8 @@
  * (v0.x); superseded by the SPP HAL SPI API in v1.
  */
 
-#ifndef MACROS_H
-#define MACROS_H
+#ifndef GENERAL_MACROS_H
+#define GENERAL_MACROS_H
 
 #include <driver/spi_master.h>
 
@@ -49,4 +49,4 @@ typedef struct {
 }
 #endif
 
-#endif /* MACROS_H */
+#endif /* GENERAL_MACROS_H */

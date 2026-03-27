@@ -10,3 +10,4 @@ settings.json
 launch.json
 solaris-v1/components/icm_driver/drivers/*
 */build/*
+doc/

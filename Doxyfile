@@ -5,7 +5,7 @@ PROJECT_BRIEF          = "Open-source amateur rocketry firmware for ESP32-S3"
 PROJECT_NUMBER         = "v1"
 
 # Input
-INPUT                  = doc/mainpage.dox \
+INPUT                  = mainpage.dox \
                          solaris-v1/main \
                          solaris-v1/components/icm_driver \
                          solaris-v1/components/pressure_sensor_driver \
