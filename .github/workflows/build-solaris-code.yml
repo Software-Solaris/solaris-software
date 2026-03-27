@@ -3,6 +3,7 @@ on: [push]
 
 env:
   CI_IMAGE: solaris-ci:latest
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-ci-image:
@@ -155,7 +156,7 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1/components/icm_driver/tests \
             $CI_IMAGE \
-            bash -c 'rm -rf build && mkdir build && cd build && cmake .. && make && ctest --output-on-failure'
+            bash -c 'rm -rf build && mkdir build && cd build && cmake .. && make && ctest --verbose'
 
   generate-docs:
     needs: [build-ci-image, static-analysis]
@@ -180,11 +181,10 @@ jobs:
             -w /workspace \
             $CI_IMAGE \
             bash -c '
-              doxygen Doxyfile
-              cd doc/latex && make pdf
+              doxygen Doxyfile 2>&1
+              cd doc/latex && make 2>&1
               cd /workspace
               cp doc/latex/refman.pdf doc/solaris-software.pdf
-              rm -rf doc/latex
             '
 
       - name: Upload documentation PDF
