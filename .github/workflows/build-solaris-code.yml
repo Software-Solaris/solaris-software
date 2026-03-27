@@ -71,7 +71,7 @@ jobs:
 
       - name: Build firmware
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1 \
             $CI_IMAGE \
@@ -96,7 +96,7 @@ jobs:
 
       - name: Run cppcheck with MISRA
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             $CI_IMAGE \
@@ -157,7 +157,7 @@ jobs:
 
       - name: Build and run tests
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1/components/icm_driver/tests \
             $CI_IMAGE \
@@ -184,7 +184,7 @@ jobs:
 
       - name: Generate documentation
         run: |
-          docker run --rm \
+          docker run --rm --privileged \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             $CI_IMAGE \
