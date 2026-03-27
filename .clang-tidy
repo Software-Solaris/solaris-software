@@ -1,0 +1,79 @@
+---
+# Only check project files, not external/ or ESP-IDF headers
+HeaderFilterRegex: '.*/solaris-v1/(components|main)/.*'
+
+Checks: >
+  -*,
+  readability-identifier-naming,
+  bugprone-macro-parentheses,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-memset-usage,
+  bugprone-too-small-loop-variable,
+  bugprone-integer-division,
+  bugprone-misplaced-widening-cast
+
+CheckOptions:
+  # --- Local variables: camelBack ---
+  # fifoCount, txBuffer, regBankSel
+  - key: readability-identifier-naming.LocalVariableCase
+    value: camelBack
+
+  # --- Parameters (value): camelBack ---
+  # reg, value, regBank
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+
+  # --- Parameters (pointer): p_ prefix + camelBack ---
+  # p_spi, p_data, p_value
+  - key: readability-identifier-naming.PointerParameterCase
+    value: camelBack
+  - key: readability-identifier-naming.PointerParameterPrefix
+    value: 'p_'
+
+  # --- Struct/union members: camelBack ---
+  # bankSel, i2cMstEn, rawData0Rdy
+  - key: readability-identifier-naming.MemberCase
+    value: camelBack
+
+  # --- Static variables (non-const): s_ prefix + camelBack ---
+  # s_variableName
+  - key: readability-identifier-naming.StaticVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.StaticVariablePrefix
+    value: 's_'
+
+  # --- Macros: UPPER_CASE ---
+  # K_ICM20948_REG_BANK_SEL, BMP390_*
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
+  # --- Enum constants: UPPER_CASE ---
+  # K_ICM20948_REG_BANK_0, K_ICM20948_CLK_AUTO
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+
+  # --- Typedefs: enforce _t suffix only (case varies) ---
+  # ICM20948_RegBankSel_t, retval_t
+  - key: readability-identifier-naming.TypedefCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.TypedefSuffix
+    value: '_t'
+
+  # --- Functions, enum types, struct/union tags: not enforced ---
+  # Naming like ICM20948_writeReg doesn't fit standard patterns
+  - key: readability-identifier-naming.FunctionCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.EnumCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.UnionCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.StructCase
+    value: aNy_CasE
+
+  # --- Global/static constants: not enforced ---
+  # Mixed patterns: TAG (ESP-IDF convention) vs s_dmp3Image
+  - key: readability-identifier-naming.StaticConstantCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: aNy_CasE
+...
