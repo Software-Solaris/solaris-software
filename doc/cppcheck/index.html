@@ -1,0 +1,912 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cppcheck - HTML report - Solaris MISRA-C Report</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+
+    </style>
+    <script>
+      function getStyle(el, styleProp) {
+        var y;
+
+        if (el.currentStyle) {
+          y = el.currentStyle[styleProp];
+        } else if (window.getComputedStyle) {
+          y = document.defaultView.getComputedStyle(el, null).getPropertyValue(styleProp);
+        }
+
+        return y;
+      }
+
+      function toggle() {
+        var el = this.expandable_content;
+        var mark = this.expandable_marker;
+
+        if (el.style.display === "block") {
+          el.style.display = "none";
+          mark.textContent = "[+]";
+        } else {
+          el.style.display = "block";
+          mark.textContent = "[-]";
+        }
+      }
+
+      function initExpandables() {
+        var elements = document.querySelectorAll(".expandable");
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          var el = elements[i];
+          var clickable = el.querySelector("span");
+          var marker = clickable.querySelector(".marker");
+          var content = el.querySelector(".content");
+          var width = clickable.clientWidth - parseInt(getStyle(content, "padding-left")) - parseInt(getStyle(content, "padding-right"));
+          content.style.width = width + "px";
+          clickable.expandable_content = content;
+          clickable.expandable_marker = marker;
+          clickable.addEventListener("click", toggle);
+        }
+      }
+
+      function toggleDisplay(cb) {
+        var elements = document.querySelectorAll("." + cb.id);
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          elements[i].classList.toggle("id-filtered", !cb.checked);
+        }
+
+        updateFileRows();
+      }
+
+      function toggleSeverity(cb) {
+        cb.parentElement.classList.toggle("unchecked", !cb.checked);
+        var elements = document.querySelectorAll(".sev_" + cb.id);
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          elements[i].classList.toggle("severity-filtered", !cb.checked);
+        }
+
+        updateFileRows();
+      }
+
+      function toggleTool(cb) {
+        cb.parentElement.classList.toggle("unchecked", !cb.checked);
+
+        var elements;
+        if (cb.id == "clang-tidy")
+            elements = document.querySelectorAll("[class^=clang-tidy-]");
+        else
+            elements = document.querySelectorAll(".issue:not([class^=clang-tidy-])");
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          elements[i].classList.toggle("tool-filtered", !cb.checked);
+        }
+
+        updateFileRows();
+      }
+
+      function toggleAll() {
+        var elements = document.querySelectorAll(".idToggle");
+
+        // starting from 1 since 0 is the "toggle all" input
+        for (var i = 1, len = elements.length; i < len; i++) {
+          var changed = elements[i].checked != elements[0].checked;
+          if (changed) {
+            elements[i].checked = elements[0].checked;
+            toggleDisplay(elements[i]);
+          }
+        }
+      }
+
+      function filterFile(filter) {
+        var elements = document.querySelectorAll(".fileEntry");
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          var visible = elements[i].querySelector("tr").querySelector("td").textContent.toLowerCase().includes(filter.toLowerCase());
+          elements[i].classList.toggle("text-filtered", !visible);
+        }
+      }
+
+      function filterText(text) {
+        filter = text.toLowerCase();
+        var elements = document.querySelectorAll(".issue");
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          var visible = false;
+          var fields = elements[i].querySelectorAll("td");
+          for (var n = 0, num = fields.length; n < num; n++) {
+            if (fields[n].textContent.toLowerCase().includes(filter)) {
+              visible = true;
+              break;
+            }
+          }
+          elements[i].classList.toggle("text-filtered", !visible);
+        }
+
+        updateFileRows();
+      }
+
+      function updateFileRows(element) {
+        var elements = document.querySelectorAll(".fileEntry");
+
+        for (var i = 0, len = elements.length; i < len; i++) {
+          var visible = elements[i].querySelector(".issue:not(.id-filtered):not(.severity-filtered):not(.tool-filtered):not(.text-filtered)");
+          elements[i].classList.toggle("file-filtered", !visible);
+        }
+      }
+
+      window.addEventListener("load", initExpandables);
+    </script>
+  </head>
+  <body>
+    <div id="wrapper">
+    <div id="header" class="header">
+      <h1>Cppcheck report - Solaris MISRA-C Report</h1>
+      <div id="filters">
+
+        <label class="checkBtn"><input type="checkbox" onclick="toggleSeverity(this)" id="error"checked/>error</label>
+        <label class="checkBtn disabled"><input type="checkbox" onclick="toggleSeverity(this)" id="warning"disabled/>warning</label>
+        <label class="checkBtn disabled"><input type="checkbox" onclick="toggleSeverity(this)" id="portability"disabled/>portability</label>
+        <label class="checkBtn disabled"><input type="checkbox" onclick="toggleSeverity(this)" id="performance"disabled/>performance</label>
+        <label class="checkBtn"><input type="checkbox" onclick="toggleSeverity(this)" id="style"checked/>style</label>
+        <label class="checkBtn"><input type="checkbox" onclick="toggleSeverity(this)" id="information"checked/>information</label>
+        | 
+        <label class="checkBtn"><input type="checkbox" onclick="toggleTool(this)" id="cppcheck"checked/>cppcheck</label>
+        <label class="checkBtn disabled"><input type="checkbox" onclick="toggleTool(this)" id="clang-tidy"disabled/>clang-tidy</label>
+        | 
+        <label class="severityHeader">File: <input type="text" oninput="filterFile(this.value)"/></label>
+        <label class="severityHeader">Filter: <input type="text" oninput="filterText(this.value)"/></label>
+      </div>
+
+    </div>
+
+    <div id="menu_index">
+     <p><a href="index.html">Defect summary</a> </p>
+
+       <label><input type="checkbox" class="idToggle" onclick="toggleAll()" checked> Toggle all</label>
+       <table>
+           <tr><th>Show</th><th>#</th><th>Defect ID</th></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-15-5" name="misra-c2012-15-5" checked></td><td>196</td><td>misra-c2012-15.5</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-config" name="misra-config" checked></td><td>189</td><td>misra-config</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-19-2" name="misra-c2012-19-2" checked></td><td>52</td><td>misra-c2012-19.2</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-2-5" name="misra-c2012-2-5" checked></td><td>42</td><td>misra-c2012-2.5</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="missingInclude" name="missingInclude" checked></td><td>40</td><td>missingInclude</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-12-1" name="misra-c2012-12-1" checked></td><td>31</td><td>misra-c2012-12.1</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-8-7" name="misra-c2012-8-7" checked></td><td>15</td><td>misra-c2012-8.7</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-17-7" name="misra-c2012-17-7" checked></td><td>14</td><td>misra-c2012-17.7</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-8-4" name="misra-c2012-8-4" checked></td><td>14</td><td>misra-c2012-8.4</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-10-3" name="misra-c2012-10-3" checked></td><td>12</td><td>misra-c2012-10.3</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-10-1" name="misra-c2012-10-1" checked></td><td>8</td><td>misra-c2012-10.1</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-8-9" name="misra-c2012-8-9" checked></td><td>6</td><td>misra-c2012-8.9</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-5-8" name="misra-c2012-5-8" checked></td><td>5</td><td>misra-c2012-5.8</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-2-2" name="misra-c2012-2-2" checked></td><td>4</td><td>misra-c2012-2.2</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-8-6" name="misra-c2012-8-6" checked></td><td>4</td><td>misra-c2012-8.6</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-2-3" name="misra-c2012-2-3" checked></td><td>3</td><td>misra-c2012-2.3</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-2-4" name="misra-c2012-2-4" checked></td><td>3</td><td>misra-c2012-2.4</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="shadowVariable" name="shadowVariable" checked></td><td>3</td><td>shadowVariable</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="constParameterPointer" name="constParameterPointer" checked></td><td>2</td><td>constParameterPointer</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="constVariable" name="constVariable" checked></td><td>2</td><td>constVariable</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="constVariablePointer" name="constVariablePointer" checked></td><td>2</td><td>constVariablePointer</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-11-5" name="misra-c2012-11-5" checked></td><td>2</td><td>misra-c2012-11.5</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-11-8" name="misra-c2012-11-8" checked></td><td>2</td><td>misra-c2012-11.8</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-12-3" name="misra-c2012-12-3" checked></td><td>2</td><td>misra-c2012-12.3</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-13-3" name="misra-c2012-13-3" checked></td><td>2</td><td>misra-c2012-13.3</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-9-3" name="misra-c2012-9-3" checked></td><td>2</td><td>misra-c2012-9.3</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="checkLevelNormal" name="checkLevelNormal" checked></td><td>1</td><td>checkLevelNormal</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="checkersReport" name="checkersReport" checked></td><td>1</td><td>checkersReport</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-15-6" name="misra-c2012-15-6" checked></td><td>1</td><td>misra-c2012-15.6</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-20-1" name="misra-c2012-20-1" checked></td><td>1</td><td>misra-c2012-20.1</td></tr>
+            <tr><td><input type="checkbox" class="idToggle" onclick="toggleDisplay(this)" id="misra-c2012-5-9" name="misra-c2012-5-9" checked></td><td>1</td><td>misra-c2012-5.9</td></tr>
+           <tr><td></td><td>662</td><td>total</td></tr>
+       </table>
+       <p><a href="stats.html">Statistics</a></p>
+    </div>
+    <div id="content_index">
+
+       <table class="summaryTable">
+       <tr><th>Line</th><th>Id</th><th>CWE</th><th>Severity</th><th>Message</th></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="14.html"></a></td></tr>
+         <tr class="checkersReport sev_information issue"><td></td><td>checkersReport</td><td></td><td>information</td><td>Active checkers: There was critical errors (use --checkers-report=&lt;filename&gt; to see details)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="11.html">solaris-v1/components/general/general.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="11.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;esp_log.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="11.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;freertos/FreeRTOS.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="11.html#line-6">6</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;freertos/task.h&quot; not found.</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="2.html">solaris-v1/components/general/general.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="2.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;esp_err.h&quot; not found.</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="12.html">solaris-v1/components/general/gpio_int.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="12.html#line-2">2</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/logging/spp_log.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="12.html#line-4">4</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="12.html#line-6">6</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="12.html#line-16">16</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;ESP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="12.html#line-18">18</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="12.html#line-32">32</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;ESP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="12.html#line-34">34</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="12.html#line-41">41</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-11-5 sev_style issue"><td><a href="12.html#line-43">43</a></td><td>misra-c2012-11.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-6 sev_style issue"><td><a href="12.html#line-58">58</a></td><td>misra-c2012-15.6</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="12.html#line-58">58</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;ESP_ERR_INVALID_STATE&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="12.html#line-59">59</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="12.html#line-59">59</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;ESP_OK&apos; is unknown</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="3.html">solaris-v1/components/general/gpio_int.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="3.html#line-1">1</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;driver/gpio.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="3.html#line-2">2</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;esp_err.h&quot; not found.</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="13.html">solaris-v1/components/general/macros.h</a></td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="13.html#line-9">9</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="13.html#line-10">10</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="13.html#line-11">11</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="13.html#line-12">12</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="9.html">solaris-v1/components/icm_driver/icm20948.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-2">2</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/core/returntypes.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-3">3</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/hal/spi/spi.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/core/types.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-8">8</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/services/logging/spp_log.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="9.html#line-9">9</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;math.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="9.html#line-81">81</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-20-1 sev_style issue"><td><a href="9.html#line-82">82</a></td><td>misra-c2012-20.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-136">136</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-157">157</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-172">172</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-182">182</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-184">184</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-213">213</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-219">219</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-221">221</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-226">226</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-228">228</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-232">232</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-234">234</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="constVariable sev_style issue"><td><a href="9.html#line-252">252</a></td><td>constVariable</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Variable &apos;bytes&apos; can be declared as const array</td></tr>
+         <tr class="constVariable sev_style issue"><td><a href="9.html#line-269">269</a></td><td>constVariable</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Variable &apos;bytes&apos; can be declared as const array</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-286">286</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-291">291</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-298">298</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-300">300</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-320">320</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-321">321</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-322">322</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-347">347</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-349">349</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-352">352</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-353">353</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-355">355</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-358">358</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-359">359</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-361">361</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-364">364</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-365">365</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-367">367</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="9.html#line-385">385</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-395">395</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-399">399</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-401">401</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-3 sev_style issue"><td><a href="9.html#line-404">404</a></td><td>misra-c2012-12.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-407">407</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-409">409</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-413">413</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-415">415</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-419">419</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-421">421</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-3 sev_style issue"><td><a href="9.html#line-427">427</a></td><td>misra-c2012-12.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-432">432</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-434">434</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-438">438</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-440">440</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-444">444</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-446">446</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-451">451</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="checkLevelNormal sev_information issue"><td><a href="9.html#line-466">466</a></td><td>checkLevelNormal</td><td></td><td>information</td><td>Limiting ValueFlow analysis in function &apos;ICM20948_configDmpInit&apos; since it is too complex. Please specify --check-level=exhaustive to perform full analysis.</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-474">474</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-475">475</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-476">476</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-477">477</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-481">481</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-482">482</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-483">483</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-484">484</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-489">489</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-493">493</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-495">495</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-499">499</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-501">501</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-506">506</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-510">510</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-511">511</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-512">512</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-513">513</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-517">517</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-519">519</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-524">524</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-526">526</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-534">534</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-536">536</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-543">543</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-545">545</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-549">549</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-551">551</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-556">556</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-558">558</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-562">562</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-564">564</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-568">568</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-570">570</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-574">574</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-576">576</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-580">580</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-582">582</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-586">586</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-588">588</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-591">591</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-592">592</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-594">594</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-597">597</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-598">598</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-600">600</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-604">604</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-605">605</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-606">606</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-607">607</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-611">611</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-613">613</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-618">618</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-620">620</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-626">626</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-628">628</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-633">633</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-635">635</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-640">640</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-642">642</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-646">646</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-648">648</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-652">652</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-654">654</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-658">658</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-660">660</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-664">664</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-666">666</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-669">669</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-670">670</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-672">672</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-675">675</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-676">676</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-678">678</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-682">682</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-683">683</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-684">684</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-687">687</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-689">689</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-693">693</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-695">695</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-699">699</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-701">701</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-705">705</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-707">707</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-712">712</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-713">713</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-718">718</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-720">720</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-725">725</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-727">727</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-732">732</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-734">734</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-743">743</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-745">745</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-753">753</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-755">755</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-765">765</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-767">767</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-772">772</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-774">774</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-778">778</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-780">780</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-784">784</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-786">786</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-790">790</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-792">792</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-797">797</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-799">799</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-803">803</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-805">805</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-810">810</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-812">812</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-816">816</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-818">818</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-822">822</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-824">824</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-828">828</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-830">830</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-835">835</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-837">837</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-841">841</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-846">846</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-848">848</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-856">856</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-858">858</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-864">864</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-866">866</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-870">870</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-872">872</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-876">876</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-878">878</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-882">882</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-884">884</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-888">888</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-892">892</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-894">894</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-901">901</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-903">903</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-907">907</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-909">909</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-918">918</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-920">920</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-924">924</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-926">926</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-933">933</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-935">935</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-939">939</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-940">940</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-944">944</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-946">946</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-950">950</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-952">952</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-957">957</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-959">959</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-963">963</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-965">965</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-969">969</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-971">971</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-974">974</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-975">975</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-977">977</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-981">981</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-983">983</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-987">987</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-989">989</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-993">993</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-998">998</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1000">1000</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1004">1004</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1006">1006</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1011">1011</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1013">1013</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1017">1017</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1019">1019</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1022">1022</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1023">1023</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1025">1025</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1029">1029</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1031">1031</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1035">1035</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1037">1037</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1041">1041</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1043">1043</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1049">1049</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1051">1051</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1055">1055</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1057">1057</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1062">1062</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1064">1064</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1068">1068</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1070">1070</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1074">1074</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1075">1075</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1079">1079</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1081">1081</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1086">1086</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1088">1088</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1094">1094</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1095">1095</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1096">1096</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1111">1111</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1113">1113</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1118">1118</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1120">1120</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1129">1129</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1131">1131</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1135">1135</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1137">1137</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1144">1144</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1146">1146</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1152">1152</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1154">1154</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1162">1162</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1164">1164</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1168">1168</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1170">1170</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1173">1173</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1174">1174</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1176">1176</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1180">1180</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1182">1182</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1188">1188</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1190">1190</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1193">1193</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1194">1194</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1196">1196</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1200">1200</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1202">1202</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1206">1206</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1208">1208</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1211">1211</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1212">1212</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1214">1214</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1218">1218</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1219">1219</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1221">1221</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1225">1225</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1227">1227</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1231">1231</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1233">1233</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1237">1237</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1239">1239</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1243">1243</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1245">1245</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1249">1249</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1251">1251</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1255">1255</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1256">1256</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1258">1258</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1261">1261</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1262">1262</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1264">1264</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1267">1267</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1268">1268</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1270">1270</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1273">1273</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1274">1274</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1276">1276</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1279">1279</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1280">1280</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1282">1282</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1287">1287</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1289">1289</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1293">1293</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1297">1297</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1299">1299</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1303">1303</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1304">1304</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1306">1306</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1310">1310</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1312">1312</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1316">1316</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1318">1318</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1322">1322</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1324">1324</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1328">1328</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1330">1330</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1334">1334</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1336">1336</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1340">1340</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1342">1342</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1346">1346</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1348">1348</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1352">1352</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1354">1354</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1359">1359</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1361">1361</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1365">1365</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1367">1367</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1371">1371</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1378">1378</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1380">1380</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1385">1385</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1387">1387</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1394">1394</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1396">1396</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="9.html#line-1400">1400</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1404">1404</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1406">1406</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1411">1411</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1413">1413</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="9.html#line-1416">1416</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1417">1417</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1419">1419</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1423">1423</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1425">1425</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-9-3 sev_style issue"><td><a href="9.html#line-1443">1443</a></td><td>misra-c2012-9.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1448">1448</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1455">1455</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1457">1457</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1467">1467</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1469">1469</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1479">1479</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1481">1481</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1490">1490</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-9-3 sev_style issue"><td><a href="9.html#line-1498">1498</a></td><td>misra-c2012-9.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="9.html#line-1503">1503</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="9.html#line-1505">1505</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1533">1533</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1534">1534</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1537">1537</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1538">1538</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1541">1541</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-1 sev_style issue"><td><a href="9.html#line-1542">1542</a></td><td>misra-c2012-10.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1548">1548</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1549">1549</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1550">1550</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1552">1552</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1553">1553</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1554">1554</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1556">1556</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1557">1557</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1558">1558</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1560">1560</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1561">1561</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-10-3 sev_style issue"><td><a href="9.html#line-1562">1562</a></td><td>misra-c2012-10.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="8.html">solaris-v1/components/icm_driver/include/icm20948.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="8.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/core/returntypes.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="8.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp/core/types.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-34">34</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-39">39</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-44">44</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-53">53</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-58">58</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-63">63</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-68">68</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-73">73</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-123">123</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-128">128</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-132">132</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-134">134</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-164">164</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-229">229</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-230">230</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-231">231</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-232">232</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-233">233</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-234">234</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-235">235</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-236">236</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-237">237</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-238">238</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-239">239</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-240">240</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-241">241</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-242">242</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-243">243</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-244">244</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-245">245</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="8.html#line-246">246</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-255">255</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-269">269</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-288">288</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-3 sev_style issue"><td><a href="8.html#line-304">304</a></td><td>misra-c2012-2.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-4 sev_style issue"><td><a href="8.html#line-305">305</a></td><td>misra-c2012-2.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-314">314</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-331">331</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-349">349</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-363">363</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-380">380</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-394">394</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-411">411</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-426">426</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-442">442</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-459">459</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-476">476</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-489">489</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-502">502</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-3 sev_style issue"><td><a href="8.html#line-521">521</a></td><td>misra-c2012-2.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-4 sev_style issue"><td><a href="8.html#line-522">522</a></td><td>misra-c2012-2.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-532">532</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-3 sev_style issue"><td><a href="8.html#line-547">547</a></td><td>misra-c2012-2.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-4 sev_style issue"><td><a href="8.html#line-548">548</a></td><td>misra-c2012-2.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-558">558</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-573">573</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-586">586</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-600">600</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-613">613</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-19-2 sev_style issue"><td><a href="8.html#line-629">629</a></td><td>misra-c2012-19.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="10.html">solaris-v1/components/pressure_sensor_driver/bmp390.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="10.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spi.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="10.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="10.html#line-6">6</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp_log.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="10.html#line-8">8</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-9">9</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-10">10</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-11">11</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-12">12</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-13">13</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-14">14</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-15">15</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-16">16</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-17">17</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-18">18</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-19">19</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="10.html#line-20">20</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-11-5 sev_style issue"><td><a href="10.html#line-51">51</a></td><td>misra-c2012-11.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-73">73</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-93">93</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-113">113</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-125">125</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-126">126</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-134">134</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-151">151</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-151">151</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-154">154</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-154">154</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-157">157</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-157">157</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-224">224</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-2 sev_style issue"><td><a href="10.html#line-229">229</a></td><td>misra-c2012-2.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-237">237</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-238">238</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-263">263</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-269">269</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-270">270</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-288">288</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-2 sev_style issue"><td><a href="10.html#line-293">293</a></td><td>misra-c2012-2.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-299">299</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-300">300</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="constParameterPointer sev_style issue"><td><a href="10.html#line-320">320</a></td><td>constParameterPointer</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Parameter &apos;params&apos; can be declared as pointer to const</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-320">320</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="shadowVariable sev_style issue"><td><a href="10.html#line-324">324</a></td><td>shadowVariable</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Local variable &apos;t_lin&apos; shadows outer variable</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-339">339</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-344">344</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-345">345</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-11-8 sev_style issue"><td><a href="10.html#line-348">348</a></td><td>misra-c2012-11.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-362">362</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-2 sev_style issue"><td><a href="10.html#line-367">367</a></td><td>misra-c2012-2.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-386">386</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-386">386</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="10.html#line-390">390</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-416">416</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-422">422</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-423">423</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-448">448</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-2 sev_style issue"><td><a href="10.html#line-453">453</a></td><td>misra-c2012-2.2</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-459">459</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-460">460</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="constParameterPointer sev_style issue"><td><a href="10.html#line-480">480</a></td><td>constParameterPointer</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Parameter &apos;p&apos; can be declared as pointer to const</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-480">480</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-12-1 sev_style issue"><td><a href="10.html#line-493">493</a></td><td>misra-c2012-12.1</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-7 sev_style issue"><td><a href="10.html#line-514">514</a></td><td>misra-c2012-8.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-519">519</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-520">520</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-11-8 sev_style issue"><td><a href="10.html#line-523">523</a></td><td>misra-c2012-11.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-548">548</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="shadowVariable sev_style issue"><td><a href="10.html#line-559">559</a></td><td>shadowVariable</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Local variable &apos;t_lin&apos; shadows outer variable</td></tr>
+         <tr class="shadowVariable sev_style issue"><td><a href="10.html#line-560">560</a></td><td>shadowVariable</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Local variable &apos;comp_press&apos; shadows outer variable</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-565">565</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-565">565</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-568">568</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-568">568</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-576">576</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-576">576</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-579">579</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-579">579</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="10.html#line-594">594</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="10.html#line-595">595</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="1.html">solaris-v1/components/pressure_sensor_driver/include/bmp390.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="1.html#line-5">5</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;returntypes.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="1.html#line-7">7</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/eventgroups.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="1.html#line-8">8</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="1.html#line-9">9</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;hal/gpio/gpio.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-16">16</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-17">17</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-32">32</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-38">38</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-71">71</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-73">73</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-2-5 sev_style issue"><td><a href="1.html#line-74">74</a></td><td>misra-c2012-2.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-5-8 sev_style issue"><td><a href="1.html#line-85">85</a></td><td>misra-c2012-5.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-5-8 sev_style issue"><td><a href="1.html#line-99">99</a></td><td>misra-c2012-5.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-5-8 sev_style issue"><td><a href="1.html#line-138">138</a></td><td>misra-c2012-5.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-5-8 sev_style issue"><td><a href="1.html#line-147">147</a></td><td>misra-c2012-5.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-5-8 sev_style issue"><td><a href="1.html#line-148">148</a></td><td>misra-c2012-5.8</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="4.html">solaris-v1/main/bmpService.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="4.html#line-6">6</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/databank/databank.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="4.html#line-7">7</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/db_flow/db_flow.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="4.html#line-9">9</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="4.html#line-10">10</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp_log.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="4.html#line-65">65</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-82">82</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-115">115</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-124">124</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-127">127</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-128">128</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-129">129</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-165">165</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-185">185</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-13-3 sev_style issue"><td><a href="4.html#line-202">202</a></td><td>misra-c2012-13.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-210">210</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-211">211</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-212">212</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="4.html#line-213">213</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-220">220</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-235">235</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-254">254</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-8-6 sev_style issue"><td><a href="4.html#line-283">283</a></td><td>misra-c2012-8.6</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-289">289</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-301">301</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-303">303</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-307">307</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-309">309</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="4.html#line-313">313</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-315">315</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-6 sev_style issue"><td><a href="4.html#line-328">328</a></td><td>misra-c2012-8.6</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="constVariablePointer sev_style issue"><td><a href="4.html#line-331">331</a></td><td>constVariablePointer</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Variable &apos;p_taskHandle&apos; can be declared as pointer to const</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-337">337</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="4.html#line-351">351</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="0.html">solaris-v1/main/bmpService.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="0.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;core/returntypes.h&quot; not found.</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="6.html">solaris-v1/main/bmp_service.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="6.html#line-6">6</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/databank/databank.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="6.html#line-7">7</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/db_flow/db_flow.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="6.html#line-9">9</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="6.html#line-10">10</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp_log.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-5-9 sev_style issue"><td><a href="6.html#line-14">14</a></td><td>misra-c2012-5.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="6.html#line-22">22</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-28">28</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-43">43</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-47">47</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-54">54</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-55">55</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-56">56</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-71">71</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-93">93</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-13-3 sev_style issue"><td><a href="6.html#line-104">104</a></td><td>misra-c2012-13.3</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-114">114</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-115">115</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-116">116</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-17-7 sev_style issue"><td><a href="6.html#line-117">117</a></td><td>misra-c2012-17.7</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-125">125</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-136">136</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-148">148</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-8-6 sev_style issue"><td><a href="6.html#line-161">161</a></td><td>misra-c2012-8.6</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-163">163</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-175">175</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-175">175</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-178">178</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-178">178</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-181">181</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="6.html#line-181">181</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-c2012-8-6 sev_style issue"><td><a href="6.html#line-186">186</a></td><td>misra-c2012-8.6</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-191">191</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="constVariablePointer sev_style issue"><td><a href="6.html#line-195">195</a></td><td>constVariablePointer</td><td><a href="https://cwe.mitre.org/data/definitions/398.html">398</a></td><td>style</td><td>Variable &apos;th&apos; can be declared as pointer to const</td></tr>
+         <tr class="misra-c2012-15-5 sev_style issue"><td><a href="6.html#line-206">206</a></td><td>misra-c2012-15.5</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="5.html">solaris-v1/main/bmp_service.h</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="5.html#line-4">4</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;core/returntypes.h&quot; not found.</td></tr>
+      <tbody class="fileEntry">
+       <tr><td colspan="5"><a href="7.html">solaris-v1/main/main.c</a></td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-1">1</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;core/core.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-3">3</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spi.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-6">6</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;driver/gpio.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-7">7</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;core/returntypes.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-9">9</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;spp_log.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-10">10</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;osal/task.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-12">12</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/databank/databank.h&quot; not found.</td></tr>
+         <tr class="missingInclude sev_information issue"><td><a href="7.html#line-13">13</a></td><td>missingInclude</td><td></td><td>information</td><td>Include file: &quot;services/db_flow/db_flow.h&quot; not found.</td></tr>
+         <tr class="misra-c2012-8-9 sev_style issue"><td><a href="7.html#line-24">24</a></td><td>misra-c2012-8.9</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-c2012-8-4 sev_style issue"><td><a href="7.html#line-34">34</a></td><td>misra-c2012-8.4</td><td></td><td>style</td><td>misra violation (use --rule-texts=&lt;file&gt; to get proper output)</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="7.html#line-45">45</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="7.html#line-68">68</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="7.html#line-78">78</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="7.html#line-91">91</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+         <tr class="misra-config sev_error issue"><td><a href="7.html#line-124">124</a></td><td>misra-config</td><td></td><td>error</td><td class="error">Variable &apos;SPP_OK&apos; is unknown</td></tr>
+      </tbody>
+       </table>
+    </div>
+    <div id="footer" class="footer">
+      <p>
+        Created by Cppcheck 2.13.0 (<a href="https://cppcheck.sourceforge.io">Sourceforge</a>, <a href="irc://irc.freenode.net/cppcheck">IRC</a>)
+      </p>
+    </div>
+    </div>
+  </body>
+</html>
