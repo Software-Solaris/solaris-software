@@ -1,0 +1,82 @@
+/**
+ * @mainpage Solaris Software Documentation
+ *
+ * @section intro_sec Introduction
+ *
+ * **Solaris** is an open-source amateur rocketry firmware built on
+ * <a href="https://docs.espressif.com/projects/esp-idf/en/stable/">ESP-IDF</a>
+ * targeting the **ESP32-S3** microcontroller. It provides reusable sensor
+ * drivers and a software framework for flight computers.
+ *
+ * The firmware communicates over **SPI** with onboard sensors and uses the
+ * **Solaris Packet Protocol (SPP)** framework for hardware abstraction, OS
+ * services and telemetry packet management.
+ *
+ * @section hw_sec Hardware
+ *
+ * | Component   | Device    | Interface | Chip Select |
+ * |-------------|-----------|-----------|-------------|
+ * | IMU         | ICM-20948 | SPI2_HOST | GPIO 21     |
+ * | Barometer   | BMP390    | SPI2_HOST | GPIO 18     |
+ * | MCU         | ESP32-S3  | --        | --          |
+ *
+ * SPI bus pins: CIPO = GPIO 47, COPI = GPIO 38, CLK = GPIO 48.
+ *
+ * @section arch_sec Architecture
+ *
+ * @subsection spp_sub SPP Framework
+ *
+ * The Solaris Packet Protocol provides three abstraction layers:
+ *
+ * - **HAL** (Hardware Abstraction Layer): SPI bus/device init, GPIO interrupts.
+ *   See @ref spi.h, @ref gpio.h.
+ * - **OSAL** (OS Abstraction Layer): FreeRTOS wrappers for tasks, event groups,
+ *   queues, mutexes and semaphores. See @ref task.h, @ref eventgroups.h.
+ * - **Services**: Packet pool (Databank), packet routing (DB Flow), logging.
+ *   See @ref databank.h, @ref db_flow.h, @ref spp_log.h.
+ *
+ * @subsection sensors_sub Sensor Drivers
+ *
+ * - **ICM-20948** -- 9-axis IMU with on-chip DMP (Digital Motion Processor).
+ *   Provides accelerometer, gyroscope, magnetometer and quaternion data at up
+ *   to 225 Hz via a 42-byte DMP FIFO packet. See @ref icm20948.h.
+ * - **BMP390** -- Barometric pressure sensor with temperature compensation and
+ *   altitude calculation. Data-ready interrupt driven via GPIO. See @ref bmp390.h.
+ *
+ * @subsection flow_sub Application Flow
+ *
+ * @code
+ * app_main()
+ *   |-- Core_Init()                    (SPP core services)
+ *   |-- SPP_HAL_SPI_BusInit()          (shared SPI bus)
+ *   |-- ICM20948_configDmpInit()       (DMP firmware load + full config)
+ *   |-- SPP_DATABANK_init()            (packet pool)
+ *   |-- BMP_ServiceInit/Start()        (barometer task)
+ *   `-- loop: ICM20948_checkFifoData() (poll DMP FIFO)
+ * @endcode
+ *
+ * @section modules_sec Modules
+ *
+ * | Module                  | Description                                |
+ * |-------------------------|--------------------------------------------|
+ * | @ref icm20948.h         | ICM-20948 IMU + DMP driver                 |
+ * | @ref bmp390.h           | BMP390 barometric pressure driver          |
+ * | @ref bmpService.h       | BMP390 service layer (task + interrupt)    |
+ * | @ref general.h          | Legacy common sensor helpers               |
+ * | @ref macros.h           | Legacy SPI pin and struct definitions       |
+ * | @ref gpio_int.h         | Legacy GPIO interrupt helpers               |
+ *
+ * @section build_sec Building
+ *
+ * @code{.sh}
+ * cd solaris-v1
+ * idf.py build
+ * @endcode
+ *
+ * Requires ESP-IDF v5.1 with the ESP32-S3 target.
+ *
+ * @section license_sec License
+ *
+ * GPLv3 with additional terms for amateur rocketry.
+ * Commercial use is allowed but modifications must remain open source.
+ */

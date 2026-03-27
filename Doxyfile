@@ -5,12 +5,13 @@ PROJECT_BRIEF          = "Open-source amateur rocketry firmware for ESP32-S3"
 PROJECT_NUMBER         = "v1"
 
 # Input
-INPUT                  = solaris-v1/main \
+INPUT                  = doc/mainpage.dox \
+                         solaris-v1/main \
                          solaris-v1/components/icm_driver \
                          solaris-v1/components/pressure_sensor_driver \
                          solaris-v1/components/general \
                          solaris-v1/components/datalogger_driver
-FILE_PATTERNS          = *.c *.h
+FILE_PATTERNS          = *.c *.h *.dox
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */external/*
 EXCLUDE                = solaris-v1/main/bmp_service.h \
@@ -20,18 +21,28 @@ EXCLUDE                = solaris-v1/main/bmp_service.h \
 OUTPUT_DIRECTORY       = doc
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
+HTML_COLORSTYLE        = LIGHT
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_TIMESTAMP         = YES
 GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+SEARCHENGINE           = YES
 
 # Extraction
 EXTRACT_ALL            = YES
 EXTRACT_STATIC         = YES
 EXTRACT_PRIVATE        = YES
+EXTRACT_LOCAL_CLASSES  = YES
 
 # Source browsing
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
 REFERENCED_BY_RELATION = YES
 REFERENCES_RELATION    = YES
+VERBATIM_HEADERS       = YES
 
 # Diagrams
 HAVE_DOT               = YES
@@ -43,10 +54,28 @@ CLASS_DIAGRAMS         = YES
 COLLABORATION_GRAPH    = YES
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
+DOT_GRAPH_MAX_NODES    = 100
+MAX_DOT_GRAPH_DEPTH    = 0
+DOT_MULTI_TARGETS      = YES
+
+# Documentation quality
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = NO
 
 # Misc
 OPTIMIZE_OUTPUT_FOR_C  = YES
 TYPEDEF_HIDES_STRUCT   = YES
 SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+SORT_GROUP_NAMES       = NO
+BRIEF_MEMBER_DESC      = YES
+REPEAT_BRIEF           = YES
+ALWAYS_DETAILED_SEC    = YES
+SHOW_INCLUDE_FILES     = YES
+SHOW_GROUPED_MEMB_INC = YES
+SHOW_USED_FILES        = YES
+SHOW_FILES             = YES
 QUIET                  = YES
 WARNINGS               = YES
