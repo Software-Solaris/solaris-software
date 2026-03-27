@@ -586,7 +586,11 @@ retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude_m, 
     return SPP_OK;
 }
 
-//--------------------INT---------------------------
+/* ----------------------------------------------------------------
+ * Interrupt Configuration
+ * ---------------------------------------------------------------- */
+
+/** @copydoc bmp390_int_enable_drdy */
 retval_t bmp390_int_enable_drdy(void *p_spi)
 {
     retval_t ret;
