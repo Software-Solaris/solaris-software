@@ -374,14 +374,7 @@ static retval_t ICM20948_dmpWriteOutputConfig(void *p_data, spp_uint16_t outCtl1
  * Public API
  * ---------------------------------------------------------------- */
 
-/**
- * @brief Loads the DMP firmware image into device SRAM and verifies it.
- *
- * @param[in] p_data Pointer to the SPI handler.
- *
- * @return SPP_OK on success, SPP_ERROR on verification mismatch, or an error
- *         code otherwise.
- */
+/** @copydoc ICM20948_loadDmp */
 retval_t ICM20948_loadDmp(void *p_data)
 {
     void *p_spi = p_data;
@@ -455,13 +448,7 @@ retval_t ICM20948_loadDmp(void *p_data)
     return SPP_OK;
 }
 
-/**
- * @brief Performs the complete DMP initialization sequence.
- *
- * @param[in] p_data Pointer to the SPI handler.
- *
- * @return SPP_OK on success, or an error code otherwise.
- */
+/** @copydoc ICM20948_configDmpInit */
 retval_t ICM20948_configDmpInit(void *p_data)
 {
     void *p_spi = p_data;
@@ -1428,15 +1415,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
     return SPP_OK;
 }
 
-/**
- * @brief Checks whether there is data in the FIFO and parses complete DMP packets.
- *
- * The function reads interrupt status registers, obtains FIFO count, resets
- * the FIFO if it grows beyond a threshold, and decodes complete DMP packets
- * containing accelerometer, gyroscope, magnetometer and quaternion data.
- *
- * @param[in] p_data Pointer to the SPI handler.
- */
+/** @copydoc ICM20948_checkFifoData */
 void ICM20948_checkFifoData(void *p_data)
 {
     void *p_spi = p_data;

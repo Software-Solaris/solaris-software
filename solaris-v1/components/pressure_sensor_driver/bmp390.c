@@ -34,8 +34,6 @@ float comp_press;
  *                        - Event group pointer
  *                        - ISR context with event group and ready bits
  * 
- * @return void
- * 
  * @details
  * The initialization sequence includes:
  * 1. Retrieves and initializes the SPI handler

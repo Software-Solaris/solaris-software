@@ -13,17 +13,14 @@ INPUT                  = solaris-v1/main \
 FILE_PATTERNS          = *.c *.h
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */external/*
+EXCLUDE                = solaris-v1/main/bmp_service.h \
+                         solaris-v1/main/bmp_service.c
 
 # Output
 OUTPUT_DIRECTORY       = doc
-GENERATE_HTML          = NO
-GENERATE_LATEX         = YES
-LATEX_OUTPUT           = latex
-
-# PDF settings
-PDF_HYPERLINKS         = YES
-USE_PDFLATEX           = YES
-LATEX_BATCHMODE        = YES
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
 
 # Extraction
 EXTRACT_ALL            = YES
@@ -40,7 +37,8 @@ REFERENCES_RELATION    = YES
 HAVE_DOT               = YES
 CALL_GRAPH             = YES
 CALLER_GRAPH           = YES
-DOT_IMAGE_FORMAT       = pdf
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
 CLASS_DIAGRAMS         = YES
 COLLABORATION_GRAPH    = YES
 INCLUDE_GRAPH          = YES
