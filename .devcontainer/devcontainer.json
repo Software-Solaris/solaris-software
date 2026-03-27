@@ -22,7 +22,8 @@
     "samubarb.vscode-doxyfile",
     "openai.tu-extension-codex",
     "github.vscode-pull-request-github",
-    "llvm-vs-code-extensions.vscode-clangd"
+    "llvm-vs-code-extensions.vscode-clangd",
+    "jbenden.c-cpp-flylint"
   ],
 
   "remoteUser": "root",

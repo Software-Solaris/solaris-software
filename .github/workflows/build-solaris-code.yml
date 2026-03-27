@@ -65,6 +65,44 @@ jobs:
           . /opt/esp/idf/export.sh
           idf.py build
 
+  unit-tests:
+    runs-on: self-hosted
+
+    container:
+      image: espressif/idf:v6.0-dev
+      options: >-
+        --security-opt label=disable
+
+    steps:
+      - name: Fix permissions for GitHub workspace
+        run: |
+          chmod -R 777 "$GITHUB_WORKSPACE" || true
+          chmod -R 777 /__w || true
+
+      - name: Wipe workspace
+        run: |
+          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+          token: ${{ secrets.CI_GH_TOKEN }}
+
+      - name: Install cgreen
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq libcgreen1-dev cmake
+
+      - name: Build and run tests
+        run: |
+          cd solaris-v1/components/icm_driver/tests
+          mkdir -p build && cd build
+          cmake ..
+          make
+          ctest --output-on-failure
+
   generate-docs:
     runs-on: self-hosted
 
