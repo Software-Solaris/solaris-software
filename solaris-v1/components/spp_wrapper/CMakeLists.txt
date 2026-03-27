@@ -33,26 +33,17 @@ if(SPP_ROOT STREQUAL "")
 endif()
 
 
-# ---------------------------------------------------------
-# SIMPLÍSIMO:
-#   INCLUYE *.c SOLO DEL DIRECTORIO RAÍZ DE external/spp
-#   NO coge nada que esté dentro de hal/ ni osal/
-# ---------------------------------------------------------
+# Coge todos los .c recursivamente, luego excluye hal/ y osal/
+# (sus implementaciones vienen de spp-ports via spp_port_wrapper)
+file(GLOB_RECURSE SPP_EXT_SOURCES "${SPP_ROOT}/*.c")
+list(FILTER SPP_EXT_SOURCES EXCLUDE REGEX ".*/(hal|osal)/.*")
 
-# Solo .c directamente en external/spp (sin recursión)
-file(GLOB_RECURSE SPP_EXT_SOURCES
-    "${SPP_ROOT}/*.c"
-)
-
-
-# No cogemos ni external/spp/hal/*.c
-# ni external/spp/osal/*.c
-# ni ningún subdirectorio
-# por diseño.
-
-# Headers (estos sí recursivos)
+# Headers: expone el directorio padre (external/) para includes cualificados
+# como "spp/osal/task.h", y también cada subdirectorio individual para
+# compatibilidad con los includes internos de SPP ("task.h").
 file(GLOB_RECURSE SPP_EXT_HEADERS "${SPP_ROOT}/*.h")
-set(SPP_EXT_INCLUDE_DIRS "${SPP_ROOT}")
+get_filename_component(SPP_PARENT_DIR "${SPP_ROOT}" DIRECTORY)
+set(SPP_EXT_INCLUDE_DIRS "${SPP_PARENT_DIR}" "${SPP_ROOT}")
 foreach(h ${SPP_EXT_HEADERS})
   get_filename_component(d "${h}" DIRECTORY)
   list(APPEND SPP_EXT_INCLUDE_DIRS "${d}")
