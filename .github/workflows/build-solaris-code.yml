@@ -8,15 +8,14 @@ jobs:
   build-ci-image:
     runs-on: self-hosted
     steps:
-      - name: Fix permissions from previous Docker runs
+      - name: Clean workspace
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          clean: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Build CI image if needed
@@ -34,16 +33,15 @@ jobs:
     needs: build-ci-image
     runs-on: self-hosted
     steps:
-      - name: Fix permissions
+      - name: Clean workspace
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: false
-          clean: false
           persist-credentials: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
@@ -71,6 +69,7 @@ jobs:
       - name: Build firmware
         run: |
           docker run --rm --privileged \
+            --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1 \
             $CI_IMAGE \
@@ -80,21 +79,21 @@ jobs:
     needs: build-ci-image
     runs-on: self-hosted
     steps:
-      - name: Fix permissions
+      - name: Clean workspace
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           submodules: false
-          clean: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Run cppcheck with MISRA
         run: |
           docker run --rm --privileged \
+            --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             $CI_IMAGE \
@@ -138,21 +137,21 @@ jobs:
     needs: [build-ci-image, static-analysis]
     runs-on: self-hosted
     steps:
-      - name: Fix permissions
+      - name: Clean workspace
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           submodules: false
-          clean: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Build and run tests
         run: |
           docker run --rm --privileged \
+            --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1/components/icm_driver/tests \
             $CI_IMAGE \
@@ -162,21 +161,21 @@ jobs:
     needs: [build-ci-image, static-analysis]
     runs-on: self-hosted
     steps:
-      - name: Fix permissions
+      - name: Clean workspace
         run: |
-          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev sh -c 'chmod -R 777 /workspace && rm -rf /workspace/* /workspace/.??*' || true
+          docker run --rm -v "${{ github.workspace }}:/workspace" espressif/idf:v6.0-dev rm -rf /workspace/* /workspace/.??* || true
 
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           submodules: false
-          clean: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Generate documentation
         run: |
           docker run --rm --privileged \
+            --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace \
             $CI_IMAGE \
