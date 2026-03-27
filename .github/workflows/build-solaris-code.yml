@@ -64,3 +64,58 @@ jobs:
           cd solaris-v1
           . /opt/esp/idf/export.sh
           idf.py build
+
+  generate-docs:
+    runs-on: self-hosted
+
+    container:
+      image: espressif/idf:v6.0-dev
+      options: >-
+        --security-opt label=disable
+
+    steps:
+      - name: Fix permissions for GitHub workspace
+        run: |
+          chmod -R 777 "$GITHUB_WORKSPACE" || true
+          chmod -R 777 /__w || true
+
+      - name: Wipe workspace
+        run: |
+          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+          persist-credentials: false
+          token: ${{ secrets.CI_GH_TOKEN }}
+          clean: true
+
+      - name: Mark workspace as safe for Git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install Doxygen and LaTeX
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq doxygen graphviz texlive-latex-base texlive-latex-extra texlive-fonts-recommended latexmk
+
+      - name: Generate documentation
+        run: |
+          doxygen Doxyfile
+          cd doc/latex
+          make pdf
+
+      - name: Copy PDF to doc/
+        run: |
+          cp doc/latex/refman.pdf doc/solaris-software.pdf
+          rm -rf doc/latex
+
+      - name: Commit and push documentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/${{ github.repository }}.git"
+          git add doc/solaris-software.pdf
+          git diff --cached --quiet && echo "No doc changes" || git commit -m "docs: update generated documentation [skip ci]" && git push origin HEAD:${{ github.ref_name }}

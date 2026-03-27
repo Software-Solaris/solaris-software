@@ -1,0 +1,54 @@
+# Doxyfile for Solaris Software
+
+PROJECT_NAME           = "Solaris Software"
+PROJECT_BRIEF          = "Open-source amateur rocketry firmware for ESP32-S3"
+PROJECT_NUMBER         = "v1"
+
+# Input
+INPUT                  = solaris-v1/main \
+                         solaris-v1/components/icm_driver \
+                         solaris-v1/components/pressure_sensor_driver \
+                         solaris-v1/components/general \
+                         solaris-v1/components/datalogger_driver
+FILE_PATTERNS          = *.c *.h
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */build/* */external/*
+
+# Output
+OUTPUT_DIRECTORY       = doc
+GENERATE_HTML          = NO
+GENERATE_LATEX         = YES
+LATEX_OUTPUT           = latex
+
+# PDF settings
+PDF_HYPERLINKS         = YES
+USE_PDFLATEX           = YES
+LATEX_BATCHMODE        = YES
+
+# Extraction
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+EXTRACT_PRIVATE        = YES
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+# Diagrams
+HAVE_DOT               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DOT_IMAGE_FORMAT       = pdf
+CLASS_DIAGRAMS         = YES
+COLLABORATION_GRAPH    = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+
+# Misc
+OPTIMIZE_OUTPUT_FOR_C  = YES
+TYPEDEF_HIDES_STRUCT   = YES
+SORT_MEMBER_DOCS       = NO
+QUIET                  = YES
+WARNINGS               = YES
