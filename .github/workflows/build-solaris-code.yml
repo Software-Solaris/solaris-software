@@ -66,6 +66,9 @@ jobs:
           cd solaris-v1/external/esp-idf
           git checkout v5.1
 
+      - name: Open workspace permissions for container
+        run: chmod -R 777 "${{ github.workspace }}"
+
       - name: Build firmware
         run: |
           docker run --rm \
@@ -87,6 +90,9 @@ jobs:
           fetch-depth: 1
           submodules: false
           token: ${{ secrets.CI_GH_TOKEN }}
+
+      - name: Open workspace permissions for container
+        run: chmod -R 777 "${{ github.workspace }}"
 
       - name: Run cppcheck with MISRA
         run: |
@@ -146,6 +152,9 @@ jobs:
           submodules: false
           token: ${{ secrets.CI_GH_TOKEN }}
 
+      - name: Open workspace permissions for container
+        run: chmod -R 777 "${{ github.workspace }}"
+
       - name: Build and run tests
         run: |
           docker run --rm \
@@ -169,6 +178,9 @@ jobs:
           persist-credentials: false
           token: ${{ secrets.CI_GH_TOKEN }}
           clean: true
+
+      - name: Open workspace permissions for container
+        run: chmod -R 777 "${{ github.workspace }}"
 
       - name: Generate documentation
         run: |
