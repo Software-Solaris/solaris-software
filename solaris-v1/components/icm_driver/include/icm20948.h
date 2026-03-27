@@ -1,9 +1,8 @@
 #ifndef ICM20948_H
 #define ICM20948_H
 
-#include "returntypes.h"
-#include "general.h"
-#include "types.h"
+#include "spp/core/returntypes.h"
+#include "spp/core/types.h"
 
 
 /**
@@ -32,17 +31,17 @@
 /**
  * @brief Priority of the main ICM20948 task.
  */
-#define K_ICM20948_TASK_PRIORITY             4U
+#define K_ICM20948_TASK_PRIORITY 4U
 
 /**
  * @brief Priority of the ICM20948 configuration task.
  */
-#define K_ICM20948_CONFIG_TASK_PRIORITY      5U
+#define K_ICM20948_CONFIG_TASK_PRIORITY 5U
 
 /**
  * @brief Priority of the sensor read task.
  */
-#define K_ICM20948_READ_SENSORS_PRIORITY     4U
+#define K_ICM20948_READ_SENSORS_PRIORITY 4U
 
 /* ----------------------------------------------------------------
  * Hardware pins
@@ -51,27 +50,27 @@
 /**
  * @brief SPI host used by the ICM20948 device.
  */
-#define K_ICM20948_SPI_HOST_USED             SPI2_HOST
+#define K_ICM20948_SPI_HOST_USED SPI2_HOST
 
 /**
  * @brief Chip-select GPIO number.
  */
-#define K_ICM20948_PIN_NUM_CS                21U
+#define K_ICM20948_PIN_NUM_CS 21U
 
 /**
  * @brief CIPO/MISO GPIO number.
  */
-#define K_ICM20948_PIN_NUM_CIPO              47U
+#define K_ICM20948_PIN_NUM_CIPO 47U
 
 /**
  * @brief COPI/MOSI GPIO number.
  */
-#define K_ICM20948_PIN_NUM_COPI              38U
+#define K_ICM20948_PIN_NUM_COPI 38U
 
 /**
  * @brief SPI clock GPIO number.
  */
-#define K_ICM20948_PIN_NUM_CLK               48U
+#define K_ICM20948_PIN_NUM_CLK 48U
 
 /* ----------------------------------------------------------------
  * SPI operation type
@@ -80,17 +79,17 @@
 /**
  * @brief SPI read operation bit.
  */
-#define K_ICM20948_READ_OP                   0x80U
+#define K_ICM20948_READ_OP 0x80U
 
 /**
  * @brief SPI write operation bit.
  */
-#define K_ICM20948_WRITE_OP                  0x00U
+#define K_ICM20948_WRITE_OP 0x00U
 
 /**
  * @brief Dummy byte used during SPI read operations.
  */
-#define K_ICM20948_EMPTY_MESSAGE             0x00U
+#define K_ICM20948_EMPTY_MESSAGE 0x00U
 
 /* ----------------------------------------------------------------
  * Register banks
@@ -110,32 +109,32 @@ typedef enum
 /**
  * @brief Address of the bank selection register.
  */
-#define K_ICM20948_REG_BANK_SEL              0x7FU
+#define K_ICM20948_REG_BANK_SEL 0x7FU
 
 /* ----------------------------------------------------------------
  * Bank 0 register addresses
  * ---------------------------------------------------------------- */
-#define K_ICM20948_REG_WHO_AM_I              0x00U
-#define K_ICM20948_REG_USER_CTRL             0x03U
-#define K_ICM20948_REG_LP_CONF               0x05U
-#define K_ICM20948_REG_PWR_MGMT_1            0x06U
-#define K_ICM20948_REG_PWR_MGMT_2            0x07U
-#define K_ICM20948_REG_INT_ENABLE            0x10U
-#define K_ICM20948_REG_INT_ENABLE_1          0x11U
-#define K_ICM20948_REG_INT_ENABLE_2          0x12U
-#define K_ICM20948_REG_DMP_INT_STATUS        0x18U
-#define K_ICM20948_REG_INT_STATUS            0x19U
+#define K_ICM20948_REG_WHO_AM_I                 0x00U
+#define K_ICM20948_REG_USER_CTRL                0x03U
+#define K_ICM20948_REG_LP_CONF                  0x05U
+#define K_ICM20948_REG_PWR_MGMT_1               0x06U
+#define K_ICM20948_REG_PWR_MGMT_2               0x07U
+#define K_ICM20948_REG_INT_ENABLE               0x10U
+#define K_ICM20948_REG_INT_ENABLE_1             0x11U
+#define K_ICM20948_REG_INT_ENABLE_2             0x12U
+#define K_ICM20948_REG_DMP_INT_STATUS           0x18U
+#define K_ICM20948_REG_INT_STATUS               0x19U
 #define K_ICM20948_REG_SINGLE_FIFO_PRIORITY_SEL 0x26U
-#define K_ICM20948_REG_PERIPH_SENS_DATA_00   0x3BU
-#define K_ICM20948_REG_FIFO_EN_1             0x66U
-#define K_ICM20948_REG_FIFO_EN_2             0x67U
-#define K_ICM20948_REG_FIFO_RST              0x68U
-#define K_ICM20948_REG_FIFO_MODE             0x69U
-#define K_ICM20948_REG_FIFO_COUNTH           0x70U
-#define K_ICM20948_REG_FIFO_COUNTL           0x71U
-#define K_ICM20948_REG_FIFO_R_W              0x72U
-#define K_ICM20948_REG_HW_FIX_DISABLE        0x75U
-#define K_ICM20948_REG_FIFO_CFG              0x76U
+#define K_ICM20948_REG_PERIPH_SENS_DATA_00      0x3BU
+#define K_ICM20948_REG_FIFO_EN_1                0x66U
+#define K_ICM20948_REG_FIFO_EN_2                0x67U
+#define K_ICM20948_REG_FIFO_RST                 0x68U
+#define K_ICM20948_REG_FIFO_MODE                0x69U
+#define K_ICM20948_REG_FIFO_COUNTH              0x70U
+#define K_ICM20948_REG_FIFO_COUNTL              0x71U
+#define K_ICM20948_REG_FIFO_R_W                 0x72U
+#define K_ICM20948_REG_HW_FIX_DISABLE           0x75U
+#define K_ICM20948_REG_FIFO_CFG                 0x76U
 
 /* ----------------------------------------------------------------
  * Bank 1 register addresses
@@ -145,106 +144,106 @@ typedef enum
 /* ----------------------------------------------------------------
  * Bank 2 register addresses
  * ---------------------------------------------------------------- */
-#define K_ICM20948_REG_GYRO_SMPLRT_DIV       0x00U
-#define K_ICM20948_REG_GYRO_CONFIG           0x01U
-#define K_ICM20948_REG_ACCEL_SMPLRT_DIV_1    0x10U
-#define K_ICM20948_REG_ACCEL_SMPLRT_DIV_2    0x11U
-#define K_ICM20948_REG_ACCEL_CONFIG          0x14U
-#define K_ICM20948_REG_ACCEL_CONFIG_2        0x15U
-#define K_ICM20948_REG_DMP_ADDR_MSB          0x50U
-#define K_ICM20948_REG_DMP_ADDR_LSB          0x51U
+#define K_ICM20948_REG_GYRO_SMPLRT_DIV    0x00U
+#define K_ICM20948_REG_GYRO_CONFIG        0x01U
+#define K_ICM20948_REG_ACCEL_SMPLRT_DIV_1 0x10U
+#define K_ICM20948_REG_ACCEL_SMPLRT_DIV_2 0x11U
+#define K_ICM20948_REG_ACCEL_CONFIG       0x14U
+#define K_ICM20948_REG_ACCEL_CONFIG_2     0x15U
+#define K_ICM20948_REG_DMP_ADDR_MSB       0x50U
+#define K_ICM20948_REG_DMP_ADDR_LSB       0x51U
 
 /* ----------------------------------------------------------------
  * Bank 3 register addresses
  * ---------------------------------------------------------------- */
-#define K_ICM20948_I2C_MST_ODR_CONFIG        0x00U
-#define K_ICM20948_REG_I2C_CTRL              0x01U
-#define K_ICM20948_REG_SLV0_ADDR             0x03U
-#define K_ICM20948_REG_SLV0_REG              0x04U
-#define K_ICM20948_REG_SLV0_CTRL             0x05U
-#define K_ICM20948_REG_SLV0_DO               0x06U
-#define K_ICM20948_I2C_SLV1_ADDR             0x07U
-#define K_ICM20948_I2C_SLV1_REG              0x08U
-#define K_ICM20948_I2C_SLV1_CTRL             0x09U
-#define K_ICM20948_I2C_SLV1_DO               0x0AU
+#define K_ICM20948_I2C_MST_ODR_CONFIG 0x00U
+#define K_ICM20948_REG_I2C_CTRL       0x01U
+#define K_ICM20948_REG_SLV0_ADDR      0x03U
+#define K_ICM20948_REG_SLV0_REG       0x04U
+#define K_ICM20948_REG_SLV0_CTRL      0x05U
+#define K_ICM20948_REG_SLV0_DO        0x06U
+#define K_ICM20948_I2C_SLV1_ADDR      0x07U
+#define K_ICM20948_I2C_SLV1_REG       0x08U
+#define K_ICM20948_I2C_SLV1_CTRL      0x09U
+#define K_ICM20948_I2C_SLV1_DO        0x0AU
 
 /* ----------------------------------------------------------------
  * DMP memory access
  * ---------------------------------------------------------------- */
-#define K_ICM20948_REG_MEM_START_ADDR        0x7CU
-#define K_ICM20948_REG_MEM_R_W               0x7DU
-#define K_ICM20948_REG_MEM_BANK_SEL          0x7EU
-#define K_ICM20948_DMP_LOAD_START            0x0090U
+#define K_ICM20948_REG_MEM_START_ADDR 0x7CU
+#define K_ICM20948_REG_MEM_R_W        0x7DU
+#define K_ICM20948_REG_MEM_BANK_SEL   0x7EU
+#define K_ICM20948_DMP_LOAD_START     0x0090U
 
 /* ----------------------------------------------------------------
  * DMP memory addresses
  * ---------------------------------------------------------------- */
-#define K_ICM20948_DMP_DATA_OUT_CTL1         (4U   * 16U)
-#define K_ICM20948_DMP_DATA_OUT_CTL2         (4U   * 16U + 2U)
-#define K_ICM20948_DMP_DATA_INTR_CTL         (4U   * 16U + 12U)
-#define K_ICM20948_DMP_MOTION_EVENT_CTL      (4U   * 16U + 14U)
-#define K_ICM20948_DMP_DATA_RDY_STATUS       (8U   * 16U + 10U)
-#define K_ICM20948_DMP_ODR_QUAT6             (10U  * 16U + 12U)
-#define K_ICM20948_DMP_ODR_QUAT9             (10U  * 16U + 8U)
-#define K_ICM20948_DMP_ODR_GYRO              (11U  * 16U + 10U)
-#define K_ICM20948_DMP_ODR_CPASS             (11U  * 16U + 6U)
-#define K_ICM20948_DMP_ODR_ACCEL             (11U  * 16U + 14U)
-#define K_ICM20948_DMP_CPASS_TIME_BUFFER     (29U  * 16U + 8U)
-#define K_ICM20948_DMP_GYRO_SF               (19U  * 16U)
-#define K_ICM20948_DMP_ACC_SCALE             (30U  * 16U)
-#define K_ICM20948_DMP_FIFO_WATERMARK        (31U  * 16U + 14U)
-#define K_ICM20948_DMP_BAC_RATE              (48U  * 16U + 10U)
-#define K_ICM20948_DMP_B2S_RATE              (48U  * 16U + 8U)
-#define K_ICM20948_DMP_ACCEL_ONLY_GAIN       (16U  * 16U + 12U)
-#define K_ICM20948_DMP_ACC_SCALE2            (79U  * 16U + 4U)
-#define K_ICM20948_DMP_CPASS_MTX_00          (23U  * 16U)
-#define K_ICM20948_DMP_CPASS_MTX_01          (23U  * 16U + 4U)
-#define K_ICM20948_DMP_CPASS_MTX_02          (23U  * 16U + 8U)
-#define K_ICM20948_DMP_CPASS_MTX_10          (23U  * 16U + 12U)
-#define K_ICM20948_DMP_CPASS_MTX_11          (24U  * 16U)
-#define K_ICM20948_DMP_CPASS_MTX_12          (24U  * 16U + 4U)
-#define K_ICM20948_DMP_CPASS_MTX_20          (24U  * 16U + 8U)
-#define K_ICM20948_DMP_CPASS_MTX_21          (24U  * 16U + 12U)
-#define K_ICM20948_DMP_CPASS_MTX_22          (25U  * 16U)
-#define K_ICM20948_DMP_GYRO_FULLSCALE        (72U  * 16U + 12U)
-#define K_ICM20948_DMP_ACCEL_ALPHA_VAR       (91U  * 16U)
-#define K_ICM20948_DMP_ACCEL_A_VAR           (92U  * 16U)
-#define K_ICM20948_DMP_ACCEL_CAL_INIT        (94U  * 16U + 4U)
-#define K_ICM20948_DMP_B2S_MTX_00            (208U * 16U)
-#define K_ICM20948_DMP_B2S_MTX_01            (208U * 16U + 4U)
-#define K_ICM20948_DMP_B2S_MTX_02            (208U * 16U + 8U)
-#define K_ICM20948_DMP_B2S_MTX_10            (208U * 16U + 12U)
-#define K_ICM20948_DMP_B2S_MTX_11            (209U * 16U)
-#define K_ICM20948_DMP_B2S_MTX_12            (209U * 16U + 4U)
-#define K_ICM20948_DMP_B2S_MTX_20            (209U * 16U + 8U)
-#define K_ICM20948_DMP_B2S_MTX_21            (209U * 16U + 12U)
-#define K_ICM20948_DMP_B2S_MTX_22            (210U * 16U)
+#define K_ICM20948_DMP_DATA_OUT_CTL1     (4U * 16U)
+#define K_ICM20948_DMP_DATA_OUT_CTL2     (4U * 16U + 2U)
+#define K_ICM20948_DMP_DATA_INTR_CTL     (4U * 16U + 12U)
+#define K_ICM20948_DMP_MOTION_EVENT_CTL  (4U * 16U + 14U)
+#define K_ICM20948_DMP_DATA_RDY_STATUS   (8U * 16U + 10U)
+#define K_ICM20948_DMP_ODR_QUAT6         (10U * 16U + 12U)
+#define K_ICM20948_DMP_ODR_QUAT9         (10U * 16U + 8U)
+#define K_ICM20948_DMP_ODR_GYRO          (11U * 16U + 10U)
+#define K_ICM20948_DMP_ODR_CPASS         (11U * 16U + 6U)
+#define K_ICM20948_DMP_ODR_ACCEL         (11U * 16U + 14U)
+#define K_ICM20948_DMP_CPASS_TIME_BUFFER (29U * 16U + 8U)
+#define K_ICM20948_DMP_GYRO_SF           (19U * 16U)
+#define K_ICM20948_DMP_ACC_SCALE         (30U * 16U)
+#define K_ICM20948_DMP_FIFO_WATERMARK    (31U * 16U + 14U)
+#define K_ICM20948_DMP_BAC_RATE          (48U * 16U + 10U)
+#define K_ICM20948_DMP_B2S_RATE          (48U * 16U + 8U)
+#define K_ICM20948_DMP_ACCEL_ONLY_GAIN   (16U * 16U + 12U)
+#define K_ICM20948_DMP_ACC_SCALE2        (79U * 16U + 4U)
+#define K_ICM20948_DMP_CPASS_MTX_00      (23U * 16U)
+#define K_ICM20948_DMP_CPASS_MTX_01      (23U * 16U + 4U)
+#define K_ICM20948_DMP_CPASS_MTX_02      (23U * 16U + 8U)
+#define K_ICM20948_DMP_CPASS_MTX_10      (23U * 16U + 12U)
+#define K_ICM20948_DMP_CPASS_MTX_11      (24U * 16U)
+#define K_ICM20948_DMP_CPASS_MTX_12      (24U * 16U + 4U)
+#define K_ICM20948_DMP_CPASS_MTX_20      (24U * 16U + 8U)
+#define K_ICM20948_DMP_CPASS_MTX_21      (24U * 16U + 12U)
+#define K_ICM20948_DMP_CPASS_MTX_22      (25U * 16U)
+#define K_ICM20948_DMP_GYRO_FULLSCALE    (72U * 16U + 12U)
+#define K_ICM20948_DMP_ACCEL_ALPHA_VAR   (91U * 16U)
+#define K_ICM20948_DMP_ACCEL_A_VAR       (92U * 16U)
+#define K_ICM20948_DMP_ACCEL_CAL_INIT    (94U * 16U + 4U)
+#define K_ICM20948_DMP_B2S_MTX_00        (208U * 16U)
+#define K_ICM20948_DMP_B2S_MTX_01        (208U * 16U + 4U)
+#define K_ICM20948_DMP_B2S_MTX_02        (208U * 16U + 8U)
+#define K_ICM20948_DMP_B2S_MTX_10        (208U * 16U + 12U)
+#define K_ICM20948_DMP_B2S_MTX_11        (209U * 16U)
+#define K_ICM20948_DMP_B2S_MTX_12        (209U * 16U + 4U)
+#define K_ICM20948_DMP_B2S_MTX_20        (209U * 16U + 8U)
+#define K_ICM20948_DMP_B2S_MTX_21        (209U * 16U + 12U)
+#define K_ICM20948_DMP_B2S_MTX_22        (210U * 16U)
 
 /* ----------------------------------------------------------------
  * Magnetometer (AK09916)
  * ---------------------------------------------------------------- */
-#define K_ICM20948_MAG_WR_ADDR               0x0CU
-#define K_ICM20948_MAG_RD_ADDR               0x8CU
-#define K_ICM20948_MAG_CTRL_2                0x31U
+#define K_ICM20948_MAG_WR_ADDR 0x0CU
+#define K_ICM20948_MAG_RD_ADDR 0x8CU
+#define K_ICM20948_MAG_CTRL_2  0x31U
 
-#define K_ICM20948_REG_ACCEL_X_H             0x2DU
-#define K_ICM20948_REG_ACCEL_X_L             0x2EU
-#define K_ICM20948_REG_ACCEL_Y_H             0x2FU
-#define K_ICM20948_REG_ACCEL_Y_L             0x30U
-#define K_ICM20948_REG_ACCEL_Z_H             0x31U
-#define K_ICM20948_REG_ACCEL_Z_L             0x32U
-#define K_ICM20948_REG_GYRO_X_H              0x33U
-#define K_ICM20948_REG_GYRO_X_L              0x34U
-#define K_ICM20948_REG_GYRO_Y_H              0x35U
-#define K_ICM20948_REG_GYRO_Y_L              0x36U
-#define K_ICM20948_REG_GYRO_Z_H              0x37U
-#define K_ICM20948_REG_GYRO_Z_L              0x38U
-#define K_ICM20948_REG_MAGNETO_X_L           0x3CU
-#define K_ICM20948_REG_MAGNETO_X_H           0x3DU
-#define K_ICM20948_REG_MAGNETO_Y_L           0x3EU
-#define K_ICM20948_REG_MAGNETO_Y_H           0x3FU
-#define K_ICM20948_REG_MAGNETO_Z_L           0x40U
-#define K_ICM20948_REG_MAGNETO_Z_H           0x41U
+#define K_ICM20948_REG_ACCEL_X_H   0x2DU
+#define K_ICM20948_REG_ACCEL_X_L   0x2EU
+#define K_ICM20948_REG_ACCEL_Y_H   0x2FU
+#define K_ICM20948_REG_ACCEL_Y_L   0x30U
+#define K_ICM20948_REG_ACCEL_Z_H   0x31U
+#define K_ICM20948_REG_ACCEL_Z_L   0x32U
+#define K_ICM20948_REG_GYRO_X_H    0x33U
+#define K_ICM20948_REG_GYRO_X_L    0x34U
+#define K_ICM20948_REG_GYRO_Y_H    0x35U
+#define K_ICM20948_REG_GYRO_Y_L    0x36U
+#define K_ICM20948_REG_GYRO_Z_H    0x37U
+#define K_ICM20948_REG_GYRO_Z_L    0x38U
+#define K_ICM20948_REG_MAGNETO_X_L 0x3CU
+#define K_ICM20948_REG_MAGNETO_X_H 0x3DU
+#define K_ICM20948_REG_MAGNETO_Y_L 0x3EU
+#define K_ICM20948_REG_MAGNETO_Y_H 0x3FU
+#define K_ICM20948_REG_MAGNETO_Z_L 0x40U
+#define K_ICM20948_REG_MAGNETO_Z_H 0x41U
 
 /* ----------------------------------------------------------------
  * Register unions
@@ -305,8 +304,8 @@ typedef union
 typedef enum
 {
     K_ICM20948_CLK_INTERNAL_20MHZ = 0U, /**< Internal oscillator. */
-    K_ICM20948_CLK_AUTO           = 1U, /**< Automatically select best clock. */
-    K_ICM20948_CLK_STOP           = 7U  /**< Stops the clock source. */
+    K_ICM20948_CLK_AUTO = 1U,           /**< Automatically select best clock. */
+    K_ICM20948_CLK_STOP = 7U            /**< Stops the clock source. */
 } ICM20948_ClockSel_t;
 
 /**
@@ -521,8 +520,8 @@ typedef union
  */
 typedef enum
 {
-    K_ICM20948_GYRO_FS_250DPS  = 0U, /**< ±250 dps. */
-    K_ICM20948_GYRO_FS_500DPS  = 1U, /**< ±500 dps. */
+    K_ICM20948_GYRO_FS_250DPS = 0U,  /**< ±250 dps. */
+    K_ICM20948_GYRO_FS_500DPS = 1U,  /**< ±500 dps. */
     K_ICM20948_GYRO_FS_1000DPS = 2U, /**< ±1000 dps. */
     K_ICM20948_GYRO_FS_2000DPS = 3U  /**< ±2000 dps. */
 } ICM20948_GyroFsSel_t;
@@ -547,10 +546,10 @@ typedef union
  */
 typedef enum
 {
-    K_ICM20948_ACCEL_FS_2G  = 0U, /**< ±2 g. */
-    K_ICM20948_ACCEL_FS_4G  = 1U, /**< ±4 g. */
-    K_ICM20948_ACCEL_FS_8G  = 2U, /**< ±8 g. */
-    K_ICM20948_ACCEL_FS_16G = 3U  /**< ±16 g. */
+    K_ICM20948_ACCEL_FS_2G = 0U, /**< ±2 g. */
+    K_ICM20948_ACCEL_FS_4G = 1U, /**< ±4 g. */
+    K_ICM20948_ACCEL_FS_8G = 2U, /**< ±8 g. */
+    K_ICM20948_ACCEL_FS_16G = 3U /**< ±16 g. */
 } ICM20948_AccelFsSel_t;
 
 /**
