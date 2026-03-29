@@ -11,7 +11,7 @@
 
 #include "services/databank/databank.h"
 #include "services/db_flow/db_flow.h"
-#include "bmp_service.h"
+#include "bmpService.h"
 
 #include <stddef.h>
 
