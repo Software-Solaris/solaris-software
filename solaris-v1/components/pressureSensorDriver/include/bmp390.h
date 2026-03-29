@@ -28,37 +28,23 @@ extern "C" {
 #endif
 
 /* ============================================================================
- * SPI Protocol Constants
- * ========================================================================= */
-
-/**
- * @brief SPI read operation flag (bit 7 set).
- */
-#define READ_OP            0x80
-
-/**
- * @brief Empty byte used as padding in SPI transactions.
- */
-#define EMPTY_MESSAGE      0x00
-
-/* ============================================================================
  * Initialisation Constants
  * ========================================================================= */
 
 /**
  * @brief FreeRTOS task priority for the BMP390 initialisation task.
  */
-#define BMP_INIT_PRIO   4
+#define K_BMP_INIT_PRIO   4
 
 /**
  * @brief Stack size in bytes for the BMP390 initialisation task.
  */
-#define BMP_INIT_TASK_STACK_SIZE 4096
+#define K_BMP_INIT_TASK_STACK_SIZE 4096
 
 /**
  * @brief Event group bit indicating BMP390 data-ready.
  */
-#define BMP390_EVT_DRDY   (1u << 0)
+#define K_BMP390_EVT_DRDY   (1u << 0)
 
 /* ============================================================================
  * Data Types
@@ -82,7 +68,7 @@ typedef struct {
 /**
  * @brief Chip-select GPIO pin for the BMP390.
  */
-#define PIN_NUM_CS   18
+#define K_BMP390_PIN_NUM_CS   18
 
 /* ============================================================================
  * Initialisation
@@ -105,17 +91,17 @@ void BmpInit(void* p_data);
 /**
  * @brief BMP390 chip ID register address.
  */
-#define BMP390_CHIP_ID_REG    0x00
+#define K_BMP390_CHIP_ID_REG    0x00
 
 /**
  * @brief Expected value of the BMP390 chip ID register.
  */
-#define BMP390_CHIP_ID_VALUE  0x60
+#define K_BMP390_CHIP_ID_VALUE  0x60
 
 /**
  * @brief BMP390 soft-reset command register address.
  */
-#define BMP390_SOFT_RESET_REG 0x7E
+#define K_BMP390_SOFT_RESET_REG 0x7E
 
 /**
  * @brief Command byte that triggers a BMP390 soft reset.
@@ -125,7 +111,7 @@ void BmpInit(void* p_data);
 /**
  * @brief BMP390 interface configuration register address.
  */
-#define BMP390_IF_CONF_REG    0x1A
+#define K_BMP390_IF_CONF_REG    0x1A
 
 /**
  * @brief Value to select SPI 4-wire mode in IF_CONF.
@@ -161,22 +147,22 @@ retval_t bmp390_config_check(void *p_spi);
  * ========================================================================= */
 
 /** @brief Power control register address. */
-#define BMP390_REG_PWRCTRL     0x1B
+#define K_BMP390_REG_PWRCTRL     0x1B
 /** @brief Power control value: normal mode, pressure + temperature enabled. */
 #define BMP390_VALUE_PWRCTRL   0x33
 
 /** @brief Oversampling settings register address. */
-#define BMP390_REG_OSR           0x1C
+#define K_BMP390_REG_OSR           0x1C
 /** @brief Oversampling value (no oversampling, +/- 0.2 m accuracy). */
 #define BMP390_VALUE_OSR         0x00
 
 /** @brief Output data rate register address. */
-#define BMP390_REG_ODR         0x1D
+#define K_BMP390_REG_ODR         0x1D
 /** @brief ODR value for 50 Hz output. */
 #define BMP390_VALUE_ODR       0x02
 
 /** @brief IIR filter coefficient register address. */
-#define BMP390_REG_IIR      0x1F
+#define K_BMP390_REG_IIR      0x1F
 /** @brief IIR filter coefficient 1. */
 #define BMP390_VALUE_IIR    0x02
 
@@ -189,9 +175,9 @@ retval_t bmp390_config_check(void *p_spi);
 retval_t bmp390_prepare_measure(void* p_spi);
 
 /** @brief Status register address. */
-#define BMP390_REG_STATUS         0x03
+#define K_BMP390_REG_STATUS         0x03
 /** @brief Status bit: temperature data ready. */
-#define BMP390_STATUS_DRDY_TEMP   0x40
+#define K_BMP390_STATUS_DRDY_TEMP   0x40
 /** @brief Status bit: pressure data ready. */
 #define BMP390_STATUS_DRDY_PRES  0x20
 
@@ -209,7 +195,7 @@ retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms);
  * ========================================================================= */
 
 /** @brief Start address of temperature calibration registers. */
-#define BMP390_TEMP_CALIB_REG_START  0x31
+#define K_BMP390_TEMP_CALIB_REG_START  0x31
 
 /**
  * @brief Raw temperature calibration coefficients (as read from the sensor).
@@ -249,7 +235,7 @@ typedef struct {
 retval_t bmp390_calibrate_temp_params(void *p_spi, bmp390_temp_params_t *out);
 
 /** @brief Start address of raw temperature data registers (24-bit). */
-#define BMP390_TEMP_RAW_REG    0x07
+#define K_BMP390_TEMP_RAW_REG    0x07
 
 /**
  * @brief Reads the 24-bit raw temperature value from the sensor.
@@ -277,7 +263,7 @@ float bmp390_compensate_temperature(spp_uint32_t raw_temp, bmp390_temp_params_t 
  * ========================================================================= */
 
 /** @brief Start address of pressure calibration registers. */
-#define BMP390_PRESS_CALIB_REG_START  0x36
+#define K_BMP390_PRESS_CALIB_REG_START  0x36
 
 /**
  * @brief Raw pressure calibration coefficients (as read from the sensor).
@@ -335,7 +321,7 @@ typedef struct {
 retval_t bmp390_calibrate_press_params(void *p_spi, bmp390_press_params_t *out);
 
 /** @brief Start address of raw pressure data registers (24-bit). */
-#define BMP390_PRESS_RAW_REG    0x04
+#define K_BMP390_PRESS_RAW_REG    0x04
 
 /**
  * @brief Reads the 24-bit raw pressure value from the sensor.
@@ -424,11 +410,11 @@ retval_t bmp390_aux_get_press(void *p_spi, const bmp390_press_params_t *press_pa
  * ========================================================================= */
 
 /** @brief Interrupt control register address. */
-#define BMP390_REG_INT_CTRL     0x19
+#define K_BMP390_REG_INT_CTRL     0x19
 /** @brief INT_CTRL bit: enable data-ready interrupt output. */
-#define BMP390_INT_CTRL_DRDY_EN 0x40
+#define K_BMP390_INT_CTRL_DRDY_EN 0x40
 /** @brief INT_CTRL bit: active-high interrupt level. */
-#define BMP390_INT_CTRL_LEVEL   0x02
+#define K_BMP390_INT_CTRL_LEVEL   0x02
 
 /**
  * @brief Enables the data-ready interrupt output on the BMP390 INT pin.
