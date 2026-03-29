@@ -1,4 +1,5 @@
-#include "bmp390.h"
+#include "include/bmp390.h"
+#include "general/macros.h"
 #include <string.h>
 #include <math.h>
 #include "spi.h"
@@ -54,7 +55,7 @@ void BmpInit(void* p_data)
     p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
 
     p_bmp->isr_ctx.p_event_group = p_bmp->p_event_group;
-    p_bmp->isr_ctx.bits        = BMP390_EVT_DRDY;
+    p_bmp->isr_ctx.bits        = K_BMP390_EVT_DRDY;
 
     SPP_HAL_GPIO_ConfigInterrupt(p_bmp->int_pin, p_bmp->int_intr_type, p_bmp->int_pull);
     SPP_HAL_GPIO_RegisterISR(p_bmp->int_pin, (void*)&p_bmp->isr_ctx);
@@ -72,7 +73,7 @@ retval_t bmp390_soft_reset(void *p_spi)
 {
     spp_uint8_t buf[2] = 
     {
-        (spp_uint8_t)BMP390_SOFT_RESET_REG,
+        (spp_uint8_t)K_BMP390_SOFT_RESET_REG,
         (spp_uint8_t)BMP390_SOFT_RESET_CMD
     };
 
@@ -92,7 +93,7 @@ retval_t bmp390_enable_spi_mode(void *p_spi)
 {
     spp_uint8_t buf[2] = 
     {
-        (spp_uint8_t)BMP390_IF_CONF_REG,
+        (spp_uint8_t)K_BMP390_IF_CONF_REG,
         (spp_uint8_t)BMP390_IF_CONF_SPI
     };
 
@@ -112,9 +113,9 @@ retval_t bmp390_config_check(void *p_spi)
 {
     spp_uint8_t buf[9] = 
     {
-        (spp_uint8_t)(READ_OP | BMP390_IF_CONF_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_SOFT_RESET_REG), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | BMP390_CHIP_ID_REG), EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(K_READ_OP | K_BMP390_IF_CONF_REG), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | K_BMP390_SOFT_RESET_REG), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | K_BMP390_CHIP_ID_REG), K_WRITE_OP, K_WRITE_OP
     };
     
     retval_t ret;
@@ -175,10 +176,10 @@ retval_t bmp390_prepare_measure(void *p_spi)
 {
     spp_uint8_t buf[8] = 
     {
-        (spp_uint8_t)BMP390_REG_OSR,     (spp_uint8_t)BMP390_VALUE_OSR,
-        (spp_uint8_t)BMP390_REG_ODR,     (spp_uint8_t)BMP390_VALUE_ODR,
-        (spp_uint8_t)BMP390_REG_IIR,     (spp_uint8_t)BMP390_VALUE_IIR,
-        (spp_uint8_t)BMP390_REG_PWRCTRL, (spp_uint8_t)BMP390_VALUE_PWRCTRL
+        (spp_uint8_t)K_BMP390_REG_OSR,     (spp_uint8_t)BMP390_VALUE_OSR,
+        (spp_uint8_t)K_BMP390_REG_ODR,     (spp_uint8_t)BMP390_VALUE_ODR,
+        (spp_uint8_t)K_BMP390_REG_IIR,     (spp_uint8_t)BMP390_VALUE_IIR,
+        (spp_uint8_t)K_BMP390_REG_PWRCTRL, (spp_uint8_t)BMP390_VALUE_PWRCTRL
     };
 
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
@@ -200,7 +201,7 @@ retval_t bmp390_wait_drdy(bmp_data_t* p_bmp, spp_uint32_t timeout_ms)
 
     retval_t ret = OSAL_EventGroupWaitBits(
         p_bmp->p_event_group,
-        BMP390_EVT_DRDY,
+        K_BMP390_EVT_DRDY,
         1,      // clear_on_exit
         0,      // wait_for_all_bits
         timeout_ms,
@@ -224,11 +225,11 @@ retval_t bmp390_read_raw_temp_coeffs(void *p_spi, bmp390_temp_calib_t *tcalib)
     retval_t ret;
 
     spp_uint8_t buf[15] = {
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 0)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 1)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 2)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 3)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_CALIB_REG_START + 4)), EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 0)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 1)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 2)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 3)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 4)), K_WRITE_OP, K_WRITE_OP
     };
 
     ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
@@ -288,9 +289,9 @@ retval_t bmp390_read_raw_temp(void *p_spi, uint32_t *raw_temp)
     retval_t ret;
 
     spp_uint8_t buf[9] = {
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 0)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 1)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_TEMP_RAW_REG + 2)), EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_RAW_REG + 0)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_RAW_REG + 1)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_RAW_REG + 2)), K_WRITE_OP, K_WRITE_OP
     };
 
     ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
@@ -362,22 +363,22 @@ retval_t bmp390_read_raw_press_coeffs(void *p_spi, bmp390_press_calib_t *pcalib)
     retval_t ret;
 
     spp_uint8_t buf[48] = {
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  0)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  1)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  2)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  3)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  4)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  5)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  6)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  7)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  8)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START +  9)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 10)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 11)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 12)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 13)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 14)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_CALIB_REG_START + 15)), EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  0)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  1)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  2)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  3)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  4)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  5)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  6)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  7)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  8)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START +  9)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 10)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 11)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 12)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 13)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 14)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 15)), K_WRITE_OP, K_WRITE_OP
     };
 
     ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
@@ -448,9 +449,9 @@ retval_t bmp390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
     retval_t ret;
 
     spp_uint8_t buf[9] = {
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 0)), EMPTY_MESSAGE, EMPTY_MESSAGE,
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 1)), EMPTY_MESSAGE, EMPTY_MESSAGE,  
-        (spp_uint8_t)(READ_OP | (BMP390_PRESS_RAW_REG + 2)), EMPTY_MESSAGE, EMPTY_MESSAGE
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_RAW_REG + 0)), K_WRITE_OP, K_WRITE_OP,
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_RAW_REG + 1)), K_WRITE_OP, K_WRITE_OP,  
+        (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_RAW_REG + 2)), K_WRITE_OP, K_WRITE_OP
     };
 
     ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
@@ -594,7 +595,7 @@ retval_t bmp390_get_altitude(void *p_spi, bmp_data_t *p_bmp, float *altitude_m, 
 retval_t bmp390_int_enable_drdy(void *p_spi)
 {
     retval_t ret;
-    spp_uint8_t buf[2] = { BMP390_REG_INT_CTRL, (spp_uint8_t)(BMP390_INT_CTRL_LEVEL | BMP390_INT_CTRL_DRDY_EN) }; // NO latch
+    spp_uint8_t buf[2] = { K_BMP390_REG_INT_CTRL, (spp_uint8_t)(K_BMP390_INT_CTRL_LEVEL | K_BMP390_INT_CTRL_DRDY_EN) }; // NO latch
     ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK) {
         return ret;
