@@ -1,4 +1,4 @@
-#include "core/core.h"
+#include "core.h"
 #include "icm20948.h"
 #include "spi.h"
 
