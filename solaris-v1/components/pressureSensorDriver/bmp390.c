@@ -5,6 +5,7 @@
 #include "spi.h"
 #include "osal/task.h"
 #include "spp_log.h"
+#include "include/bmp390.h"
 
 static const char *TAG = "BMP390";
 spp_uint8_t id, ifc;
