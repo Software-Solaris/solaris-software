@@ -32,7 +32,7 @@ services:
 
 #https://docs.sonarsource.com/sonarqube-server/server-installation/from-docker-image/set-up-and-start-container
   sonarqube:
-    image: sonarqube:25.6.0.109173-community
+    image: sonarqube:2026-lta-developer
     depends_on:
       - postgres
     environment:
