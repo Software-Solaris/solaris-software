@@ -26,17 +26,23 @@ services:
       POSTGRES_USER: sonar
       POSTGRES_PASSWORD: sonar
       POSTGRES_DB: sonarqube
+    ports:
+      - "5432:5432"
     volumes:
       - sonarqube_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-#https://docs.sonarsource.com/sonarqube-server/server-installation/from-docker-image/set-up-and-start-container
+# https://docs.sonarsource.com/sonarqube-server/server-installation/from-docker-image/set-up-and-start-container
   sonarqube:
-    image: sonarqube:2026-lta-developer
+    image: sonarqube:community
+    hostname: sonarqube
+    extra_hosts:
+      - "sonarqube:127.0.0.1"
+      - "host.docker.internal:host-gateway"
     depends_on:
       - postgres
     environment:
-      SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonarqube
+      SONAR_JDBC_URL: jdbc:postgresql://host.docker.internal:5432/sonarqube
       SONAR_JDBC_USERNAME: sonar
       SONAR_JDBC_PASSWORD: sonar
     ports:
@@ -45,6 +51,7 @@ services:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_logs:/opt/sonarqube/logs
       - sonarqube_extensions:/opt/sonarqube/extensions
+      - ./sonarqube-plugins:/opt/sonarqube/extensions/plugins
     restart: unless-stopped
 
 volumes:
