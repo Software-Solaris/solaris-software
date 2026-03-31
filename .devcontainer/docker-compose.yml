@@ -15,12 +15,9 @@ services:
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
     volumes:
-      - ${HOME}/.ssh:/root/.ssh:ro
       - ${HOME}/.gitconfig:/root/.gitconfig:ro
       - ..:/home/user/Documents/solaris-software:cached
     network_mode: host
-    dns:
-      - 192.168.10.1
     working_dir: /home/user/Documents/solaris-software
 
   postgres:
