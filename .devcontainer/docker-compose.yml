@@ -1,6 +1,5 @@
 services:
   esp32-dev:
-    container_name: esp32-dev
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
@@ -11,20 +10,48 @@ services:
     user: root
     tty: true
     stdin_open: true
-
     environment:
       IDF_PATH: /opt/esp/idf
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
-
     volumes:
       - ${HOME}/.ssh:/root/.ssh:ro
       - ${HOME}/.gitconfig:/root/.gitconfig:ro
       - ..:/home/user/Documents/solaris-software:cached
-
     network_mode: host
     dns:
       - 192.168.10.1
-
     working_dir: /home/user/Documents/solaris-software
 
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonarqube
+    volumes:
+      - sonarqube_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+#https://docs.sonarsource.com/sonarqube-server/server-installation/from-docker-image/set-up-and-start-container
+  sonarqube:
+    image: sonarqube:25.6.0.109173-community
+    depends_on:
+      - postgres
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://postgres:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    restart: unless-stopped
+
+volumes:
+  sonarqube_postgres_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:

@@ -1,14 +1,13 @@
 {
   "name": "ESP32 - SW DEV",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "..",
-    "args": {
-      "USERNAME": "root",
-      "USER_UID": "1000",
-      "USER_GID": "1000"
-    }
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "esp32-dev",
+  "runServices": [
+    "esp32-dev",
+    "postgres",
+    "sonarqube"
+  ],
+  "workspaceFolder": "/home/user/Documents/solaris-software",
   "runArgs": [
     "--device=/dev/ttyACM0",
     "--privileged"
