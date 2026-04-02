@@ -1,4 +1,5 @@
 #include "icm20948.h"
+#include "macros.h"
 #include "spp/core/returntypes.h"
 #include "spp/hal/spi/spi.h"
 #include "spp/osal/task.h"
@@ -97,7 +98,7 @@ static const spp_uint8_t s_dmp3Image[] = {
  */
 static retval_t ICM20948_writeReg(void *p_spi, spp_uint8_t reg, spp_uint8_t value)
 {
-    spp_uint8_t txBuffer[2] = {K_ICM20948_WRITE_OP | reg, value};
+    spp_uint8_t txBuffer[2] = {K_WRITE_OP | reg, value};
     return SPP_HAL_SPI_Transmit(p_spi, txBuffer, 2U);
 }
 
@@ -112,7 +113,7 @@ static retval_t ICM20948_writeReg(void *p_spi, spp_uint8_t reg, spp_uint8_t valu
  */
 static retval_t ICM20948_readReg(void *p_spi, spp_uint8_t reg, spp_uint8_t *p_value)
 {
-    spp_uint8_t txRxBuffer[2] = {K_ICM20948_READ_OP | reg, K_ICM20948_EMPTY_MESSAGE};
+    spp_uint8_t txRxBuffer[2] = {K_READ_OP | reg, K_WRITE_OP};
     retval_t ret = SPP_HAL_SPI_Transmit(p_spi, txRxBuffer, 2U);
 
     if (p_value != NULL)
@@ -1427,8 +1428,8 @@ void ICM20948_checkFifoData(void *p_data)
         return;
     }
 
-    txRxData[0] = K_ICM20948_READ_OP | K_ICM20948_REG_INT_STATUS;
-    txRxData[1] = K_ICM20948_EMPTY_MESSAGE;
+    txRxData[0] = K_READ_OP | K_ICM20948_REG_INT_STATUS;
+    txRxData[1] = K_WRITE_OP;
 
     ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 2U);
     if (ret != SPP_OK)
@@ -1439,8 +1440,8 @@ void ICM20948_checkFifoData(void *p_data)
     {
         spp_uint8_t intStatus = txRxData[1];
 
-        txRxData[0] = K_ICM20948_READ_OP | K_ICM20948_REG_DMP_INT_STATUS;
-        txRxData[1] = K_ICM20948_EMPTY_MESSAGE;
+        txRxData[0] = K_READ_OP | K_ICM20948_REG_DMP_INT_STATUS;
+        txRxData[1] = K_WRITE_OP;
 
         ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 2U);
         if (ret != SPP_OK)
@@ -1450,9 +1451,9 @@ void ICM20948_checkFifoData(void *p_data)
 
         if ((intStatus & 0x02U) != 0U)
         {
-            txRxData[0] = K_ICM20948_READ_OP | K_ICM20948_REG_FIFO_COUNTH;
-            txRxData[1] = K_ICM20948_EMPTY_MESSAGE;
-            txRxData[2] = K_ICM20948_EMPTY_MESSAGE;
+            txRxData[0] = K_READ_OP | K_ICM20948_REG_FIFO_COUNTH;
+            txRxData[1] = K_WRITE_OP;
+            txRxData[2] = K_WRITE_OP;
 
             ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 3U);
             if (ret != SPP_OK)
@@ -1476,7 +1477,7 @@ void ICM20948_checkFifoData(void *p_data)
                     {
                         spp_uint8_t fifoBuffer[K_ICM20948_DMP_PACKET_SIZE_BYTES + 1U] = {0U};
 
-                        fifoBuffer[0] = K_ICM20948_READ_OP | K_ICM20948_REG_FIFO_R_W;
+                        fifoBuffer[0] = K_READ_OP | K_ICM20948_REG_FIFO_R_W;
                         ret = SPP_HAL_SPI_Transmit(p_spi, fifoBuffer,
                                                    K_ICM20948_DMP_PACKET_SIZE_BYTES + 1U);
                         if (ret != SPP_OK)

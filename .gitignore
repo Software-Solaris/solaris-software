@@ -11,3 +11,5 @@ launch.json
 solaris-v1/components/icm_driver/drivers/*
 */build/*
 doc/
+solaris-v1/.scannerwork/*
+.scannerwork/.sonar_lock
