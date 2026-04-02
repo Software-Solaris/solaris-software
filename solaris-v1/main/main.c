@@ -1,4 +1,4 @@
-#include "core/core.h"
+#include "core.h"
 #include "icm20948.h"
 #include "spi.h"
 
@@ -11,7 +11,7 @@
 
 #include "services/databank/databank.h"
 #include "services/db_flow/db_flow.h"
-#include "bmp_service.h"
+#include "bmpService.h"
 
 #include <stddef.h>
 

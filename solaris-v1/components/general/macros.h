@@ -29,6 +29,20 @@ extern "C" {
 /** @brief GPIO pin for SPI clock. */
 #define PIN_NUM_CLK        48
 
+/* ----------------------------------------------------------------
+ * SPI operation type
+ * ---------------------------------------------------------------- */
+
+/**
+ * @brief SPI read operation bit.
+ */
+#define K_READ_OP 0x80U
+
+/**
+ * @brief SPI write operation bit.
+ */
+#define K_WRITE_OP 0x00U
+
 /**
  * @brief Legacy SPI device context.
  *
