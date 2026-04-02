@@ -1,8 +1,9 @@
 #include "storage.h"
 #include "spi.h"
-#include "macros_esp.h" 
-#include "spp_log.h"
+#include "macros_esp.h"
 #include "osal/task.h"
+
+#include "esp_log.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -11,16 +12,10 @@
 
 void app_main(void)
 {
-    SPP_OSAL_TaskDelay(2000);
     retval_t ret;
 
-    // 1) SPI Bus Init
-    ret = SPP_HAL_SPI_BusInit();
-    if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "SPI Bus Init failed");
-    }
+    SPP_OSAL_TaskDelay(2000);
 
-    // 2) Config
     static SPP_Storage_InitCfg sd_cfg = {
         .base_path = "/sdcard",
         .spi_host_id = USED_HOST,
@@ -30,31 +25,47 @@ void app_main(void)
         .format_if_mount_failed = false
     };
 
-    // 3) Mount
-    ret = SPP_HAL_Storage_Mount((void*)&sd_cfg);
+    ESP_LOGI(TAG, "Inicio app_main");
+
+    ret = SPP_HAL_SPI_BusInit();
     if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Storage Mount failed");
+        ESP_LOGE(TAG, "SPI Bus Init failed");
+        return;
     }
+    ESP_LOGI(TAG, "SPI Bus Init OK");
 
-    // 4) Write Test
-    FILE* f = fopen("/sdcard/test.txt", "w");
+    ret = SPP_HAL_Storage_Mount((void *)&sd_cfg);
+    if (ret != SPP_OK) {
+        ESP_LOGE(TAG, "Storage Mount failed");
+        return;
+    }
+    ESP_LOGI(TAG, "Storage Mount OK");
+
+    FILE *f = fopen("/sdcard/test.txt", "w");
     if (f == NULL) {
-        (void)SPP_HAL_Storage_Unmount((void*)&sd_cfg);
-        SPP_LOGE(TAG, "Failed to open file for writing");
+        ESP_LOGE(TAG, "Failed to open file for writing");
+        (void)SPP_HAL_Storage_Unmount((void *)&sd_cfg);
+        return;
     }
+    ESP_LOGI(TAG, "File opened OK");
 
-    const char* msg = "hola sd\n";
+    const char *msg = "hola sd\n";
     size_t wr = fwrite(msg, 1, strlen(msg), f);
     fclose(f);
 
     if (wr != strlen(msg)) {
-        (void)SPP_HAL_Storage_Unmount((void*)&sd_cfg);
-        SPP_LOGE(TAG, "Failed to write to file");
+        ESP_LOGE(TAG, "Failed to write to file");
+        (void)SPP_HAL_Storage_Unmount((void *)&sd_cfg);
+        return;
+    }
+    ESP_LOGI(TAG, "Write test OK");
+
+    ret = SPP_HAL_Storage_Unmount((void *)&sd_cfg);
+    if (ret != SPP_OK) {
+        ESP_LOGE(TAG, "Storage Unmount failed");
+        return;
     }
 
-    // 5) Unmount
-    ret = SPP_HAL_Storage_Unmount((void*)&sd_cfg);
-    if (ret != SPP_OK) {
-        SPP_LOGE(TAG, "Storage Unmount failed");
-    }
+    ESP_LOGI(TAG, "Storage Unmount OK");
+    ESP_LOGI(TAG, "Fin app_main");
 }
