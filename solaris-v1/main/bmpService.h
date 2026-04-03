@@ -4,10 +4,11 @@
 #include "core/returntypes.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/**
+    /**
  * @file bmp_service.h
  * @brief Public API for the BMP390 service layer.
  *
@@ -23,7 +24,7 @@ extern "C" {
  *   through the system data services.
  */
 
-/**
+    /**
  * @brief Initializes the BMP390 service.
  *
  * This function prepares the BMP390 service context and associates it
@@ -36,9 +37,9 @@ extern "C" {
  * - SPP_OK if initialization succeeds
  * - Error code otherwise
  */
-retval_t BMP_ServiceInit(void *p_spi_bmp);
+    retval_t BMP_ServiceInit(void *p_spi_bmp);
 
-/**
+    /**
  * @brief Starts the BMP390 service.
  *
  * This function starts the internal service execution, typically by
@@ -49,7 +50,7 @@ retval_t BMP_ServiceInit(void *p_spi_bmp);
  * - SPP_OK if the service starts correctly
  * - Error code otherwise
  */
-retval_t BMP_ServiceStart(void);
+    retval_t BMP_ServiceStart(void);
 
 #ifdef __cplusplus
 }

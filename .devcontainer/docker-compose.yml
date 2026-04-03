@@ -7,6 +7,9 @@ services:
         USERNAME: root
         USER_UID: 1000
         USER_GID: 1000
+    devices:
+      - "/dev/ttyACM0:/dev/ttyACM0"
+    privileged: true
     user: root
     tty: true
     stdin_open: true
