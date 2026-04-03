@@ -12,10 +12,7 @@ We recommend reading our [installation guide for Linux users](https://github.com
 
 ## Versions
 We have currently one version of our code: [solaris-v0](https://github.com/Software-Solaris/solaris-software/tree/solaris-v0) where we configure the barometer BMP390 and the IMU ICM20948 in differents drivers.
-Next versions will include: 
- - v1: Both sensors in the same general driver (almost ready).
- - v2: General code with FreeRTOS (on standby right now).
- - v3: General code with the SPP (we are working on it).
+The original roadmap considered an intermediate version with both sensors integrated into the same general driver, followed by another version with FreeRTOS support. In the end, neither of those versions was released as an official milestone. Development moved directly to the first SPP-based implementation, which is now the current `solaris-v1`.
 
 ## Next steps
 We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hardware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
