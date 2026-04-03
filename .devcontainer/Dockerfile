@@ -20,11 +20,7 @@ RUN apt-get update && apt-get install -y \
     texlive-fonts-recommended \
     texlive-plain-generic \
     latexmk \
-    clang \
-    clangd \
     clang-format \
-    clang-tidy \
-    clang-tools \
     cppcheck \
     flawfinder \
     python3-pip \
@@ -43,7 +39,8 @@ RUN curl -fsSL -o /tmp/sonar-scanner.zip \
     && rm /tmp/sonar-scanner.zip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git config --global core.editor "nano"
+RUN git config --system core.editor "nano" \
+    && git config --system --add safe.directory /home/user/Documents/solaris-software
 
 WORKDIR /root
 
