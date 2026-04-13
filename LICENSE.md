@@ -260,6 +260,3 @@ enforceable, and the remaining provisions shall continue in full force and effec
 ---
 
 ## END OF LICENCE
-
-*For commercial licensing enquiries, collaboration proposals or any questions
-regarding these terms, contact Team Solaris through the official repository.*
