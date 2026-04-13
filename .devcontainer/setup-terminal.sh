@@ -83,6 +83,81 @@ goto() {
     esac
 }
 
+# ─── Unit Testing ─────────────────────────────────────────────────────────────
+
+test() {
+    local test_path="$1"
+
+    if [ -z "$test_path" ]; then
+        printf "\n  \033[1;33mUsage:\033[0m test <path/to/tests>\n\n"
+        printf "  Compiles and runs Cgreen unit tests in the given directory.\n"
+        printf "  The directory must contain a CMakeLists.txt.\n\n"
+        return 1
+    fi
+
+    # Resolve to absolute path
+    [[ "$test_path" != /* ]] && test_path="$(pwd)/$test_path"
+    test_path="$(realpath "$test_path" 2>/dev/null || echo "$test_path")"
+
+    if [ ! -d "$test_path" ]; then
+        printf "\n  \033[1;31m✘\033[0m  Directory not found: %s\n\n" "$test_path"
+        return 1
+    fi
+
+    if [ ! -f "$test_path/CMakeLists.txt" ]; then
+        printf "\n  \033[1;31m✘\033[0m  No CMakeLists.txt in: %s\n\n" "$test_path"
+        return 1
+    fi
+
+    local build_dir="$test_path/build"
+    local L="\033[1;36m  $(printf '─%.0s' {1..54})\033[0m"
+
+    echo -e "\n$L"
+    printf "  \033[1;37mSolaris Unit Tests\033[0m\n"
+    echo -e "$L"
+    printf "  \033[0;37mSource:\033[0m  %s\n" "$test_path"
+    printf "  \033[0;37mBuild:\033[0m   %s\n" "$build_dir"
+    echo -e "$L\n"
+
+    # ── Configure ────────────────────────────────────────────────────────────
+    printf "  \033[1;33m[1/3]\033[0m Configuring...\n"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cmake -S "$test_path" -B "$build_dir" -DCMAKE_BUILD_TYPE=Debug 2>&1 | sed 's/^/       /'
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        printf "\n  \033[1;31m✘  cmake failed.\033[0m\n\n"
+        return 1
+    fi
+
+    # ── Build ────────────────────────────────────────────────────────────────
+    echo ""
+    printf "  \033[1;33m[2/3]\033[0m Building...\n"
+    cmake --build "$build_dir" --parallel 2>&1 | sed 's/^/       /'
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        printf "\n  \033[1;31m✘  Build failed.\033[0m\n\n"
+        return 1
+    fi
+
+    # ── Run tests ────────────────────────────────────────────────────────────
+    echo ""
+    printf "  \033[1;33m[3/3]\033[0m Running tests...\n\n"
+
+    pushd "$build_dir" > /dev/null
+    ctest --output-on-failure --no-compress-output 2>&1 | sed 's/^/  /'
+    local exit_code=${PIPESTATUS[0]}
+    popd > /dev/null
+
+    echo -e "\n$L"
+    if [ "$exit_code" -eq 0 ]; then
+        printf "  \033[1;32m✔  All tests passed.\033[0m\n"
+    else
+        printf "  \033[1;31m✘  Some tests failed  (exit %d).\033[0m\n" "$exit_code"
+    fi
+    echo -e "$L\n"
+
+    return "$exit_code"
+}
+
 # ─── Help ─────────────────────────────────────────────────────────────────────
 
 help() {
@@ -116,6 +191,9 @@ help() {
 
     echo -e "\n  \033[1;33mHistory\033[0m"
     echo -e "  10 000 entries with timestamps, no duplicates.  \033[1;32mCtrl+R\033[0m to search."
+
+    echo -e "\n  \033[1;33mUnit Testing  →  test <path>\033[0m"
+    printf "  \033[1;32m%-30s\033[0m %s\n" "test <path/to/tests>" "cmake build + ctest (Cgreen)"
 
     echo -e "\n  \033[1;33mRaspberry Pi  (192.168.20.236)\033[0m"
     echo -e "  \033[1;32mssh raspi\033[0m   SSH into the flashing / OpenOCD station."

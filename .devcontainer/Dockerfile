@@ -24,9 +24,25 @@ RUN apt-get update && apt-get install -y \
     cppcheck \
     flawfinder \
     python3-pip \
+    cmake \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
+
+# Install cgreen unit testing library (build from source — not in apt repos)
+# The shallow clone has no git history, so GITREVISION is never defined by cmake.
+# Patch the one line in utils.c that uses it before building.
+RUN git clone --depth=1 https://github.com/cgreen-devs/cgreen.git /tmp/cgreen \
+    && sed -i \
+        's/char \*cgreen_library_revision = GITREVISION;/char *cgreen_library_revision = "custom-build";/' \
+        /tmp/cgreen/src/utils.c \
+    && cmake -S /tmp/cgreen -B /tmp/cgreen/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+    && cmake --build /tmp/cgreen/build --parallel \
+    && cmake --install /tmp/cgreen/build \
+    && ldconfig \
+    && rm -rf /tmp/cgreen
 
 # Install SonarScanner CLI (SonarQube)
 ARG SONAR_SCANNER_VERSION=7.1.0.4889
