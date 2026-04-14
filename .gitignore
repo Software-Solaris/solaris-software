@@ -13,3 +13,5 @@ solaris-v1/components/icm_driver/drivers/*
 doc/
 solaris-v1/.scannerwork/*
 .scannerwork/.sonar_lock
+solaris-v1/components/icm_driver/tests
+solaris-v1/components/icm_driver/build
