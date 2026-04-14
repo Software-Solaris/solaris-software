@@ -13,7 +13,7 @@ _solaris_prompt() {
     local branch dirty exit_part branch_part
 
     branch=$(parse_git_branch)
-    [[ -n "$(git status --porcelain 2>/dev/null)" ]] && dirty=1
+    [[ -n "$(git status --porcelain --ignore-submodules=dirty 2>/dev/null)" ]] && dirty=1
 
     if [ -n "$branch" ]; then
         if [ -n "$dirty" ]; then
@@ -85,7 +85,7 @@ goto() {
 
 # ─── Unit Testing ─────────────────────────────────────────────────────────────
 
-test() {
+run_tests() {
     local test_path="$1"
 
     if [ -z "$test_path" ]; then
@@ -192,8 +192,8 @@ help() {
     echo -e "\n  \033[1;33mHistory\033[0m"
     echo -e "  10 000 entries with timestamps, no duplicates.  \033[1;32mCtrl+R\033[0m to search."
 
-    echo -e "\n  \033[1;33mUnit Testing  →  test <path>\033[0m"
-    printf "  \033[1;32m%-30s\033[0m %s\n" "test <path/to/tests>" "cmake build + ctest (Cgreen)"
+    echo -e "\n  \033[1;33mUnit Testing  →  run_tests <path>\033[0m"
+    printf "  \033[1;32m%-30s\033[0m %s\n" "run_tests <path/to/tests>" "cmake build + ctest (Cgreen)"
 
     echo -e "\n  \033[1;33mRaspberry Pi  (192.168.20.236)\033[0m"
     echo -e "  \033[1;32mssh raspi\033[0m   SSH into the flashing / OpenOCD station."
@@ -228,9 +228,9 @@ if [ -n "$IDF_PATH" ]; then
 fi
 
 BRANCH=$(parse_git_branch)
-CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+CHANGES=$(git status --porcelain --ignore-submodules=dirty 2>/dev/null | wc -l | tr -d ' ')
 
-(echo > /dev/tcp/192.168.20.236/22) >/dev/null 2>&1 && RASPI_OK=1 || RASPI_OK=0
+timeout 2 bash -c "echo > /dev/tcp/192.168.20.236/22" >/dev/null 2>&1 && RASPI_OK=1 || RASPI_OK=0
 
 # ── Print ──────────────────────────────────────────────────────────────────────
 
