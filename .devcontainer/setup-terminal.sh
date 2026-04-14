@@ -222,9 +222,13 @@ fi
 
 # Collect all status data before printing (avoids interleaved delays)
 if [ -n "$IDF_PATH" ]; then
-    IDF_VER=$(cat "$IDF_PATH/version.txt" 2>/dev/null \
-           || python3 "$IDF_PATH/tools/idf_version.py" 2>/dev/null \
-           || echo "?")
+    if [ -n "$IDF_VERSION" ]; then
+        IDF_VER="${IDF_VERSION#v}"
+    elif command -v idf.py >/dev/null 2>&1; then
+        IDF_VER=$(idf.py --version 2>/dev/null | sed 's/ESP-IDF v//')
+    else
+        IDF_VER="?"
+    fi
 fi
 
 BRANCH=$(parse_git_branch)
