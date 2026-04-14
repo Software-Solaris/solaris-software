@@ -1,31 +1,122 @@
-# Welcome to Solaris!
+# Solaris
 
-Thank you very much for visiting our repository! The goal of Solaris is to develop and provide reusable code for amateur rocketry.
-Through the different modules and the software architecture, our objective is to enable the rapid development of software for amateur rocketry teams that lack the time or resources to build it themselves.
+Open-source firmware framework for amateur rocketry, targeting **ESP32-S3** microcontrollers.
+Solaris provides reusable sensor drivers and a software architecture built around the
+**Solaris Packet Protocol (SPP)**, designed so that teams without the time or resources
+to build their own stack can get flying faster.
 
-## Installation
-To use and compile the code, we have developed a Docker container with the latest ESPRESSIF image — the manufacturer of our boards.
-However, this configuration can easily be adapted (by changing the Docker image) to any other board or architecture.
-We use Docker as a common base so that all our developers share the same dependencies and can build code in a consistent environment.
+---
 
-We recommend reading our [installation guide for Linux users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Linux-users) and also for the [Windows users](https://github.com/secureshadow/solaris-software/wiki/Installation-guide-for-Windows-users)
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [Software Architecture](docs/software-architecture.md) | Repo structure, firmware layers (HAL / OSAL / SPP), components |
+| [System Architecture](docs/system-architecture.md) | Remote development setup: WireGuard VPN, VPS, ESP32, VS Code |
+| [Website](website/README.md) | How the project website is hosted and updated |
+
+---
+
+## Quick start
+
+### Step 1 — Get Git
+
+You need Git to clone the repository. If you don't have it:
+
+| OS | Command |
+|---|---|
+| **Ubuntu / Debian** | `sudo apt install git` |
+| **Fedora** | `sudo dnf install git` |
+| **Arch** | `sudo pacman -S git` |
+| **Windows** | Open PowerShell as Administrator → `winget install Git.Git` → open a new terminal |
+| **Any OS** | Download from [git-scm.com](https://git-scm.com) |
+
+### Step 2 — Clone the repository
+
+```bash
+git clone --recurse-submodules https://github.com/Software-Solaris/solaris-software.git
+cd solaris-software
+```
+
+> `--recurse-submodules` is required — ESP-IDF and the SPP libraries are git submodules.
+
+### Step 3 — Run the setup script
+
+The script installs Docker and VS Code, and configures everything for the Dev Container automatically.
+
+**Linux** (Ubuntu / Debian / Fedora / Arch) — run with `sudo`:
+
+```bash
+sudo ./scripts/install-linux.sh
+```
+
+**Windows** — open PowerShell **as Administrator**:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\scripts\install-windows.ps1
+```
+
+> The Windows script checks for common issues (virtualisation disabled, insufficient disk
+> space, WSL2 not enabled, missing winget) and gives step-by-step instructions for each.
+> It is safe to run multiple times — it skips anything already installed.
+> A reboot may be required after enabling WSL2; re-run the script afterwards.
+
+### Step 4 — Open in VS Code and build
+
+```bash
+code .
+```
+
+VS Code will detect the `.devcontainer` configuration and prompt:
+
+> **"Reopen in Container"** → click it.
+
+If the prompt does not appear: `Ctrl+Shift+P` → **Dev Containers: Reopen in Container**.
+
+Docker builds the image on the first run — this takes a few minutes. Subsequent opens are instant.
+
+Once inside the container, open a terminal (`Ctrl+` `` ` ``):
+
+```bash
+cd solaris-v1
+idf.py build
+```
+
+A successful build produces the firmware binaries under `solaris-v1/build/`.
+
+### Step 5 — Flash and debug
+
+Flashing and debugging require access to the remote development station via WireGuard VPN.
+See [System Architecture](docs/system-architecture.md) for the full setup.
+
+---
 
 ## Versions
-We have currently one version of our code: [solaris-v0](https://github.com/Software-Solaris/solaris-software/tree/solaris-v0) where we configure the barometer BMP390 and the IMU ICM20948 in differents drivers.
-The original roadmap considered an intermediate version with both sensors integrated into the same general driver, followed by another version with FreeRTOS support. In the end, neither of those versions was released as an official milestone. Development moved directly to the first SPP-based implementation, which is now the current `solaris-v1`.
 
-## Next steps
-We are currently working on an improved version of the Solaris software. We will introduce in nexts versions the use of a new Solaris Packet Protocol(SPP) for efficient communication between modules in amateur rocketry. We are also developing all of our code creating our own Hardware Abstraction Layer (HAL) and Operating System Abstraction Layer (OSAL) to allow everyone to run our code independently of their OS or board!
-If you wish to colaborate on this layers, you can explore all our branches or contact the repository administrators via email.
+| Version | Status | Description |
+|---|---|---|
+| `solaris-v0.1` | Legacy | BMP390 barometer — standalone ESP-IDF driver |
+| `solaris-v0.2` | Legacy | ICM20948 IMU — standalone ESP-IDF driver |
+| `solaris-v1` | **Active** | Combined sensors + SPP framework + DMP firmware |
+| `solaris-v2` | Planned | FreeRTOS task-based architecture |
+| `solaris-v3` | Planned | Full SPP integration |
+
+---
 
 ## Collaboration
-We are open to contributions, ideas or improvements — it is the only way to progress and be able to develop faster.
-To collaborate, you will need to create an account in GitHub. To participate, users can create forks of our repository and propose their modifications, they will then need to associate a PR to our repository against your branch in your forked repo.
+
+Contributions, ideas and improvements are welcome.
+Fork the repository, make your changes on a branch, and open a pull request against `main`.
 
 ## License
-This project is licensed under **GPLv3 with Additional Terms for Amateur Rocketry**.  
-Commercial use is allowed, but all modifications must remain open source and properly attributed.  
-See [LICENSE](https://softwaresolaris.com/solaris/solaris-software/src/branch/main/LICENSE.md) for full terms
 
+**Solaris Software License v1.0** — key points:
 
- 
+- Free for personal, educational and amateur rocketry use.
+- **Commercial use is unconditionally prohibited.** No commercial licence exists or will ever be granted. Any profits generated must be paid in full to Team Solaris.
+- **Military use is unconditionally prohibited.**
+- All modifications must be published under this same licence (copyleft).
+- Academic use (TFG/TFM) is allowed provided the work is public and credits this repository.
+
+See [LICENSE.md](LICENSE.md) for the full terms.

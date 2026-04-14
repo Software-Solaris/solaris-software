@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Solaris Software — Open-source flight computer firmware. Built from nothing. Released to everyone.">
+    <title>SOFTWARE SOLARIS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:    #120a0c;
+            --red:   #e8192c;
+            --mid:   #c43040;
+            --dim:   #a02535;
+            --faint: #3a0d14;
+            --hi:    #ffffff;
+            --w:     760px;
+            --f:     'VT323', monospace;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg);
+            color: var(--mid);
+            font-family: var(--f);
+            font-size: 22px;
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* scanlines */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0, transparent 3px,
+                rgba(0,0,0,0.11) 3px, rgba(0,0,0,0.11) 4px
+            );
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* vignette */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at 50% 35%,
+                transparent 40%, rgba(0,0,0,0.82) 100%);
+            pointer-events: none;
+            z-index: 9997;
+        }
+
+        a { color: var(--red); text-decoration: none; }
+        a:hover { color: var(--hi); }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky; top: 0; z-index: 500;
+            background: var(--bg);
+            border-bottom: 1px solid var(--faint);
+        }
+        .nav-inner {
+            max-width: var(--w);
+            margin: 0 auto;
+            padding: 0.6rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .nav-logo {
+            color: var(--mid);
+            font-size: 1.05rem;
+            letter-spacing: 0.08em;
+        }
+        .nav-logo .prompt { color: var(--dim); }
+        .nav-links { list-style: none; display: flex; gap: 0; }
+        .nav-links li::before { content: ' / '; color: var(--faint); }
+        .nav-links li:first-child::before { content: ''; }
+        .nav-links a { color: var(--dim); font-size: 1rem; }
+        .nav-links a:hover { color: var(--red); }
+
+        /* ── LAYOUT ── */
+        main { max-width: var(--w); margin: 0 auto; padding: 0 2rem 8rem; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 96vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 1.5rem 0 4rem;
+            border-bottom: 1px solid var(--faint);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+            object-position: center;
+            opacity: 0.08;
+            z-index: 0;
+            pointer-events: none;
+            filter: brightness(0) invert(1);
+        }
+        #matrixCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.55;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.1) 10%, rgba(0,0,0,0.5) 25%, black 45%, black 75%, rgba(0,0,0,0.3) 90%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.1) 10%, rgba(0,0,0,0.5) 25%, black 45%, black 75%, rgba(0,0,0,0.3) 90%, transparent 100%);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-label {
+            font-size: 0.95rem;
+            color: var(--dim);
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .hero-terminal {
+            font-size: clamp(3.5rem, 10vw, 7rem);
+            line-height: 1.7;
+            color: var(--red);
+            text-shadow:
+                0 0 18px rgba(232,25,44,0.6),
+                0 0 60px rgba(232,25,44,0.22);
+            min-height: 1.7em;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .hero-rule {
+            border: none;
+            border-top: 1px solid var(--faint);
+            margin: 2rem 0;
+        }
+
+        .hero-copy {
+            font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+            color: var(--dim);
+            line-height: 1.5;
+            margin-bottom: 0.4rem;
+        }
+        .hero-copy strong { color: var(--hi); }
+
+        .hero-actions { margin-top: 2.5rem; }
+
+        .hero-meta {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.3rem 0.8rem;
+            font-size: 1rem;
+            color: var(--dim);
+        }
+        .hero-meta a { color: var(--dim); }
+        .hero-meta a:hover { color: var(--red); }
+        .hero-meta .sep { color: var(--faint); }
+
+        .btn {
+            display: inline-block;
+            border: 1px solid var(--red);
+            color: var(--red);
+            font-family: var(--f);
+            font-size: 1.15rem;
+            padding: 0.3rem 1.3rem;
+            letter-spacing: 0.1em;
+            margin-right: 1rem;
+            margin-bottom: 0.4rem;
+            transition: background 0.08s, color 0.08s;
+        }
+        .btn:hover { background: var(--red); color: var(--bg); }
+        .btn-g { border-color: var(--faint); color: var(--dim); }
+        .btn-g:hover { background: var(--dim); color: var(--bg); }
+
+        /* ── REGULAR SECTIONS ── */
+        section {
+            padding: 5rem 0;
+            border-bottom: 1px solid var(--faint);
+        }
+        section:last-of-type { border-bottom: none; }
+
+        .cmd {
+            font-size: 0.95rem;
+            color: var(--dim);
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+        .cmd .p { color: var(--mid); }
+
+        .s-title {
+            font-size: clamp(2.4rem, 6vw, 3.5rem);
+            color: var(--hi);
+            text-shadow: 0 0 20px rgba(232,25,44,0.28);
+            line-height: 1.08;
+            margin-bottom: 1.75rem;
+        }
+
+        .body-text {
+            font-size: 1.3rem;
+            color: var(--dim);
+            line-height: 1.65;
+            max-width: 600px;
+            margin-bottom: 1rem;
+        }
+        .body-text strong { color: var(--red); }
+        .body-text em     { color: var(--hi); font-style: normal; }
+
+        /* ── PRINCIPLE (centered statement section) ── */
+        .principle {
+            padding: 7rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--faint);
+        }
+
+        .principle-text {
+            font-size: clamp(2rem, 5.5vw, 3.2rem);
+            color: var(--hi);
+            text-shadow: 0 0 22px rgba(232,25,44,0.3);
+            line-height: 1.35;
+            margin: 0 auto 1.5rem;
+            max-width: 560px;
+        }
+
+        .principle-text .glow {
+            color: var(--red);
+            text-shadow: 0 0 20px rgba(232,25,44,0.6);
+        }
+
+        .principle-rule {
+            border: none;
+            border-top: 1px solid var(--faint);
+            width: 60px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .principle-sub {
+            font-size: 1.2rem;
+            color: var(--dim);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* ── STACK LIST ── */
+        .stack {
+            margin-top: 2rem;
+            border-left: 2px solid var(--faint);
+            padding-left: 1.5rem;
+        }
+        .stack-item {
+            display: flex;
+            gap: 1.75rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid var(--faint);
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .stack-item:last-child { border-bottom: none; }
+        .si-key {
+            color: var(--red);
+            font-size: 1.1rem;
+            min-width: 130px;
+            letter-spacing: 0.06em;
+            flex-shrink: 0;
+        }
+        .si-val { color: var(--dim); font-size: 1.15rem; }
+
+        /* ── TEAM ── */
+        .team { margin-top: 2.5rem; }
+        .member {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid var(--faint);
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .member:last-child { border-bottom: none; }
+        .m-name {
+            color: var(--hi);
+            font-size: 1.25rem;
+            min-width: 210px;
+            flex-shrink: 0;
+        }
+        .m-role { color: var(--dim); font-size: 1.05rem; }
+        .m-ghost {
+            color: var(--dim);
+            font-size: 0.95rem;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── ROADMAP ── */
+        .rl { list-style: none; margin-top: 2rem; }
+        .rl li {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--faint);
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .rl li:last-child { border-bottom: none; }
+        .rv { min-width: 44px; font-size: 1.1rem; flex-shrink: 0; }
+        .rv.done { color: var(--red); }
+        .rv.now  { color: var(--hi); }
+        .rv.nx   { color: var(--dim); }
+        .rd { flex: 1; font-size: 1.15rem; color: var(--dim); min-width: 200px; }
+        .rd strong { color: var(--hi); }
+        .rb {
+            font-size: 0.88rem;
+            border: 1px solid;
+            padding: 0.03rem 0.5rem;
+            letter-spacing: 0.07em;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .rb-d { border-color: var(--red); color: var(--red); }
+        .rb-a { border-color: var(--hi); color: var(--hi); }
+        .rb-p { border-color: var(--dim); color: var(--dim); }
+        .rb-x { border-color: var(--dim); color: var(--dim); letter-spacing: 0.15em; }
+
+        /* ── SPONSOR BOX ── */
+        .sponsor-box {
+            margin-top: 2rem;
+            border: 1px solid var(--faint);
+            padding: 2rem;
+            position: relative;
+        }
+        .sponsor-box::before {
+            content: '[ transmission ]';
+            position: absolute;
+            top: -0.6em; left: 1.5rem;
+            background: var(--bg);
+            padding: 0 0.5rem;
+            color: var(--dim);
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            max-width: var(--w);
+            margin: 0 auto;
+            padding: 2rem;
+            border-top: 1px solid var(--faint);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            font-size: 0.95rem;
+            color: var(--dim);
+        }
+        .footer-org {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 1.5rem;
+            color: var(--dim);
+            font-size: 1rem;
+        }
+        .footer-org a { color: var(--dim); }
+        .footer-org a:hover { color: var(--red); }
+        .footer-org .sep { color: var(--faint); }
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        footer a { color: var(--dim); }
+        footer a:hover { color: var(--red); }
+        .fl { list-style: none; display: flex; gap: 2rem; }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s ease, transform 0.65s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* ── CURSOR ── */
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .cur {
+            display: inline-block;
+            width: 0.5em; height: 0.85em;
+            background: var(--red);
+            vertical-align: text-bottom;
+            animation: blink 1.1s step-end infinite;
+            box-shadow: 0 0 8px rgba(232,25,44,0.65);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 860px) {
+            main   { padding: 0 2rem 6rem; }
+            footer { padding: 1.75rem 2rem; }
+        }
+
+        @media (max-width: 600px) {
+            body   { font-size: 20px; }
+            main   { padding: 0 1.25rem 5rem; }
+            .nav-inner  { padding: 0.6rem 1.25rem; }
+            .nav-links  { display: none; }
+            .hero  { min-height: 88vh; padding: 3.5rem 0 3rem; }
+            .hero-rule  { margin: 1.5rem 0; }
+            .hero-actions { margin-top: 2rem; }
+            .hero-meta .sep { display: none; }
+            section { padding: 3.5rem 0; }
+            .principle { padding: 4.5rem 0; }
+            .member { gap: 0.3rem; }
+            .m-name { min-width: unset; width: 100%; }
+            .stack-item { gap: 0.5rem; }
+            .si-key { min-width: unset; width: 100%; }
+            .rl li  { gap: 0.5rem; }
+            footer  { flex-direction: column; align-items: flex-start; padding: 1.5rem 1.25rem; }
+            .fl     { gap: 1.5rem; }
+            .sponsor-box { padding: 1.5rem; }
+        }
+
+        @media (max-width: 380px) {
+            body { font-size: 18px; }
+            .btn { font-size: 1rem; padding: 0.3rem 0.9rem; margin-right: 0.6rem; }
+        }
+
+        @media (min-width: 1100px) {
+            :root { --w: 800px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-inner">
+        <div class="nav-logo"><span class="prompt">~$</span> Software Solaris</div>
+        <ul class="nav-links">
+            <li><a href="#origin">origin</a></li>
+            <li><a href="#code">code</a></li>
+            <li><a href="#people">people</a></li>
+            <li><a href="#open">open</a></li>
+            <li><a href="https://github.com/Software-Solaris/solaris-software">github&nbsp;↗</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main>
+
+<!-- ── HERO ── -->
+<div class="hero">
+<canvas id="matrixCanvas"></canvas>
+    <div class="hero-content">
+        <p class="hero-label">// uvigo aerotech · software division</p>
+        <div class="hero-terminal" id="heroTerminal"></div>
+        <hr class="hero-rule">
+        <p class="hero-copy">Flight computer firmware.</p>
+        <p class="hero-copy"><strong>Built from nothing.</strong></p>
+        <p class="hero-copy">Given to everyone.</p>
+        <div class="hero-actions">
+            <a class="btn" href="https://github.com/Software-Solaris/solaris-software">[ CODE&nbsp;↗ ]</a>
+            <a class="btn btn-g" href="#origin">[ WHY&nbsp;↓ ]</a>
+        </div>
+        <div class="hero-meta">
+            <span>Spain</span>
+            <span class="sep">//</span>
+            <a href="https://uvigoaerotech.com/">uvigoaerotech.com</a>
+            <span class="sep">//</span>
+            <a href="mailto:contacto@uvigoaerotech.com">contacto@uvigoaerotech.com</a>
+            <span class="sep">//</span>
+            <a href="https://www.instagram.com/uvigoaerotech/">instagram</a>
+            <span class="sep">//</span>
+            <a href="https://www.linkedin.com/company/uvigo-aerotech/">linkedin</a>
+            <span class="sep">//</span>
+            <a href="https://www.tiktok.com/@uvigo_aerotech">tiktok</a>
+        </div>
+    </div>
+</div>
+
+<!-- ── ORIGIN ── -->
+<section id="origin">
+    <p class="cmd"><span class="p">Software Solaris</span>:~$ cat /origin.txt</p>
+    <h2 class="s-title">We learned it<br>from scratch.</h2>
+
+    <p class="body-text">
+        No lab. No mentors. No inherited codebase.<br>
+        Just engineers who decided to figure it out —
+        registers, protocols, DMA queues, firmware —
+        and <strong>documented everything along the way.</strong>
+    </p>
+    <p class="body-text">
+        Because the next team
+        shouldn't have to start from zero.
+    </p>
+</section>
+
+<!-- ── PRINCIPLE (centered statement) ── -->
+<section class="principle">
+    <p class="principle-text">
+        The tools to compete<br>
+        shouldn't depend on<br>
+        <span class="glow">who you know.</span>
+    </p>
+    <hr class="principle-rule">
+    <p class="principle-sub">Build. Fly. Repeat.</p>
+</section>
+
+<!-- ── CODE ── -->
+<section id="code">
+    <p class="cmd"><span class="p">Software Solaris</span>:~$ ls /components/</p>
+    <h2 class="s-title">What we built.</h2>
+
+    <div class="stack">
+        <div class="stack-item">
+            <span class="si-key">ICM20948</span>
+            <span class="si-val">9-axis IMU · DMP firmware · quaternion fusion</span>
+        </div>
+        <div class="stack-item">
+            <span class="si-key">BMP390</span>
+            <span class="si-val">Barometric pressure · temperature · altitude</span>
+        </div>
+        <div class="stack-item">
+            <span class="si-key">Datalogger</span>
+            <span class="si-val">SD card · FATFS · full packet flow</span>
+        </div>
+        <div class="stack-item">
+            <span class="si-key">HAL / OSAL</span>
+            <span class="si-val">Hardware &amp; OS abstraction · portable by design</span>
+        </div>
+        <div class="stack-item">
+            <span class="si-key">SPP</span>
+            <span class="si-val">Solaris Packet Protocol · telemetry · zero-malloc</span>
+        </div>
+        <div class="stack-item">
+            <span class="si-key">CI / CD</span>
+            <span class="si-val">MISRA-C · unit tests · SonarQube · Doxygen</span>
+        </div>
+    </div>
+</section>
+
+<!-- ── PEOPLE ── -->
+<section id="people">
+    <p class="cmd"><span class="p">Software Solaris</span>:~$ finger team@uvigo</p>
+    <h2 class="s-title">A handful of engineers.<br>No playbook.</h2>
+
+    <p class="body-text">
+        Every contributor ships production code
+        on real flight hardware.
+        No simulations. No toy projects.
+        <strong>You learn by doing the actual thing.</strong>
+    </p>
+
+    <div class="team">
+        <div class="member">
+            <span class="m-name">Óscar Barja Lorenzo</span>
+            <span class="m-role">// Lead · Uvigo</span>
+        </div>
+        <div class="member">
+            <span class="m-name">David Rodríguez Dagas</span>
+            <span class="m-role">// Core · Uvigo</span>
+        </div>
+        <div class="member">
+            <span class="m-name">Antonio Formoso</span>
+            <span class="m-role">// Contributor · Uvigo</span>
+        </div>
+        <div class="member">
+            <span class="m-name">Silent Whisper</span>
+            <span class="m-role">// External collaborator &nbsp;<span class="m-ghost">[ identity undisclosed ]</span></span>
+        </div>
+    </div>
+</section>
+
+<!-- ── OPEN ── -->
+<section id="open">
+    <p class="cmd"><span class="p">Software Solaris</span>:~$ cat /license.md</p>
+    <h2 class="s-title">Everything.<br>Available.<br>Always.<span class="cur"></span></h2>
+
+    <p class="body-text">
+        Knowledge that lives behind closed doors
+        doesn't advance the field.
+        <em>Everything we build is public. Every decision documented.</em>
+    </p>
+    <p class="body-text">
+        Use it. Build on it. Win with it.<br>
+        <strong>Never for profit. Never for war.</strong><br>
+        Modify it — and publish the changes.<br>
+        TFG, TFM, research — go for it. Keep it open, credit the source.
+    </p>
+    <p class="body-text">
+        Violate the terms and you'll hear from us.<br>
+        <a href="https://github.com/Software-Solaris/solaris-software/blob/main/LICENSE.md">Full licence →</a>
+    </p>
+
+    <ul class="rl">
+        <li>
+            <span class="rv done">v0.1</span>
+            <span class="rd">BMP390 barometer driver <span class="rb rb-d">SHIPPED</span></span>
+        </li>
+        <li>
+            <span class="rv done">v0.2</span>
+            <span class="rd">ICM20948 IMU driver <span class="rb rb-d">SHIPPED</span></span>
+        </li>
+        <li>
+            <span class="rv now">v1</span>
+            <span class="rd"><strong>SPP framework · full sensor stack</strong> <span class="rb rb-a">ACTIVE</span></span>
+        </li>
+        <li>
+            <span class="rv nx">v2</span>
+            <span class="rd">FreeRTOS multi-task architecture <span class="rb rb-p">NEXT</span></span>
+        </li>
+        <li>
+            <span class="rv nx">v3</span>
+            <span class="rd">████████████████ <span class="rb rb-x">CLASSIFIED</span></span>
+        </li>
+    </ul>
+</section>
+
+<!-- ── SPONSOR ── -->
+<section>
+    <p class="cmd"><span class="p">Software Solaris</span>:~$ cat /sponsor.md</p>
+    <h2 class="s-title">If this matters<br>to you,<br>let's talk.</h2>
+
+    <div class="sponsor-box">
+        <p class="body-text" style="margin-bottom:1.5rem">
+            The code will always be free.
+            If you want to help us build more of it —
+            more hardware, more documentation, more teams
+            that don't have to start from zero —
+            we'd be glad to have your name next to ours.
+        </p>
+        <a class="btn" href="mailto:contacto@uvigoaerotech.com">[ GET IN TOUCH&nbsp;↗ ]</a>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <div class="footer-bottom">
+        <span>© 2025 SOLARIS UVIGO AEROTECH · Solaris Software License v1.0</span>
+        <ul class="fl">
+            <li><a href="https://github.com/Software-Solaris/solaris-software">github</a></li>
+            <li><a href="https://github.com/Software-Solaris/solaris-software/blob/main/LICENSE.md">license</a></li>
+            <li><a href="mailto:contacto@uvigoaerotech.com">contact</a></li>
+        </ul>
+</footer>
+
+<script>
+(function () {
+    const lines = [
+        "Solaris Software"
+    ];
+
+    const el = document.getElementById('heroTerminal');
+    let li = 0, ci = 0;
+    const done = [];
+
+    function render() {
+        const finished = li >= lines.length;
+        let html = done.map((l, i) =>
+            (finished && i === done.length - 1) ? l : l + '<br>'
+        ).join('');
+        if (!finished) html += lines[li].slice(0, ci);
+        html += '<span class="cur"></span>';
+        el.innerHTML = html;
+    }
+
+    function tick() {
+        if (li >= lines.length) return;
+        if (ci < lines[li].length) {
+            ci++;
+            render();
+            setTimeout(tick, 60 + Math.random() * 60);
+        } else {
+            done.push(lines[li]);
+            li++; ci = 0;
+            render();
+            if (li < lines.length) setTimeout(tick, 700);
+        }
+    }
+
+    render();
+    setTimeout(tick, 1000);
+})();
+</script>
+<script>
+(function () {
+    const CHARS = '01!@#%<>[]{}?/\\|=+-*^~$&';
+
+    function scramble(el) {
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let n;
+        while ((n = walker.nextNode())) {
+            if (n.textContent.trim()) nodes.push([n, n.textContent]);
+        }
+        nodes.forEach(([node, original]) => {
+            let iter = 0;
+            const iv = setInterval(() => {
+                node.textContent = original.split('').map((ch, i) => {
+                    if (ch === ' ') return ch;
+                    if (i < iter) return original[i];
+                    return CHARS[Math.floor(Math.random() * CHARS.length)];
+                }).join('');
+                iter += 0.45;
+                if (iter > original.length) {
+                    node.textContent = original;
+                    clearInterval(iv);
+                }
+            }, 22);
+        });
+    }
+
+    // Staggered reveal per group
+    document.querySelectorAll('.stack, .team, .rl').forEach(group => {
+        Array.from(group.children).forEach((child, i) => {
+            child.classList.add('reveal');
+            child.style.transitionDelay = `${i * 0.07}s`;
+        });
+    });
+
+    // Reveal for standalone elements
+    document.querySelectorAll(
+        '.body-text, .hero-copy, .hero-actions, .hero-meta, .hero-rule, .sponsor-box, .principle-rule, .principle-sub'
+    ).forEach(el => el.classList.add('reveal'));
+
+    // Scramble + reveal for titles and cmds
+    document.querySelectorAll('.s-title, .cmd, .principle-text').forEach(el => {
+        el.classList.add('reveal');
+        el.dataset.scrambled = '0';
+    });
+
+    const revealObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            el.classList.add('visible');
+            if (el.dataset.scrambled === '0') {
+                el.dataset.scrambled = '1';
+                setTimeout(() => scramble(el), 80);
+            }
+            revealObs.unobserve(el);
+        });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+})();
+</script>
+<script>
+// ── MATRIX RAIN ──
+(function () {
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    const CHARS = 'アイウエオカキクケコサシスセソタチツテト0123456789!#$%<>[]{}01';
+    const COL_W = 12;
+    let drops = [];
+
+    const TRAIL = 18;
+    const SPEED = 0.35;
+    let charBufs = [];
+
+    function resize() {
+        const hero = canvas.parentElement;
+        canvas.width  = hero.offsetWidth;
+        canvas.height = hero.offsetHeight;
+        const cols = Math.ceil(canvas.width / COL_W);
+        drops = Array.from({ length: cols }, () => Math.random() * (canvas.height / COL_W));
+        charBufs = Array.from({ length: cols }, () =>
+            Array.from({ length: TRAIL + 1 }, () => CHARS[Math.floor(Math.random() * CHARS.length)])
+        );
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < drops.length; i++) {
+            const head = Math.floor(drops[i]);
+
+            // Rastro con chars persistentes
+            for (let t = TRAIL; t >= 1; t--) {
+                const row = head - t;
+                if (row < 0) continue;
+                const alpha = (1 - t / TRAIL) * 0.65;
+                ctx.fillStyle = `rgba(210, 22, 38, ${alpha})`;
+                ctx.font = `${COL_W - 3}px monospace`;
+                ctx.fillText(charBufs[i][t], i * COL_W, row * COL_W);
+            }
+
+            // Head — nuevo char, brillante
+            charBufs[i][0] = CHARS[Math.floor(Math.random() * CHARS.length)];
+            ctx.fillStyle = 'rgba(255, 75, 85, 0.95)';
+            ctx.font = `bold ${COL_W - 2}px monospace`;
+            ctx.fillText(charBufs[i][0], i * COL_W, head * COL_W);
+
+            drops[i] += SPEED;
+            if (head * COL_W > canvas.height) {
+                drops[i] = Math.random() * -TRAIL;
+                charBufs[i] = Array.from({ length: TRAIL + 1 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]);
+            }
+        }
+    }
+
+    setInterval(draw, 40);
+})();
+</script>
+
+<script>
+(function () {
+    let started = false;
+
+    function startAmbient() {
+        if (started) return;
+        started = true;
+
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume();
+
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 4);
+        master.connect(ctx.destination);
+
+        // Ruido blanco filtrado — sala de servidores
+        const bufSize = ctx.sampleRate * 3;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = ctx.createBufferSource();
+        noise.buffer = buf;
+        noise.loop = true;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 200;
+        lp.Q.value = 0.8;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.value = 0.4;
+        noise.connect(lp);
+        lp.connect(noiseGain);
+        noiseGain.connect(master);
+        noise.start();
+
+        // Drone grave — 60 Hz
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.value = 60;
+        const g1 = ctx.createGain();
+        g1.gain.value = 0.7;
+        osc1.connect(g1);
+        g1.connect(master);
+        osc1.start();
+
+        // Armónico — 120 Hz
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.value = 120;
+        const g2 = ctx.createGain();
+        g2.gain.value = 0.25;
+        osc2.connect(g2);
+        g2.connect(master);
+        osc2.start();
+
+        // Pulso lento — respiración
+        const lfo = ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.08;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 0.04;
+        lfo.connect(lfoGain);
+        lfoGain.connect(master.gain);
+        lfo.start();
+    }
+
+    ['scroll', 'click', 'keydown', 'touchstart'].forEach(ev =>
+        window.addEventListener(ev, startAmbient, { once: false, passive: true })
+    );
+})();
+</script>
+</body>
+</html>

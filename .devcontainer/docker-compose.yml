@@ -15,6 +15,7 @@ services:
     stdin_open: true
     environment:
       IDF_PATH: /opt/esp/idf
+      XTENSA_GDB: /opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb
       LANG: en_US.UTF-8
       LC_ALL: en_US.UTF-8
     volumes:
