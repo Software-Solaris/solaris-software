@@ -1,11 +1,14 @@
 # ----------------------------------------------------------------
 # spp_port_wrapper — ESP-IDF component for SPP platform ports
 #
-# Compiles the FreeRTOS OSAL port and the ESP32 HAL port, both
-# now located inside external/spp/ports/freertos/.
+# Compiles the FreeRTOS OSAL + ESP32 HAL port and the baremetal
+# OSAL + polling HAL port. Both are compiled in; the application
+# selects the active port by registering the desired descriptor:
+#   g_freertosOsalPort / g_esp32HalPort       — FreeRTOS
+#   g_baremetalOsalPort / g_esp32BaremetalHalPort — baremetal
 # ----------------------------------------------------------------
 
-# Locate external/spp (same logic as spp_wrapper)
+# Locate external/spp
 set(_bases "${CMAKE_CURRENT_LIST_DIR};${PROJECT_SOURCE_DIR};${CMAKE_SOURCE_DIR}")
 set(_candidates "")
 if(SPP_ROOT)
@@ -37,18 +40,18 @@ if(SPP_PORT_ROOT STREQUAL "")
 endif()
 message(STATUS "spp_port_wrapper: SPP_PORT_ROOT = ${SPP_PORT_ROOT}")
 
-# FreeRTOS OSAL port
-set(FREERTOS_PORT "${SPP_PORT_ROOT}/ports/freertos/osal/osal_freertos.c")
+# FreeRTOS OSAL + ESP32 HAL
+set(FREERTOS_OSAL  "${SPP_PORT_ROOT}/ports/freertos/osal/osal_freertos.c")
+set(ESP32_HAL      "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/hal_esp32.c")
+set(ESP32_HAL_INC  "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/include")
 
-# ESP32 HAL port
-set(ESP32_HAL_PORT "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/hal_esp32.c")
-
-# ESP32 HAL include dir (for macros_esp32.h)
-set(ESP32_HAL_INCLUDE "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/include")
+# Baremetal OSAL + polling HAL
+set(BM_OSAL        "${SPP_PORT_ROOT}/ports/baremetal/osal/osal_baremetal.c")
+set(BM_HAL         "${SPP_PORT_ROOT}/ports/baremetal/hal/esp32/hal_esp32_baremetal.c")
 
 idf_component_register(
-    SRCS         ${FREERTOS_PORT} ${ESP32_HAL_PORT}
-    INCLUDE_DIRS "${SPP_PORT_ROOT}/include" ${ESP32_HAL_INCLUDE}
+    SRCS         ${FREERTOS_OSAL} ${ESP32_HAL} ${BM_OSAL} ${BM_HAL}
+    INCLUDE_DIRS "${SPP_PORT_ROOT}/include" ${ESP32_HAL_INC}
     REQUIRES     spp_wrapper esp_driver_spi esp_driver_gpio
-                 esp_driver_sdspi fatfs freertos
+                 esp_driver_sdspi fatfs freertos esp_timer
 )
