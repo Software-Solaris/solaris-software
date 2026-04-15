@@ -14,7 +14,7 @@
 # section below, then extend INCLUDE_DIRS if the port has headers.
 # ----------------------------------------------------------------
 
-# Locate external/spp
+# Locate spp
 set(_bases "${CMAKE_CURRENT_LIST_DIR};${PROJECT_SOURCE_DIR};${CMAKE_SOURCE_DIR}")
 set(_candidates "")
 if(SPP_ROOT)
@@ -27,8 +27,8 @@ foreach(b ${_bases})
     get_filename_component(babs "${b}" ABSOLUTE)
     set(cur "${babs}")
     foreach(_n 0 1 2 3 4 5)
-        if(EXISTS "${cur}/external/spp")
-            list(APPEND _candidates "${cur}/external/spp")
+        if(EXISTS "${cur}/spp")
+            list(APPEND _candidates "${cur}/spp")
         endif()
         get_filename_component(cur "${cur}/.." ABSOLUTE)
     endforeach()
@@ -42,7 +42,7 @@ foreach(p ${_candidates})
     endif()
 endforeach()
 if(SPP_PORT_ROOT STREQUAL "")
-    message(FATAL_ERROR "spp_ports: could not locate ports/osal/freertos inside external/spp.")
+    message(FATAL_ERROR "spp_ports: could not locate ports/osal/freertos inside spp/.")
 endif()
 message(STATUS "spp_ports: SPP_PORT_ROOT = ${SPP_PORT_ROOT}")
 

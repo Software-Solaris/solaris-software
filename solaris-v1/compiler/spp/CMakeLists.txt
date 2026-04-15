@@ -8,7 +8,7 @@
 #   SPP_SERVICE_DATALOGGER — SD card datalogger
 #
 # To add a new service:
-#   1. Add its .c files under external/spp/services/<name>/src/
+#   1. Add its .c files under spp/services/<name>/src/
 #   2. Add one option() + one if-block in the services section below.
 #
 # To disable a service at build time (no source compiled at all):
@@ -17,7 +17,7 @@
 # Platform ports (OSAL + HAL implementations) live in spp_ports.
 # ----------------------------------------------------------------
 
-# Locate external/spp
+# Locate spp
 set(_bases "${CMAKE_CURRENT_LIST_DIR};${PROJECT_SOURCE_DIR};${CMAKE_SOURCE_DIR}")
 set(_candidates "")
 if(SPP_ROOT)
@@ -30,8 +30,8 @@ foreach(b ${_bases})
     get_filename_component(babs "${b}" ABSOLUTE)
     set(cur "${babs}")
     foreach(_n 0 1 2 3 4 5)
-        if(EXISTS "${cur}/external/spp")
-            list(APPEND _candidates "${cur}/external/spp")
+        if(EXISTS "${cur}/spp")
+            list(APPEND _candidates "${cur}/spp")
         endif()
         get_filename_component(cur "${cur}/.." ABSOLUTE)
     endforeach()
@@ -45,7 +45,7 @@ foreach(p ${_candidates})
     endif()
 endforeach()
 if(SPP_ROOT STREQUAL "")
-    message(FATAL_ERROR "spp: could not find external/spp. Set SPP_ROOT.")
+    message(FATAL_ERROR "spp: could not find spp/. Set SPP_ROOT.")
 endif()
 message(STATUS "spp: SPP_ROOT = ${SPP_ROOT}")
 
