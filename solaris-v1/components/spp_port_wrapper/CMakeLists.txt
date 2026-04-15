@@ -1,11 +1,14 @@
 # ----------------------------------------------------------------
 # spp_port_wrapper — ESP-IDF component for SPP platform ports
 #
-# Compiles the FreeRTOS OSAL + ESP32 HAL port and the baremetal
-# OSAL + polling HAL port. Both are compiled in; the application
-# selects the active port by registering the desired descriptor:
-#   g_freertosOsalPort / g_esp32HalPort       — FreeRTOS
-#   g_baremetalOsalPort / g_esp32BaremetalHalPort — baremetal
+# OSAL and HAL are now in separate trees:
+#   ports/osal/<os>/        — OS abstraction (freertos, baremetal, posix)
+#   ports/hal/<target>/     — hardware abstraction (esp32, stub)
+#
+# Both FreeRTOS and baremetal variants are compiled in. The application
+# selects the active port by registering the desired descriptors:
+#   FreeRTOS  → g_freertosOsalPort   + g_esp32HalPort
+#   Baremetal → g_baremetalOsalPort  + g_esp32BaremetalHalPort
 # ----------------------------------------------------------------
 
 # Locate external/spp
@@ -30,28 +33,29 @@ endforeach()
 list(REMOVE_DUPLICATES _candidates)
 set(SPP_PORT_ROOT "")
 foreach(p ${_candidates})
-    if(EXISTS "${p}/ports/freertos/osal/osal_freertos.c")
+    if(EXISTS "${p}/ports/osal/freertos/osal_freertos.c")
         set(SPP_PORT_ROOT "${p}")
         break()
     endif()
 endforeach()
 if(SPP_PORT_ROOT STREQUAL "")
-    message(FATAL_ERROR "spp_port_wrapper: could not find ports/freertos inside external/spp. Set SPP_ROOT.")
+    message(FATAL_ERROR "spp_port_wrapper: could not locate ports/osal/freertos inside external/spp.")
 endif()
 message(STATUS "spp_port_wrapper: SPP_PORT_ROOT = ${SPP_PORT_ROOT}")
 
-# FreeRTOS OSAL + ESP32 HAL
-set(FREERTOS_OSAL  "${SPP_PORT_ROOT}/ports/freertos/osal/osal_freertos.c")
-set(ESP32_HAL      "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/hal_esp32.c")
-set(ESP32_HAL_INC  "${SPP_PORT_ROOT}/ports/freertos/hal/esp32/include")
+# OSAL ports
+set(OSAL_FREERTOS  "${SPP_PORT_ROOT}/ports/osal/freertos/osal_freertos.c")
+set(OSAL_BAREMETAL "${SPP_PORT_ROOT}/ports/osal/baremetal/osal_baremetal.c")
 
-# Baremetal OSAL + polling HAL
-set(BM_OSAL        "${SPP_PORT_ROOT}/ports/baremetal/osal/osal_baremetal.c")
-set(BM_HAL         "${SPP_PORT_ROOT}/ports/baremetal/hal/esp32/hal_esp32_baremetal.c")
+# HAL ports (ESP32)
+set(HAL_ESP32_FREERTOS  "${SPP_PORT_ROOT}/ports/hal/esp32/hal_esp32.c")
+set(HAL_ESP32_BAREMETAL "${SPP_PORT_ROOT}/ports/hal/esp32/hal_esp32_baremetal.c")
+set(HAL_ESP32_INC       "${SPP_PORT_ROOT}/ports/hal/esp32/include")
 
 idf_component_register(
-    SRCS         ${FREERTOS_OSAL} ${ESP32_HAL} ${BM_OSAL} ${BM_HAL}
-    INCLUDE_DIRS "${SPP_PORT_ROOT}/include" ${ESP32_HAL_INC}
+    SRCS         ${OSAL_FREERTOS} ${OSAL_BAREMETAL}
+                 ${HAL_ESP32_FREERTOS} ${HAL_ESP32_BAREMETAL}
+    INCLUDE_DIRS "${SPP_PORT_ROOT}/include" ${HAL_ESP32_INC}
     REQUIRES     spp_wrapper esp_driver_spi esp_driver_gpio
                  esp_driver_sdspi fatfs freertos esp_timer
 )
