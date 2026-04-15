@@ -17,11 +17,11 @@
 #define BMP390_H
 
 #include <stdint.h>
-#include "returntypes.h"
+#include "spp/core/returntypes.h"
+#include "spp/core/types.h"
+#include "spp/osal/event.h"
+#include "spp/hal/gpio.h"
 #include "general.h"
-#include "osal/eventgroups.h"
-#include "osal/task.h"
-#include "hal/gpio/gpio.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -61,7 +61,7 @@ extern "C"
     {
         void *p_handler_spi;        /**< SPI device handle.                 */
         void *p_event_group;        /**< Event group for DRDY signalling.   */
-        spp_gpio_isr_ctx_t isr_ctx; /**< ISR context (event group + bits).  */
+        SPP_GpioIsrCtx_t isr_ctx; /**< ISR context (event group + bits).  */
         spp_uint32_t intPin;        /**< GPIO pin number for the interrupt. */
         spp_uint32_t intIntrType;   /**< Interrupt trigger type.            */
         spp_uint32_t intPull;       /**< Pull resistor: 0=none, 1=up, 2=down. */

@@ -1,8 +1,8 @@
 #include "dataloggerSD.h"
 
-#include "storage.h"
-#include "spp_log.h"
-#include "types.h"
+#include "spp/hal/storage.h"
+#include "spp/services/log.h"
+#include "spp/core/types.h"
 #include <string.h>
 
 static const char *TAG = "DATALOGGER";
@@ -14,7 +14,7 @@ retval_t DATALOGGER_Init(Datalogger_t *p_logger, void *p_storage_cfg, const char
     memset(p_logger, 0, sizeof(Datalogger_t));
     p_logger->p_storage_cfg = p_storage_cfg;
 
-    ret = SPP_HAL_Storage_Mount(p_storage_cfg);
+    ret = SPP_Hal_storageMount(p_storage_cfg);
     if (ret != SPP_OK)
     {
         SPP_LOGE(TAG, "Storage mount failed");
@@ -25,7 +25,7 @@ retval_t DATALOGGER_Init(Datalogger_t *p_logger, void *p_storage_cfg, const char
     if (p_logger->p_file == NULL)
     {
         SPP_LOGE(TAG, "Failed to open file: %s", p_file_path);
-        (void)SPP_HAL_Storage_Unmount(p_storage_cfg);
+        (void)SPP_Hal_storageUnmount(p_storage_cfg);
         return SPP_ERROR;
     }
 
@@ -36,7 +36,7 @@ retval_t DATALOGGER_Init(Datalogger_t *p_logger, void *p_storage_cfg, const char
     return SPP_OK;
 }
 
-retval_t DATALOGGER_LogPacket(Datalogger_t *p_logger, const spp_packet_t *p_packet)
+retval_t DATALOGGER_LogPacket(Datalogger_t *p_logger, const SPP_Packet_t *p_packet)
 {
     if ((p_logger->is_initialized == 0U) || (p_logger->p_file == NULL))
     {
@@ -47,11 +47,11 @@ retval_t DATALOGGER_LogPacket(Datalogger_t *p_logger, const spp_packet_t *p_pack
     logSD =
         fprintf(p_logger->p_file,
                 "pkt=%lu ver=%u apid=0x%04X seq=%u len=%u ts=%lu drop=%u crc=%u payload_hex=",
-                (unsigned long)p_logger->logged_packets, (unsigned)p_packet->primary_header.version,
-                (unsigned)p_packet->primary_header.apid, (unsigned)p_packet->primary_header.seq,
-                (unsigned)p_packet->primary_header.payload_len,
-                (unsigned long)p_packet->secondary_header.timestamp_ms,
-                (unsigned)p_packet->secondary_header.drop_counter, (unsigned)p_packet->crc);
+                (unsigned long)p_logger->logged_packets, (unsigned)p_packet->primaryHeader.version,
+                (unsigned)p_packet->primaryHeader.apid, (unsigned)p_packet->primaryHeader.seq,
+                (unsigned)p_packet->primaryHeader.payloadLen,
+                (unsigned long)p_packet->secondaryHeader.timestampMs,
+                (unsigned)p_packet->secondaryHeader.dropCounter, (unsigned)p_packet->crc);
 
     if (logSD < 0)
     {
@@ -60,7 +60,7 @@ retval_t DATALOGGER_LogPacket(Datalogger_t *p_logger, const spp_packet_t *p_pack
     }
 
 
-    for (spp_uint16_t i = 0U; i < p_packet->primary_header.payload_len; i++)
+    for (spp_uint16_t i = 0U; i < p_packet->primaryHeader.payloadLen; i++)
     {
         // Write payload in hexa.
         logSD = fprintf(p_logger->p_file, "%02X", (unsigned)p_packet->payload[i]);
@@ -71,7 +71,7 @@ retval_t DATALOGGER_LogPacket(Datalogger_t *p_logger, const spp_packet_t *p_pack
         }
 
         // Add a separator
-        if (i + 1U < p_packet->primary_header.payload_len)
+        if (i + 1U < p_packet->primaryHeader.payloadLen)
         {
             logSD = fprintf(p_logger->p_file, " ");
         }
@@ -123,7 +123,7 @@ retval_t DATALOGGER_Deinit(Datalogger_t *p_logger)
 
     if (p_logger->p_storage_cfg != NULL)
     {
-        ret = SPP_HAL_Storage_Unmount(p_logger->p_storage_cfg);
+        ret = SPP_Hal_storageUnmount(p_logger->p_storage_cfg);
         if (ret != SPP_OK)
         {
             SPP_LOGE(TAG, "Storage unmount failed");

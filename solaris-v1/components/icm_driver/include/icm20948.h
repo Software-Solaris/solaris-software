@@ -47,12 +47,49 @@
  * Hardware pins
  * ---------------------------------------------------------------- */
 
+/**
+ * @brief SPI host used by the ICM20948 device.
+ */
+#define K_ICM20948_SPI_HOST_USED SPI2_HOST
 
 /**
  * @brief Chip-select GPIO number.
  */
 #define K_ICM20948_PIN_NUM_CS 21U
 
+/**
+ * @brief CIPO/MISO GPIO number.
+ */
+#define K_ICM20948_PIN_NUM_CIPO 47U
+
+/**
+ * @brief COPI/MOSI GPIO number.
+ */
+#define K_ICM20948_PIN_NUM_COPI 38U
+
+/**
+ * @brief SPI clock GPIO number.
+ */
+#define K_ICM20948_PIN_NUM_CLK 48U
+
+/* ----------------------------------------------------------------
+ * SPI operation type
+ * ---------------------------------------------------------------- */
+
+/**
+ * @brief SPI read operation bit.
+ */
+#define K_ICM20948_READ_OP 0x80U
+
+/**
+ * @brief SPI write operation bit.
+ */
+#define K_ICM20948_WRITE_OP 0x00U
+
+/**
+ * @brief Dummy byte used during SPI read operations.
+ */
+#define K_ICM20948_EMPTY_MESSAGE 0x00U
 
 /* ----------------------------------------------------------------
  * Register banks

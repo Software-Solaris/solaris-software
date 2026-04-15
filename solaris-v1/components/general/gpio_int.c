@@ -1,5 +1,5 @@
 #include "gpio_int.h"
-#include "services/logging/spp_log.h"
+#include "spp/services/log.h"
 
 static const char *TAG = "GPIO_INT";
 // static bool s_int_flag = false;

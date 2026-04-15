@@ -2,10 +2,9 @@
 #include "macros.h"
 #include <string.h>
 #include <math.h>
-#include "spi.h"
-#include "osal/task.h"
-#include "spp_log.h"
-#include "include/bmp390.h"
+#include "spp/hal/spi.h"
+#include "spp/osal/task.h"
+#include "spp/services/log.h"
 
 static const char *TAG = "BMP390";
 spp_uint8_t id, ifc;
@@ -50,16 +49,13 @@ void BMP390_init(void *p_data)
 {
     BMP390_Data_t *p_bmp = (BMP390_Data_t *)p_data;
 
-    void *p_buffer_eg;
+    p_bmp->p_event_group = SPP_Osal_eventCreate();
 
-    p_buffer_eg = SPP_OSAL_GetEventGroupsBuffer();
-    p_bmp->p_event_group = SPP_OSAL_EventGroupCreate(p_buffer_eg);
-
-    p_bmp->isr_ctx.p_event_group = p_bmp->p_event_group;
+    p_bmp->isr_ctx.p_eventGroup = p_bmp->p_event_group;
     p_bmp->isr_ctx.bits = K_BMP390_EVT_DRDY;
 
-    SPP_HAL_GPIO_ConfigInterrupt(p_bmp->intPin, p_bmp->intIntrType, p_bmp->intPull);
-    SPP_HAL_GPIO_RegisterISR(p_bmp->intPin, (void *)&p_bmp->isr_ctx);
+    SPP_Hal_gpioConfigInterrupt(p_bmp->intPin, p_bmp->intIntrType, p_bmp->intPull);
+    SPP_Hal_gpioRegisterIsr(p_bmp->intPin, (void *)&p_bmp->isr_ctx);
 }
 
 
@@ -74,8 +70,8 @@ retval_t BMP390_soft_reset(void *p_spi)
 {
     spp_uint8_t buf[2] = {(spp_uint8_t)K_BMP390_SOFT_RESET_REG, (spp_uint8_t)BMP390_SOFT_RESET_CMD};
 
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
-    SPP_OSAL_TaskDelay(100);
+    retval_t ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
+    SPP_Osal_taskDelayMs(100);
 
     return ret;
 }
@@ -90,8 +86,8 @@ retval_t BMP390_enable_spi_mode(void *p_spi)
 {
     spp_uint8_t buf[2] = {(spp_uint8_t)K_BMP390_IF_CONF_REG, (spp_uint8_t)BMP390_IF_CONF_SPI};
 
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
-    SPP_OSAL_TaskDelay(100);
+    retval_t ret = SPP_Hal_spiTransmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    SPP_Osal_taskDelayMs(100);
 
     return ret;
 }
@@ -110,7 +106,7 @@ retval_t BMP390_config_check(void *p_spi)
         (spp_uint8_t)(K_READ_OP | K_BMP390_CHIP_ID_REG),    K_WRITE_OP, K_WRITE_OP};
 
     retval_t ret;
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, (spp_uint8_t)sizeof(buf));
 
     if (ret != SPP_OK)
     {
@@ -175,7 +171,7 @@ retval_t BMP390_prepareMeasure(void *p_spi)
                           (spp_uint8_t)K_BMP390_REG_IIR,     (spp_uint8_t)BMP390_VALUE_IIR,
                           (spp_uint8_t)K_BMP390_REG_PWRCTRL, (spp_uint8_t)BMP390_VALUE_PWRCTRL};
 
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    retval_t ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
 
     return ret;
 }
@@ -190,12 +186,12 @@ retval_t BMP390_prepareMeasure(void *p_spi)
  */
 retval_t BMP390_waitDrdy(BMP390_Data_t *p_bmp, spp_uint32_t timeout_ms)
 {
-    osal_eventbits_t bits;
+    spp_uint32_t bits;
 
-    retval_t ret = OSAL_EventGroupWaitBits(p_bmp->p_event_group, K_BMP390_EVT_DRDY,
-                                           1, // clear_on_exit
-                                           0, // wait_for_all_bits
-                                           timeout_ms, &bits);
+    retval_t ret = SPP_Osal_eventWait(p_bmp->p_event_group, K_BMP390_EVT_DRDY,
+                                       true,  /* clearOnExit */
+                                       false, /* waitAll */
+                                       timeout_ms, &bits);
 
     return ret;
 }
@@ -220,7 +216,7 @@ retval_t BMP390_read_raw_temp_coeffs(void *p_spi, BMP390_temp_calib_t *tcalib)
         (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 3)), K_WRITE_OP, K_WRITE_OP,
         (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_CALIB_REG_START + 4)), K_WRITE_OP, K_WRITE_OP};
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK)
     {
         return ret;
@@ -283,7 +279,7 @@ retval_t BMP390_read_raw_temp(void *p_spi, uint32_t *raw_temp)
         (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_RAW_REG + 1)), K_WRITE_OP, K_WRITE_OP,
         (spp_uint8_t)(K_READ_OP | (K_BMP390_TEMP_RAW_REG + 2)), K_WRITE_OP, K_WRITE_OP};
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK)
     {
         return ret;
@@ -372,7 +368,7 @@ retval_t BMP390_read_raw_press_coeffs(void *p_spi, BMP390_press_calib_t *pcalib)
         (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 14)), K_WRITE_OP, K_WRITE_OP,
         (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_CALIB_REG_START + 15)), K_WRITE_OP, K_WRITE_OP};
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK)
         return ret;
 
@@ -447,7 +443,7 @@ retval_t BMP390_read_raw_press(void *p_spi, spp_uint32_t *raw_press)
         (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_RAW_REG + 1)), K_WRITE_OP, K_WRITE_OP,
         (spp_uint8_t)(K_READ_OP | (K_BMP390_PRESS_RAW_REG + 2)), K_WRITE_OP, K_WRITE_OP};
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK)
     {
         return ret;
@@ -601,7 +597,7 @@ retval_t BMP390_intEnableDrdy(void *p_spi)
     spp_uint8_t buf[2] = {
         K_BMP390_REG_INT_CTRL,
         (spp_uint8_t)(K_BMP390_INT_CTRL_LEVEL | K_BMP390_INT_CTRL_DRDY_EN)}; // NO latch
-    ret = SPP_HAL_SPI_Transmit(p_spi, buf, sizeof(buf));
+    ret = SPP_Hal_spiTransmit(p_spi, buf, sizeof(buf));
     if (ret != SPP_OK)
     {
         return ret;

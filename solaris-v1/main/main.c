@@ -1,87 +1,106 @@
-#include "core/core.h"
-#include "core/returntypes.h"
+/**
+ * @file main.c
+ * @brief Application entry point — boots SPP v2 and starts sensor services.
+ *
+ * Port registration must happen before SPP_Core_init():
+ *   1. SPP_Core_setOsalPort(&g_freertosOsalPort)
+ *   2. SPP_Core_setHalPort(&g_esp32HalPort)
+ *   3. SPP_Core_init()   — initialises Log, Databank, DbFlow
+ */
 
-#include "spi.h"
-#include "spp_log.h"
-#include "osal/task.h"
-
-#include "services/databank/databank.h"
-#include "services/db_flow/db_flow.h"
+#include "spp/core/core.h"
+#include "spp/core/returntypes.h"
+#include "spp/hal/spi.h"
+#include "spp/osal/task.h"
+#include "spp/osal/port.h"
+#include "spp/hal/port.h"
+#include "spp/services/log.h"
 
 #include "bmpService.h"
 
+/* ----------------------------------------------------------------
+ * External port objects (defined in spp_port_wrapper)
+ * ---------------------------------------------------------------- */
+
+extern const SPP_OsalPort_t g_freertosOsalPort;
+extern const SPP_HalPort_t  g_esp32HalPort;
+
+/* ----------------------------------------------------------------
+ * Private constants
+ * ---------------------------------------------------------------- */
+
 static const char *TAG = "MAIN";
+
+/** @brief Device index for the ICM-20948 (registered first on the SPI bus). */
+#define K_MAIN_SPI_IDX_ICM (0U)
+
+/** @brief Device index for the BMP-390. */
+#define K_MAIN_SPI_IDX_BMP (1U)
+
+/* ----------------------------------------------------------------
+ * app_main
+ * ---------------------------------------------------------------- */
 
 void app_main(void)
 {
-    Core_Init();
     retval_t ret;
 
-    Core_Init();
+    /* --- Port registration ---------------------------------------- */
+    ret = SPP_Core_setOsalPort(&g_freertosOsalPort);
+    if (ret != SPP_OK)
+    {
+        /* Cannot log yet — OSAL not ready */
+        for (;;) { /* hang */ }
+    }
+
+    ret = SPP_Core_setHalPort(&g_esp32HalPort);
+    if (ret != SPP_OK)
+    {
+        for (;;) { /* hang */ }
+    }
+
+    /* --- Core init (Log + Databank + DbFlow) ----------------------- */
+    ret = SPP_Core_init();
+    if (ret != SPP_OK)
+    {
+        for (;;) { /* hang */ }
+    }
+
     SPP_LOGI(TAG, "Boot");
 
-    ret = SPP_DATABANK_init();
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "Databank init failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
-
-    ret = DB_FLOW_Init();
-    if (ret != SPP_OK)
-    {
-        SPP_LOGE(TAG, "DB_FLOW init failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
-    }
-
-    ret = SPP_HAL_SPI_BusInit();
+    /* --- SPI bus init --------------------------------------------- */
+    ret = SPP_Hal_spiBusInit();
     if (ret != SPP_OK)
     {
         SPP_LOGE(TAG, "SPI bus init failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
+        for (;;) { SPP_Osal_taskDelayMs(1000U); }
     }
 
-    // Keep handler order: 1st ICM dummy, 2nd BMP
-    void *p_spi_icm_dummy = SPP_HAL_SPI_GetHandler();
-    ret = SPP_HAL_SPI_DeviceInit(p_spi_icm_dummy);
+    /* ICM-20948 device — must be added first (index 0) */
+    void *p_spiIcm = SPP_Hal_spiGetHandle(K_MAIN_SPI_IDX_ICM);
+    ret = SPP_Hal_spiDeviceInit(p_spiIcm);
     if (ret != SPP_OK)
     {
-        SPP_LOGE(TAG, "SPI dev init ICM dummy failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
+        SPP_LOGE(TAG, "SPI device init ICM failed");
+        for (;;) { SPP_Osal_taskDelayMs(1000U); }
     }
 
-    void *p_spi_bmp = SPP_HAL_SPI_GetHandler();
-    ret = SPP_HAL_SPI_DeviceInit(p_spi_bmp);
+    /* BMP-390 device — second handle (index 1) */
+    void *p_spiBmp = SPP_Hal_spiGetHandle(K_MAIN_SPI_IDX_BMP);
+    ret = SPP_Hal_spiDeviceInit(p_spiBmp);
     if (ret != SPP_OK)
     {
-        SPP_LOGE(TAG, "SPI dev init BMP failed");
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
+        SPP_LOGE(TAG, "SPI device init BMP failed");
+        for (;;) { SPP_Osal_taskDelayMs(1000U); }
     }
 
+    /* --- BMP390 service ------------------------------------------- */
     SPP_LOGI(TAG, "BMP service init");
-    ret = BMP_ServiceInit(p_spi_bmp);
+    ret = BMP_ServiceInit(p_spiBmp);
     if (ret != SPP_OK)
     {
         SPP_LOGE(TAG, "BMP_ServiceInit failed ret=%d", (int)ret);
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
+        for (;;) { SPP_Osal_taskDelayMs(1000U); }
     }
 
     SPP_LOGI(TAG, "BMP service start");
@@ -89,15 +108,12 @@ void app_main(void)
     if (ret != SPP_OK)
     {
         SPP_LOGE(TAG, "BMP_ServiceStart failed ret=%d", (int)ret);
-        for (;;)
-        {
-            SPP_OSAL_TaskDelay(1000);
-        }
+        for (;;) { SPP_Osal_taskDelayMs(1000U); }
     }
 
     SPP_LOGI(TAG, "Main idle");
     for (;;)
     {
-        SPP_OSAL_TaskDelay(1000);
+        SPP_Osal_taskDelayMs(1000U);
     }
 }

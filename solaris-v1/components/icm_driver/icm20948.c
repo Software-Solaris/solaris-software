@@ -1,12 +1,12 @@
 #include "icm20948.h"
 #include "macros.h"
 #include "spp/core/returntypes.h"
-#include "spp/hal/spi/spi.h"
+#include "spp/hal/spi.h"
 #include "spp/osal/task.h"
 #include "spp/core/types.h"
 
 #include <string.h>
-#include "spp/services/logging/spp_log.h"
+#include "spp/services/log.h"
 #include "math.h"
 
 /* ----------------------------------------------------------------
@@ -99,7 +99,7 @@ static const spp_uint8_t s_dmp3Image[] = {
 static retval_t ICM20948_writeReg(void *p_spi, spp_uint8_t reg, spp_uint8_t value)
 {
     spp_uint8_t txBuffer[2] = {K_WRITE_OP | reg, value};
-    return SPP_HAL_SPI_Transmit(p_spi, txBuffer, 2U);
+    return SPP_Hal_spiTransmit(p_spi, txBuffer, 2U);
 }
 
 /**
@@ -114,7 +114,7 @@ static retval_t ICM20948_writeReg(void *p_spi, spp_uint8_t reg, spp_uint8_t valu
 static retval_t ICM20948_readReg(void *p_spi, spp_uint8_t reg, spp_uint8_t *p_value)
 {
     spp_uint8_t txRxBuffer[2] = {K_READ_OP | reg, K_WRITE_OP};
-    retval_t ret = SPP_HAL_SPI_Transmit(p_spi, txRxBuffer, 2U);
+    retval_t ret = SPP_Hal_spiTransmit(p_spi, txRxBuffer, 2U);
 
     if (p_value != NULL)
     {
@@ -722,7 +722,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
-        SPP_OSAL_TaskDelay(1);
+        SPP_Osal_taskDelayMs(1);
 
         pwrMgmt1Reg.value = 0U;
         pwrMgmt1Reg.bits.clkSel = K_ICM20948_CLK_AUTO;
@@ -733,7 +733,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
-        SPP_OSAL_TaskDelay(1);
+        SPP_Osal_taskDelayMs(1);
 
         pwrMgmt1Reg.value = 0U;
         pwrMgmt1Reg.bits.clkSel = K_ICM20948_CLK_AUTO;
@@ -743,7 +743,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
-        SPP_OSAL_TaskDelay(1);
+        SPP_Osal_taskDelayMs(1);
     }
 
     /* ----------------------------------------------------------------
@@ -836,7 +836,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
             return ret;
         }
 
-        SPP_OSAL_TaskDelay(100);
+        SPP_Osal_taskDelayMs(100);
 
         userCtrlReg.value = 0U;
         userCtrlReg.bits.i2cIfDis = 1U;
@@ -898,7 +898,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         }
     }
 
-    SPP_OSAL_TaskDelay(1);
+    SPP_Osal_taskDelayMs(1);
 
     for (spp_uint8_t i = 0U; i < (sizeof(s_b2sMatrix) / sizeof(s_b2sMatrix[0])); i++)
     {
@@ -915,7 +915,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         }
     }
 
-    SPP_OSAL_TaskDelay(1);
+    SPP_Osal_taskDelayMs(1);
 
     ret = ICM20948_setBank(p_spi, K_ICM20948_REG_BANK_2);
     if (ret != SPP_OK)
@@ -1142,7 +1142,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
                 return ret;
             }
 
-            SPP_OSAL_TaskDelay(1);
+            SPP_Osal_taskDelayMs(1);
 
             pwrMgmt1Reg.value = 0U;
             pwrMgmt1Reg.bits.clkSel = K_ICM20948_CLK_AUTO;
@@ -1376,7 +1376,7 @@ retval_t ICM20948_configDmpInit(void *p_data)
         }
     }
 
-    SPP_OSAL_TaskDelay(1);
+    SPP_Osal_taskDelayMs(1);
 
     ret = ICM20948_resetFifo(p_spi);
     if (ret != SPP_OK)
@@ -1431,7 +1431,7 @@ void ICM20948_checkFifoData(void *p_data)
     txRxData[0] = K_READ_OP | K_ICM20948_REG_INT_STATUS;
     txRxData[1] = K_WRITE_OP;
 
-    ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 2U);
+    ret = SPP_Hal_spiTransmit(p_spi, txRxData, 2U);
     if (ret != SPP_OK)
     {
         return;
@@ -1443,7 +1443,7 @@ void ICM20948_checkFifoData(void *p_data)
         txRxData[0] = K_READ_OP | K_ICM20948_REG_DMP_INT_STATUS;
         txRxData[1] = K_WRITE_OP;
 
-        ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 2U);
+        ret = SPP_Hal_spiTransmit(p_spi, txRxData, 2U);
         if (ret != SPP_OK)
         {
             return;
@@ -1455,7 +1455,7 @@ void ICM20948_checkFifoData(void *p_data)
             txRxData[1] = K_WRITE_OP;
             txRxData[2] = K_WRITE_OP;
 
-            ret = SPP_HAL_SPI_Transmit(p_spi, txRxData, 3U);
+            ret = SPP_Hal_spiTransmit(p_spi, txRxData, 3U);
             if (ret != SPP_OK)
             {
                 return;
@@ -1478,7 +1478,7 @@ void ICM20948_checkFifoData(void *p_data)
                         spp_uint8_t fifoBuffer[K_ICM20948_DMP_PACKET_SIZE_BYTES + 1U] = {0U};
 
                         fifoBuffer[0] = K_READ_OP | K_ICM20948_REG_FIFO_R_W;
-                        ret = SPP_HAL_SPI_Transmit(p_spi, fifoBuffer,
+                        ret = SPP_Hal_spiTransmit(p_spi, fifoBuffer,
                                                    K_ICM20948_DMP_PACKET_SIZE_BYTES + 1U);
                         if (ret != SPP_OK)
                         {
