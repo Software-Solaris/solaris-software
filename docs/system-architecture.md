@@ -232,9 +232,9 @@ control ports (telnet and TCL) that are used to send commands like "reset halt".
 The task opens these as local tunnels:
 
 ```
-localhost:3337  →  VPS:3333   (OpenOCD telnet)
-localhost:4447  →  VPS:4444   (OpenOCD TCL — used by reset-halt)
-localhost:6667  →  VPS:6666   (OpenOCD extra interface)
+localhost:3337  →  raspi:3334   (OpenOCD GDB)
+localhost:4447  →  raspi:4444   (OpenOCD telnet — used for reset halt)
+localhost:6667  →  raspi:6666   (OpenOCD TCL)
 ```
 
 **What "reset halt" does:**
@@ -247,7 +247,7 @@ state at the very start of execution.
 
 VS Code launches `xtensa-esp32s3-elf-gdb` (inside the container, via the wrapper
 script `.devcontainer/docker-gdb.sh`) and connects it to OpenOCD at
-`192.168.20.236:3334` — directly over the WireGuard VPN.
+`<RASPI_IP>:3334` — directly over the WireGuard VPN.
 
 ```
   ╔═══════════════════╗              ╔══════════════════╗
