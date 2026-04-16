@@ -18,9 +18,9 @@
 #include "spp/hal/spi.h"
 #include "spp/osal/port.h"
 #include "spp/hal/port.h"
-#include "spp/services/log.h"
+#include "spp/services/log/log.h"
 #include "spp/services/service.h"
-#include "spp/services/bmp390.h"
+#include "spp/services/bmp390/bmp390.h"
 
 #include "macros_esp32.h"
 
