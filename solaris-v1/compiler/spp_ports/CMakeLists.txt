@@ -1,22 +1,13 @@
 # ----------------------------------------------------------------
 # spp_ports — ESP-IDF component for SPP platform ports (ESP32)
 #
-# OSAL and HAL ports are independent and opt-in (all ON by default).
-# OSAL ports live in spp/ports/osal/<os>/
-# HAL  ports live in spp/ports/hal/<target>/
+# HAL ports live in spp/ports/hal/<target>/
 #
 # Available ports:
-#   SPP_OSAL_FREERTOS    — FreeRTOS OSAL  → ports/osal/freertos/
-#   SPP_OSAL_BAREMETAL   — Baremetal OSAL → ports/osal/baremetal/
-#   SPP_HAL_ESP32        — ESP32 HAL (FreeRTOS SPI)
-#   SPP_HAL_ESP32_BM     — ESP32 HAL (polling SPI, no FreeRTOS)
-#
-# To disable a port at build time:
-#   idf.py build -DSPP_OSAL_FREERTOS=OFF
+#   SPP_HAL_ESP32  — ESP32-S3 HAL (polling SPI, no FreeRTOS)
 #
 # To add a new port:
-#   OSAL: add ports/osal/<os>/osal_<os>.c + option() + if-block below
-#   HAL:  add ports/hal/<target>/hal_<target>.c + option() + if-block below
+#   HAL: add ports/hal/<target>/hal_<target>.c + option() + if-block below
 # ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
@@ -43,7 +34,7 @@ endforeach()
 list(REMOVE_DUPLICATES _candidates)
 set(SPP_PORT_ROOT "")
 foreach(p ${_candidates})
-    if(EXISTS "${p}/ports/osal/freertos/osal_freertos.c")
+    if(EXISTS "${p}/ports/hal/esp32/hal_esp32.c")
         set(SPP_PORT_ROOT "${p}")
         break()
     endif()
@@ -54,32 +45,11 @@ endif()
 message(STATUS "spp_ports: SPP_PORT_ROOT = ${SPP_PORT_ROOT}")
 
 # ----------------------------------------------------------------
-# OSAL ports — add one option() + if-block for each new OS port
-# ----------------------------------------------------------------
-option(SPP_OSAL_FREERTOS  "Compile FreeRTOS OSAL port"   ON)
-option(SPP_OSAL_BAREMETAL "Compile baremetal OSAL port"  ON)
-
-set(PORT_SRCS "")
-
-if(SPP_OSAL_FREERTOS)
-    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/osal/freertos/osal_freertos.c")
-    message(STATUS "spp_ports: OSAL FreeRTOS   ON")
-else()
-    message(STATUS "spp_ports: OSAL FreeRTOS   OFF")
-endif()
-
-if(SPP_OSAL_BAREMETAL)
-    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/osal/baremetal/osal_baremetal.c")
-    message(STATUS "spp_ports: OSAL Baremetal  ON")
-else()
-    message(STATUS "spp_ports: OSAL Baremetal  OFF")
-endif()
-
-# ----------------------------------------------------------------
 # HAL ports — add one option() + if-block for each new target
 # ----------------------------------------------------------------
-option(SPP_HAL_ESP32    "Compile ESP32 HAL (FreeRTOS SPI)"  ON)
-option(SPP_HAL_ESP32_BM "Compile ESP32 HAL (polling SPI)"   ON)
+option(SPP_HAL_ESP32 "Compile ESP32-S3 HAL (polling SPI)" ON)
+
+set(PORT_SRCS "")
 
 if(SPP_HAL_ESP32)
     list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/hal/esp32/hal_esp32.c")
@@ -88,18 +58,11 @@ else()
     message(STATUS "spp_ports: HAL ESP32       OFF")
 endif()
 
-if(SPP_HAL_ESP32_BM)
-    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/hal/esp32/hal_esp32_baremetal.c")
-    message(STATUS "spp_ports: HAL ESP32 BM    ON")
-else()
-    message(STATUS "spp_ports: HAL ESP32 BM    OFF")
-endif()
-
 # Include root is the parent of spp/ for SPP headers.
 # ports/hal/esp32/ is added so macros_esp32.h resolves for HAL sources.
 idf_component_register(
     SRCS         ${PORT_SRCS}
     INCLUDE_DIRS "${SPP_PORT_ROOT}/.." "${SPP_PORT_ROOT}/ports/hal/esp32"
     REQUIRES     spp esp_driver_spi esp_driver_gpio
-                 esp_driver_sdspi fatfs freertos esp_timer
+                 esp_driver_sdspi fatfs esp_timer
 )

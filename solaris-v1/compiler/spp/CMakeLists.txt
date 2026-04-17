@@ -57,11 +57,10 @@ message(STATUS "spp: SPP_ROOT = ${SPP_ROOT}")
 set(SPP_SRC_FILES
     "${SPP_ROOT}/core/core.c"
     "${SPP_ROOT}/core/error.c"
-    "${SPP_ROOT}/osal/dispatch.c"
     "${SPP_ROOT}/hal/dispatch.c"
     "${SPP_ROOT}/services/service.c"
     "${SPP_ROOT}/services/databank/databank.c"
-    "${SPP_ROOT}/services/db_flow/db_flow.c"
+    "${SPP_ROOT}/services/pubsub/pubsub.c"
     "${SPP_ROOT}/services/log/log.c"
     "${SPP_ROOT}/util/crc.c"
 )
