@@ -85,37 +85,55 @@ goto() {
 
 # ─── Unit Testing ─────────────────────────────────────────────────────────────
 
-run_tests() {
-    local test_path="$1"
+test() {
+    local input_path="$1"
 
-    if [ -z "$test_path" ]; then
-        printf "\n  \033[1;33mUsage:\033[0m test <path/to/tests>\n\n"
-        printf "  Compiles and runs Cgreen unit tests in the given directory.\n"
-        printf "  The directory must contain a CMakeLists.txt.\n\n"
+    if [ -z "$input_path" ]; then
+        printf "\n  \033[1;33mUsage:\033[0m test <path/to/module>\n\n"
+        printf "  Compiles and runs Cgreen unit tests for the given module.\n"
+        printf "  Accepts the spp root or any tests/ subdirectory.\n\n"
         return 1
     fi
 
     # Resolve to absolute path
-    [[ "$test_path" != /* ]] && test_path="$(pwd)/$test_path"
-    test_path="$(realpath "$test_path" 2>/dev/null || echo "$test_path")"
+    [[ "$input_path" != /* ]] && input_path="$(pwd)/$input_path"
+    input_path="$(realpath "$input_path" 2>/dev/null || echo "$input_path")"
 
-    if [ ! -d "$test_path" ]; then
-        printf "\n  \033[1;31m✘\033[0m  Directory not found: %s\n\n" "$test_path"
+    if [ ! -d "$input_path" ]; then
+        printf "\n  \033[1;31m✘\033[0m  Directory not found: %s\n\n" "$input_path"
         return 1
     fi
 
-    if [ ! -f "$test_path/CMakeLists.txt" ]; then
-        printf "\n  \033[1;31m✘\033[0m  No CMakeLists.txt in: %s\n\n" "$test_path"
-        return 1
+    # Walk up from input_path to find the CMakeLists.txt root
+    local cmake_root="$input_path"
+    while [ ! -f "$cmake_root/CMakeLists.txt" ]; do
+        [ "$cmake_root" = "/" ] && {
+            printf "\n  \033[1;31m✘\033[0m  No CMakeLists.txt found above: %s\n\n" "$input_path"
+            return 1
+        }
+        cmake_root="$(dirname "$cmake_root")"
+    done
+
+    # Derive ctest filter from the path relative to the cmake root
+    local ctest_args=()
+    local module_dir="${input_path#$cmake_root/}"   # strip root prefix
+    local module_name="$(basename "$input_path")"
+
+    if [ "$input_path" != "$cmake_root" ]; then
+        case "$module_name" in
+            services) ctest_args+=(-L services) ;;
+            tests)    ;;                           # run all
+            *)        ctest_args+=(-R "spp_test_${module_name}") ;;
+        esac
     fi
 
-    local build_dir="$test_path/build"
+    local build_dir="$cmake_root/build"
     local L="\033[1;36m  $(printf '─%.0s' {1..54})\033[0m"
 
     echo -e "\n$L"
     printf "  \033[1;37mSolaris Unit Tests\033[0m\n"
     echo -e "$L"
-    printf "  \033[0;37mSource:\033[0m  %s\n" "$test_path"
+    printf "  \033[0;37mModule:\033[0m  %s\n" "${module_dir:-all}"
     printf "  \033[0;37mBuild:\033[0m   %s\n" "$build_dir"
     echo -e "$L\n"
 
@@ -123,7 +141,7 @@ run_tests() {
     printf "  \033[1;33m[1/3]\033[0m Configuring...\n"
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
-    cmake -S "$test_path" -B "$build_dir" -DCMAKE_BUILD_TYPE=Debug 2>&1 | sed 's/^/       /'
+    cmake -S "$cmake_root" -B "$build_dir" -DCMAKE_BUILD_TYPE=Debug -DSPP_BUILD_TESTS=ON -DSPP_PORT=posix 2>&1 | sed 's/^/       /'
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
         printf "\n  \033[1;31m✘  cmake failed.\033[0m\n\n"
         return 1
@@ -143,7 +161,7 @@ run_tests() {
     printf "  \033[1;33m[3/3]\033[0m Running tests...\n\n"
 
     pushd "$build_dir" > /dev/null
-    ctest --output-on-failure --no-compress-output 2>&1 | sed 's/^/  /'
+    ctest --output-on-failure --no-compress-output "${ctest_args[@]}" 2>&1 | sed 's/^/  /'
     local exit_code=${PIPESTATUS[0]}
     popd > /dev/null
 
@@ -354,8 +372,14 @@ help() {
     printf "  \033[1;32m%-18s\033[0m %s\n" "template enum"   "Enum"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template macro"  "Macro / constant"
 
-    echo -e "\n  \033[1;33mUnit Testing  →  run_tests <path>\033[0m"
-    printf "  \033[1;32m%-30s\033[0m %s\n" "run_tests <path/to/tests>" "cmake build + ctest (Cgreen)"
+    echo -e "\n  \033[1;33mUnit Testing  →  test <path>\033[0m"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp"                    "All modules"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/core"         "Core"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/util"         "Util"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/services"     "All services"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/services/databank" "Databank"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/services/db_flow"  "Db flow"
+    printf "  \033[1;32m%-40s\033[0m %s\n" "test <path>/spp/tests/services/log"      "Log"
 
     echo -e "\n  \033[1;33mPrompt\033[0m"
     echo -e "  \033[1;35m(branch \033[1;33m★\033[1;35m)\033[0m  Uncommitted changes present"
