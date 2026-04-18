@@ -97,6 +97,7 @@ jobs:
         run: |
           docker run --rm --privileged \
             --user "$(id -u):$(id -g)" \
+            -e IDF_CCACHE_ENABLE=0 \
             -v "${{ github.workspace }}:/workspace" \
             -w /workspace/solaris-v1 \
             $CI_IMAGE \
