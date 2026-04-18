@@ -10,7 +10,7 @@
  * Data flow:
  *   ISR sets drdyFlag
  *     → superloop detects flag
- *       → ServiceTask reads sensor, builds packet, calls SPP_PubSub_publish()
+ *       → ServiceTask reads sensor, builds packet, calls SPP_SERVICES_PUBSUB_publish()
  *         → sdLogHandler   : writes one line to SD card
  *
  * SPP_LOG messages are also published as K_SPP_APID_LOG packets and saved
@@ -81,11 +81,11 @@ static const SPP_StorageInitCfg_t s_storageCfg = {
 static void sdLogHandler(const SPP_Packet_t *p_packet, void *p_ctx)
 {
     Datalogger_t *p_log = (Datalogger_t *)p_ctx;
-    (void)DATALOGGER_logPacket(p_log, p_packet);
+    (void)SPP_SERVICES_DATALOGGER_logPacket(p_log, p_packet);
 
     if ((p_log->logged_packets % K_SD_FLUSH_EVERY) == 0U)
     {
-        (void)DATALOGGER_flush(p_log);
+        (void)SPP_SERVICES_DATALOGGER_flush(p_log);
     }
 }
 
@@ -111,7 +111,7 @@ static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level,
     if (s_logBusy) { return; }
     s_logBusy = true;
 
-    SPP_Packet_t *p_pkt = SPP_Databank_getPacket();
+    SPP_Packet_t *p_pkt = SPP_SERVICES_DATABANK_getPacket();
     if (p_pkt != NULL)
     {
         char buf[K_SPP_PKT_PAYLOAD_MAX];
@@ -120,8 +120,8 @@ static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level,
                            ? (spp_uint16_t)(n + 1U)
                            : (spp_uint16_t)sizeof(buf);
 
-        (void)SPP_Databank_packetData(p_pkt, K_SPP_APID_LOG, s_logSeq++, buf, len);
-        (void)SPP_PubSub_publish(p_pkt);
+        (void)SPP_SERVICES_DATABANK_packetData(p_pkt, K_SPP_APID_LOG, s_logSeq++, buf, len);
+        (void)SPP_SERVICES_PUBSUB_publish(p_pkt);
     }
 
     s_logBusy = false;
@@ -134,24 +134,24 @@ static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level,
 void app_main(void)
 {
     /* 1. Register HAL port and initialise core
-     *    (SPP_Core_init also calls SPP_Databank_init + SPP_PubSub_init) */
-    (void)SPP_Core_setHalPort(&g_esp32HalPort);
-    (void)SPP_Core_init();
+     *    (SPP_CORE_init also calls SPP_SERVICES_DATABANK_init + SPP_SERVICES_PUBSUB_init) */
+    (void)SPP_CORE_setHalPort(&g_esp32HalPort);
+    (void)SPP_CORE_init();
 
     /* 2. Redirect log output through pub/sub before any SPP_LOG* calls. */
-    SPP_Log_registerOutput(logPubSubOutput);
+    SPP_SERVICES_LOG_registerOutput(logPubSubOutput);
 
     SPP_LOGI(k_tag, "Solaris v1 boot");
 
     /* 3. Init SD card logger. */
-    if (DATALOGGER_init(&s_logger, (void *)&s_storageCfg, "/sdcard/log.txt") != K_SPP_OK)
+    if (SPP_SERVICES_DATALOGGER_init(&s_logger, (void *)&s_storageCfg, "/sdcard/log.txt") != K_SPP_OK)
     {
         printf("[W] app_main: SD card unavailable — continuing without logging\n");
     }
 
     /* 4. Subscribe SD card handler to all APIDs
      *    (sensor packets + log packets both land here). */
-    (void)SPP_PubSub_subscribe(K_SPP_APID_ALL, sdLogHandler, &s_logger);
+    (void)SPP_SERVICES_PUBSUB_subscribe(K_SPP_APID_ALL, sdLogHandler, &s_logger);
 
     /* 5. Initialise SPI bus and devices (ICM first, then BMP). */
     (void)SPP_HAL_spiBusInit();
@@ -159,10 +159,10 @@ void app_main(void)
     (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(1U)); /* BMP390   */
 
     /* 6. Register, init and start services. */
-    (void)SPP_Service_register(&g_icm20948ServiceDesc, &s_icmCtx, &s_icmCfg);
-    (void)SPP_Service_register(&g_bmp390ServiceDesc,   &s_bmpCtx, &s_bmpCfg);
-    (void)SPP_Service_initAll();
-    (void)SPP_Service_startAll();
+    (void)SPP_SERVICES_register(&g_icm20948ServiceDesc, &s_icmCtx, &s_icmCfg);
+    (void)SPP_SERVICES_register(&g_bmp390ServiceDesc,   &s_bmpCtx, &s_bmpCfg);
+    (void)SPP_SERVICES_initAll();
+    (void)SPP_SERVICES_startAll();
 
     SPP_LOGI(k_tag, "Services ready — entering superloop");
 
@@ -174,13 +174,13 @@ void app_main(void)
         /* BMP390: read altitude/pressure/temperature on DRDY. */
         if (s_bmpCtx.bmpData.drdyFlag)
         {
-            BMP390_ServiceTask(&s_bmpCtx);
+            SPP_SERVICES_BMP390_serviceTask(&s_bmpCtx);
         }
 
         /* ICM20948: drain DMP FIFO on data-ready interrupt. */
         if (s_icmCtx.icmData.drdyFlag)
         {
-            ICM20948_ServiceTask(&s_icmCtx);
+            SPP_SERVICES_ICM20948_serviceTask(&s_icmCtx);
         }
 
         /* SD card: handled passively through pub/sub — no explicit call needed. */

@@ -7,7 +7,7 @@
 #   SPP_HAL_ESP32  — ESP32-S3 HAL (polling SPI, no FreeRTOS)
 #
 # To add a new port:
-#   HAL: add ports/hal/<target>/hal_<target>.c + option() + if-block below
+#   HAL: add ports/hal/<target>/hal<target>.c + option() + if-block below
 # ----------------------------------------------------------------
 
 # ----------------------------------------------------------------
@@ -34,7 +34,7 @@ endforeach()
 list(REMOVE_DUPLICATES _candidates)
 set(SPP_PORT_ROOT "")
 foreach(p ${_candidates})
-    if(EXISTS "${p}/ports/hal/esp32/hal_esp32.c")
+    if(EXISTS "${p}/ports/hal/esp32/halEsp32.c")
         set(SPP_PORT_ROOT "${p}")
         break()
     endif()
@@ -52,14 +52,14 @@ option(SPP_HAL_ESP32 "Compile ESP32-S3 HAL (polling SPI)" ON)
 set(PORT_SRCS "")
 
 if(SPP_HAL_ESP32)
-    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/hal/esp32/hal_esp32.c")
+    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/hal/esp32/halEsp32.c")
     message(STATUS "spp_ports: HAL ESP32       ON")
 else()
     message(STATUS "spp_ports: HAL ESP32       OFF")
 endif()
 
 # Include root is the parent of spp/ for SPP headers.
-# ports/hal/esp32/ is added so macros_esp32.h resolves for HAL sources.
+# ports/hal/esp32/ is added so macrosEsp32.h resolves for HAL sources.
 idf_component_register(
     SRCS         ${PORT_SRCS}
     INCLUDE_DIRS "${SPP_PORT_ROOT}/.." "${SPP_PORT_ROOT}/ports/hal/esp32"

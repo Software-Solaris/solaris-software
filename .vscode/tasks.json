@@ -51,6 +51,16 @@
       "problemMatcher": []
     },
     {
+      "label": "openocd-reset-halt-local",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "(printf \"reset halt\\n\" > /dev/tcp/127.0.0.1/4444) >/dev/null 2>&1 || true"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "openocd-reset-halt",
       "type": "shell",
       "command": "bash",
@@ -108,7 +118,7 @@
     },
     {
       "label": "full-debug-prepare",
-      "dependsOn": ["docker-build-flash", "gdb-prepare"],
+      "dependsOn": ["docker-build-flash", "openocd-reset-halt-local"],
       "dependsOrder": "sequence",
       "problemMatcher": []
     },
