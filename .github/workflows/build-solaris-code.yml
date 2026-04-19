@@ -31,7 +31,7 @@ jobs:
             echo "CI image is up to date"
           fi
 
-  check-icm-changes:
+  check-spp-changes:
     runs-on: self-hosted
     outputs:
       changed: ${{ steps.filter.outputs.changed }}
@@ -47,10 +47,10 @@ jobs:
           fetch-depth: 2
           token: ${{ secrets.CI_GH_TOKEN }}
 
-      - name: Check for ICM driver changes
+      - name: Check for SPP submodule changes
         id: filter
         run: |
-          if git diff --name-only HEAD~1 HEAD | grep -q '^solaris-v1/components/icm_driver/'; then
+          if git diff --name-only HEAD~1 HEAD | grep -q '^solaris-v1/spp'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -77,7 +77,7 @@ jobs:
         run: |
           git config --global --add safe.directory "${{ github.workspace }}"
           rm -rf .git/modules/* || true
-          rm -rf solaris-v1/external/esp-idf solaris-v1/external/spp solaris-v1/external/spp-ports || true
+          rm -rf solaris-v1/esp-idf solaris-v1/spp || true
           if [ -f .gitmodules ]; then
             sed -i \
               -e 's#git@github.com:#https://github.com/#g' \
@@ -88,10 +88,9 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
           git submodule sync --recursive
-          git submodule update --init solaris-v1/external/spp
-          git submodule update --init solaris-v1/external/spp-ports
-          git submodule add -f https://github.com/espressif/esp-idf.git solaris-v1/external/esp-idf
-          cd solaris-v1/external/esp-idf
+          git submodule update --init solaris-v1/spp
+          git submodule add -f https://github.com/espressif/esp-idf.git solaris-v1/esp-idf
+          cd solaris-v1/esp-idf
           git checkout v5.1
 
       - name: Build firmware
@@ -116,7 +115,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          submodules: false
+          submodules: true
           token: ${{ secrets.CI_GH_TOKEN }}
 
       - name: Run cppcheck with MISRA
@@ -136,17 +135,12 @@ jobs:
                 --suppress=missingIncludeSystem \
                 --suppress=unusedFunction \
                 --xml \
-                -I solaris-v1/components/icm_driver/include \
-                -I solaris-v1/components/general \
-                -I solaris-v1/components/pressure_sensor_driver/include \
-                -I solaris-v1/external/spp/core \
-                -I solaris-v1/external/spp/hal/spi \
-                -I solaris-v1/external/spp/osal \
-                -I solaris-v1/external/spp/services/logging \
-                solaris-v1/main/*.c \
-                solaris-v1/components/icm_driver/*.c \
-                solaris-v1/components/pressure_sensor_driver/*.c \
-                solaris-v1/components/general/*.c \
+                -I solaris-v1/spp/include \
+                -I solaris-v1/spp/ports/hal/esp32/include \
+                solaris-v1/main/main.c \
+                solaris-v1/spp/src/ \
+                solaris-v1/spp/services/ \
+                solaris-v1/spp/ports/ \
                 2> cppcheck-result.xml
               cppcheck-htmlreport \
                 --file=cppcheck-result.xml \
@@ -163,8 +157,8 @@ jobs:
           path: doc/cppcheck/
 
   unit-tests:
-    needs: [build-ci-image, check-icm-changes]
-    if: needs.check-icm-changes.outputs.changed == 'true'
+    needs: [build-ci-image, check-spp-changes]
+    if: needs.check-spp-changes.outputs.changed == 'true'
     runs-on: self-hosted
     steps:
       - name: Clean workspace
@@ -176,15 +170,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          submodules: false
+          submodules: true
           token: ${{ secrets.CI_GH_TOKEN }}
 
-      - name: Build and run tests
+      - name: Build and run SPP unit tests
         run: |
           docker run --rm --privileged \
             --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/workspace" \
-            -w /workspace/solaris-v1/components/icm_driver/tests \
+            -w /workspace/solaris-v1/spp/tests \
             $CI_IMAGE \
             bash -c 'rm -rf build && mkdir build && cd build && cmake .. && make && ctest --verbose'
 

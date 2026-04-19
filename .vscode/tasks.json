@@ -12,7 +12,7 @@
         "-o", "ExitOnForwardFailure=yes",
         "-o", "StrictHostKeyChecking=accept-new",
         "-fN",
-        "-L", "127.0.0.1:3337:127.0.0.1:3333",
+        "-L", "127.0.0.1:3337:127.0.0.1:3334",
         "-L", "127.0.0.1:4447:127.0.0.1:4444",
         "-L", "127.0.0.1:6667:127.0.0.1:6666",
         "raspi"
@@ -47,6 +47,16 @@
         "-o",
         "ControlPath=/tmp/raspi-openocd-3337.ctl",
         "raspi"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-reset-halt-local",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "(printf \"reset halt\\n\" > /dev/tcp/127.0.0.1/4444) >/dev/null 2>&1 || true"
       ],
       "problemMatcher": []
     },
@@ -108,7 +118,7 @@
     },
     {
       "label": "full-debug-prepare",
-      "dependsOn": ["docker-build-flash", "gdb-prepare"],
+      "dependsOn": ["docker-build-flash", "openocd-reset-halt-local"],
       "dependsOrder": "sequence",
       "problemMatcher": []
     },

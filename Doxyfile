@@ -7,15 +7,14 @@ PROJECT_NUMBER         = "v1"
 # Input
 INPUT                  = mainpage.dox \
                          solaris-v1/main \
-                         solaris-v1/components/icm_driver \
-                         solaris-v1/components/pressure_sensor_driver \
-                         solaris-v1/components/general \
-                         solaris-v1/components/datalogger_driver
+                         solaris-v1/spp/core \
+                         solaris-v1/spp/hal \
+                         solaris-v1/spp/util \
+                         solaris-v1/spp/services \
+                         solaris-v1/spp/ports
 FILE_PATTERNS          = *.c *.h *.dox
 RECURSIVE              = YES
-EXCLUDE_PATTERNS       = */build/* */external/*
-EXCLUDE                = solaris-v1/main/bmp_service.h \
-                         solaris-v1/main/bmp_service.c
+EXCLUDE_PATTERNS       = */build/* */tests/*
 
 # Output
 OUTPUT_DIRECTORY       = doc

@@ -3,9 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "esp32-dev",
   "runServices": [
-    "esp32-dev",
-    "postgres",
-    "sonarqube"
+    "esp32-dev"
   ],
   "workspaceFolder": "/home/user/Documents/solaris-software",
   "runArgs": [
