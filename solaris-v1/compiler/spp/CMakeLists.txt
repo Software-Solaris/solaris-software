@@ -71,6 +71,7 @@ set(SPP_SRC_FILES
 option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"  ON)
 option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"            ON)
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"    ON)
+option(SPP_SERVICE_SX1261     "Compile SX1261 service"                  ON)
 
 set(SPP_SERVICE_FILES "")
 
@@ -93,6 +94,13 @@ if(SPP_SERVICE_DATALOGGER)
     message(STATUS "spp: DATALOGGER service   ON")
 else()
     message(STATUS "spp: DATALOGGER service   OFF")
+endif()
+
+if(SPP_SERVICE_SX1261)
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/sx1261/sx1261.c")
+    message(STATUS "spp: SX1261 service   ON")
+else()
+    message(STATUS "spp: SX1261 service   OFF")
 endif()
 
 # Include root is the parent of spp/ so #include "spp/core/packet.h" resolves correctly.

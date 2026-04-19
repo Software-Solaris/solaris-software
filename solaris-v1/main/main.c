@@ -43,10 +43,10 @@ static const char *const k_tag = "MAIN";
 
 static BMP390_ServiceCtx_t s_bmpCtx;
 static const BMP390_ServiceCfg_t s_bmpCfg = {
-    .spiDevIdx   = 1U,  /* BMP390 = SPI device index 1 */
-    .intPin      = 5U,  /* DRDY GPIO */
-    .intIntrType = 1U,  /* Rising edge */
-    .intPull     = 0U,  /* No pull */
+    .spiDevIdx = 1U,   /* BMP390 = SPI device index 1 */
+    .intPin = 5U,      /* DRDY GPIO */
+    .intIntrType = 1U, /* Rising edge */
+    .intPull = 0U,     /* No pull */
 };
 
 /* ----------------------------------------------------------------
@@ -55,10 +55,10 @@ static const BMP390_ServiceCfg_t s_bmpCfg = {
 
 static ICM20948_ServiceCtx_t s_icmCtx;
 static const ICM20948_ServiceCfg_t s_icmCfg = {
-    .spiDevIdx   = 0U,  /* ICM20948 = SPI device index 0 */
-    .intPin      = 4U,  /* INT GPIO */
-    .intIntrType = 1U,  /* Rising edge */
-    .intPull     = 0U,  /* No pull */
+    .spiDevIdx = 0U,   /* ICM20948 = SPI device index 0 */
+    .intPin = 4U,      /* INT GPIO */
+    .intIntrType = 1U, /* Rising edge */
+    .intPull = 0U,     /* No pull */
 };
 
 /* ----------------------------------------------------------------
@@ -68,11 +68,11 @@ static const ICM20948_ServiceCfg_t s_icmCfg = {
 static Datalogger_t s_logger;
 
 static const SPP_StorageInitCfg_t s_storageCfg = {
-    .p_basePath          = "/sdcard",
-    .spiHostId           = 1,
-    .pinCs               = 8,
-    .maxFiles            = 5U,
-    .allocationUnitSize  = 16384U,
+    .p_basePath = "/sdcard",
+    .spiHostId = 1,
+    .pinCs = 8,
+    .maxFiles = 5U,
+    .allocationUnitSize = 16384U,
     .formatIfMountFailed = false,
 };
 
@@ -97,18 +97,20 @@ static void sdLogHandler(const SPP_Packet_t *p_packet, void *p_ctx)
  * receives it and writes the string directly to the log file.
  * ---------------------------------------------------------------- */
 
-static spp_uint16_t s_logSeq  = 0U;
-static spp_bool_t   s_logBusy = false;
+static spp_uint16_t s_logSeq = 0U;
+static spp_bool_t s_logBusy = false;
 
-static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level,
-                             const char *p_message)
+static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level, const char *p_message)
 {
     static const char k_lvl[] = "?EWID V";
     char lvlChar = k_lvl[(unsigned)level < sizeof(k_lvl) ? (unsigned)level : 0U];
 
     printf("[%c] %s: %s\n", lvlChar, p_tag, p_message);
 
-    if (s_logBusy) { return; }
+    if (s_logBusy)
+    {
+        return;
+    }
     s_logBusy = true;
 
     SPP_Packet_t *p_pkt = SPP_SERVICES_DATABANK_getPacket();
@@ -116,9 +118,8 @@ static void logPubSubOutput(const char *p_tag, SPP_LogLevel_t level,
     {
         char buf[K_SPP_PKT_PAYLOAD_MAX];
         int n = snprintf(buf, sizeof(buf), "[%c] %s: %s", lvlChar, p_tag, p_message);
-        spp_uint16_t len = (n > 0 && n < (int)sizeof(buf))
-                           ? (spp_uint16_t)(n + 1U)
-                           : (spp_uint16_t)sizeof(buf);
+        spp_uint16_t len =
+            (n > 0 && n < (int)sizeof(buf)) ? (spp_uint16_t)(n + 1U) : (spp_uint16_t)sizeof(buf);
 
         (void)SPP_SERVICES_DATABANK_packetData(p_pkt, K_SPP_APID_LOG, s_logSeq++, buf, len);
         (void)SPP_SERVICES_PUBSUB_publish(p_pkt);
@@ -150,7 +151,8 @@ void app_main(void)
     (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(1U)); /* BMP390   */
 
     /* 4. Init SD card logger (SPI bus must already be up). */
-    if (SPP_SERVICES_DATALOGGER_init(&s_logger, (void *)&s_storageCfg, "/sdcard/log.txt") != K_SPP_OK)
+    if (SPP_SERVICES_DATALOGGER_init(&s_logger, (void *)&s_storageCfg, "/sdcard/log.txt") !=
+        K_SPP_OK)
     {
         printf("[W] app_main: SD card unavailable — continuing without logging\n");
     }
@@ -161,7 +163,7 @@ void app_main(void)
 
     /* 6. Register, init and start services. */
     (void)SPP_SERVICES_register(&g_icm20948ServiceDesc, &s_icmCtx, &s_icmCfg);
-    (void)SPP_SERVICES_register(&g_bmp390ServiceDesc,   &s_bmpCtx, &s_bmpCfg);
+    (void)SPP_SERVICES_register(&g_bmp390ServiceDesc, &s_bmpCtx, &s_bmpCfg);
     (void)SPP_SERVICES_initAll();
     (void)SPP_SERVICES_startAll();
 
