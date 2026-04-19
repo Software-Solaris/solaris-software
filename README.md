@@ -11,7 +11,7 @@ to build their own stack can get flying faster.
 
 | Document | Contents |
 |---|---|
-| [Software Architecture](docs/software-architecture.md) | Repo structure, firmware layers (HAL / OSAL / SPP), components |
+| [Software Architecture](docs/software-architecture.md) | Repo structure, firmware layers (HAL / SPP), components |
 | [System Architecture](docs/system-architecture.md) | Remote development setup: WireGuard VPN, VPS, ESP32, VS Code |
 | [Website](website/README.md) | How the project website is hosted and updated |
 
@@ -49,6 +49,14 @@ The script installs Docker and VS Code, and configures everything for the Dev Co
 ```bash
 sudo ./scripts/install-linux.sh
 ```
+
+After the script finishes, add your user to the `docker` group:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Then **log out and back in** (or run `newgrp docker`) for the group change to take effect.
 
 **Windows** — open PowerShell **as Administrator**:
 
@@ -98,9 +106,7 @@ See [System Architecture](docs/system-architecture.md) for the full setup.
 |---|---|---|
 | `solaris-v0.1` | Legacy | BMP390 barometer — standalone ESP-IDF driver |
 | `solaris-v0.2` | Legacy | ICM20948 IMU — standalone ESP-IDF driver |
-| `solaris-v1` | **Active** | Combined sensors + SPP framework + DMP firmware |
-| `solaris-v2` | Planned | FreeRTOS task-based architecture |
-| `solaris-v3` | Planned | Full SPP integration |
+| `solaris-v1` | **Active** | Combined sensors + SPP v2 bare-metal superloop |
 
 ---
 
