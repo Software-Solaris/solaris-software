@@ -502,7 +502,8 @@ if (-not $inp -or $inp -match '^[Yy]') {
     } else {
         Info "Adding raspi entry to $sshConfig..."
         $block = "`nHost raspi`n    HostName 192.168.20.236`n    User username`n    IdentityFile ~/.ssh/$raspiKeyName`n    IdentitiesOnly yes"
-        Add-Content -Path $sshConfig -Value $block -Encoding UTF8
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::AppendAllText($sshConfig, $block, $utf8NoBom)
         Ok "SSH config updated."
         Warn "Edit $sshConfig - replace 'username' with your actual Raspberry Pi username."
     }

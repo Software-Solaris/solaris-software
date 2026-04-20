@@ -68,9 +68,9 @@ RUN curl -o /etc/bash_completion.d/git-completion.bash \
 COPY .devcontainer/setup-terminal.sh /root/setup-terminal.sh
 RUN chmod +x /root/setup-terminal.sh
 
-RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
-    && echo "source /root/setup-terminal.sh" >> /root/.bashrc \
-    && echo "source /opt/esp/idf/export.sh >/dev/null 2>&1" >> /root/.bashrc
+RUN echo "source /opt/esp/idf/export.sh >/dev/null 2>&1" >> /root/.bashrc \
+    && echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
+    && echo "source /root/setup-terminal.sh" >> /root/.bashrc
 
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8

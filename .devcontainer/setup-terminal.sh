@@ -377,9 +377,10 @@ elif [ "$HOUR" -ge 12 ] && [ "$HOUR" -lt 20 ]; then GREETING="Buenas tardes"
 else                                                  GREETING="Buenas noches"
 fi
 
-# Source ESP-IDF if IDF_PATH is set but idf.py is not yet in PATH
-# (happens in compose+exec mode — postCreateCommand never ran, --init-file skips .bashrc)
-if [ -n "$IDF_PATH" ] && ! command -v idf.py >/dev/null 2>&1; then
+# Source ESP-IDF export.sh to activate the Python venv and populate IDF_VERSION.
+# Always run it — idf.py may already be in PATH via remoteEnv but the venv won't
+# be activated and IDF_VERSION won't be set until export.sh is sourced.
+if [ -n "$IDF_PATH" ] && [ -f "$IDF_PATH/export.sh" ]; then
     source "$IDF_PATH/export.sh" >/dev/null 2>&1
 fi
 
