@@ -2,11 +2,17 @@
     "configurations": [
         {
             "name": "ESP32",
-            "compileCommands": "${workspaceFolder}/solaris-v1/build/compile_commands.json",
+            "compileCommands": [
+                "${workspaceFolder}/solaris-v1/build/compile_commands.json"
+            ],
             "intelliSenseMode": "gcc-x64",
             "compilerPath": "/opt/esp/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp-elf-gcc",
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/solaris-v1"
+            ]
         }
     ],
     "version": 4
