@@ -1,0 +1,115 @@
+Command: ninja flash
+[0/1] Re-running CMake...
+-- Minimal build - OFF
+-- ccache will be used for faster recompilation
+-- Building ESP-IDF components for target esp32s3
+-- spp: SPP_ROOT = /home/user/Documents/solaris-software/solaris-v1/spp
+-- spp: BMP390 service       ON
+-- spp: ICM20948 service     ON
+-- spp: DATALOGGER service   ON
+-- spp_ports: SPP_PORT_ROOT = /home/user/Documents/solaris-software/solaris-v1/spp
+-- spp_ports: HAL ESP32       ON
+-- Project sdkconfig file /home/user/Documents/solaris-software/solaris-v1/sdkconfig
+-- Compiler supported targets: xtensa-esp-elf
+-- USING O3
+-- App "solaris-v1" version: 7472c55-dirty
+-- Adding linker script /home/user/Documents/solaris-software/solaris-v1/build/esp-idf/esp_system/ld/memory.ld
+-- Adding linker script /home/user/Documents/solaris-software/solaris-v1/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.bt_funcs.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.wdt.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libc.ld
+-- Adding linker script /opt/esp/idf/components/esp_rom/esp32s3/ld/esp32s3.rom.newlib.ld
+-- Adding linker script /opt/esp/idf/components/soc/esp32s3/ld/esp32s3.peripherals.ld
+-- spp: SPP_ROOT = /home/user/Documents/solaris-software/solaris-v1/spp
+-- spp: BMP390 service       ON
+-- spp: ICM20948 service     ON
+-- spp: DATALOGGER service   ON
+-- spp_ports: SPP_PORT_ROOT = /home/user/Documents/solaris-software/solaris-v1/spp
+-- spp_ports: HAL ESP32       ON
+-- Components: app_trace app_update bootloader bootloader_support bt cmock console cxx driver efuse esp-tls esp_adc esp_app_format esp_bootloader_format esp_coex esp_common esp_driver_ana_cmpr esp_driver_bitscrambler esp_driver_cam esp_driver_dac esp_driver_gpio esp_driver_gptimer esp_driver_i2c esp_driver_i2s esp_driver_isp esp_driver_jpeg esp_driver_ledc esp_driver_mcpwm esp_driver_parlio esp_driver_pcnt esp_driver_ppa esp_driver_rmt esp_driver_sdio esp_driver_sdm esp_driver_sdmmc esp_driver_sdspi esp_driver_spi esp_driver_touch_sens esp_driver_tsens esp_driver_twai esp_driver_uart esp_driver_usb_serial_jtag esp_eth esp_event esp_gdbstub esp_hid esp_http_client esp_http_server esp_https_ota esp_https_server esp_hw_support esp_lcd esp_local_ctrl esp_mm esp_netif esp_netif_stack esp_partition esp_phy esp_pm esp_psram esp_ringbuf esp_rom esp_security esp_system esp_timer esp_vfs_console esp_wifi espcoredump esptool_py fatfs freertos hal heap http_parser idf_test ieee802154 json log lwip main mbedtls mqtt newlib nvs_flash nvs_sec_provider openthread partition_table perfmon protobuf-c protocomm pthread rt sdmmc soc spi_flash spiffs spp spp_ports tcp_transport touch_element ulp unity usb vfs wear_levelling wifi_provisioning wpa_supplicant xtensa
+-- Component paths: /opt/esp/idf/components/app_trace /opt/esp/idf/components/app_update /opt/esp/idf/components/bootloader /opt/esp/idf/components/bootloader_support /opt/esp/idf/components/bt /opt/esp/idf/components/cmock /opt/esp/idf/components/console /opt/esp/idf/components/cxx /opt/esp/idf/components/driver /opt/esp/idf/components/efuse /opt/esp/idf/components/esp-tls /opt/esp/idf/components/esp_adc /opt/esp/idf/components/esp_app_format /opt/esp/idf/components/esp_bootloader_format /opt/esp/idf/components/esp_coex /opt/esp/idf/components/esp_common /opt/esp/idf/components/esp_driver_ana_cmpr /opt/esp/idf/components/esp_driver_bitscrambler /opt/esp/idf/components/esp_driver_cam /opt/esp/idf/components/esp_driver_dac /opt/esp/idf/components/esp_driver_gpio /opt/esp/idf/components/esp_driver_gptimer /opt/esp/idf/components/esp_driver_i2c /opt/esp/idf/components/esp_driver_i2s /opt/esp/idf/components/esp_driver_isp /opt/esp/idf/components/esp_driver_jpeg /opt/esp/idf/components/esp_driver_ledc /opt/esp/idf/components/esp_driver_mcpwm /opt/esp/idf/components/esp_driver_parlio /opt/esp/idf/components/esp_driver_pcnt /opt/esp/idf/components/esp_driver_ppa /opt/esp/idf/components/esp_driver_rmt /opt/esp/idf/components/esp_driver_sdio /opt/esp/idf/components/esp_driver_sdm /opt/esp/idf/components/esp_driver_sdmmc /opt/esp/idf/components/esp_driver_sdspi /opt/esp/idf/components/esp_driver_spi /opt/esp/idf/components/esp_driver_touch_sens /opt/esp/idf/components/esp_driver_tsens /opt/esp/idf/components/esp_driver_twai /opt/esp/idf/components/esp_driver_uart /opt/esp/idf/components/esp_driver_usb_serial_jtag /opt/esp/idf/components/esp_eth /opt/esp/idf/components/esp_event /opt/esp/idf/components/esp_gdbstub /opt/esp/idf/components/esp_hid /opt/esp/idf/components/esp_http_client /opt/esp/idf/components/esp_http_server /opt/esp/idf/components/esp_https_ota /opt/esp/idf/components/esp_https_server /opt/esp/idf/components/esp_hw_support /opt/esp/idf/components/esp_lcd /opt/esp/idf/components/esp_local_ctrl /opt/esp/idf/components/esp_mm /opt/esp/idf/components/esp_netif /opt/esp/idf/components/esp_netif_stack /opt/esp/idf/components/esp_partition /opt/esp/idf/components/esp_phy /opt/esp/idf/components/esp_pm /opt/esp/idf/components/esp_psram /opt/esp/idf/components/esp_ringbuf /opt/esp/idf/components/esp_rom /opt/esp/idf/components/esp_security /opt/esp/idf/components/esp_system /opt/esp/idf/components/esp_timer /opt/esp/idf/components/esp_vfs_console /opt/esp/idf/components/esp_wifi /opt/esp/idf/components/espcoredump /opt/esp/idf/components/esptool_py /opt/esp/idf/components/fatfs /opt/esp/idf/components/freertos /opt/esp/idf/components/hal /opt/esp/idf/components/heap /opt/esp/idf/components/http_parser /opt/esp/idf/components/idf_test /opt/esp/idf/components/ieee802154 /opt/esp/idf/components/json /opt/esp/idf/components/log /opt/esp/idf/components/lwip /home/user/Documents/solaris-software/solaris-v1/main /opt/esp/idf/components/mbedtls /opt/esp/idf/components/mqtt /opt/esp/idf/components/newlib /opt/esp/idf/components/nvs_flash /opt/esp/idf/components/nvs_sec_provider /opt/esp/idf/components/openthread /opt/esp/idf/components/partition_table /opt/esp/idf/components/perfmon /opt/esp/idf/components/protobuf-c /opt/esp/idf/components/protocomm /opt/esp/idf/components/pthread /opt/esp/idf/components/rt /opt/esp/idf/components/sdmmc /opt/esp/idf/components/soc /opt/esp/idf/components/spi_flash /opt/esp/idf/components/spiffs /home/user/Documents/solaris-software/solaris-v1/compiler/spp /home/user/Documents/solaris-software/solaris-v1/compiler/spp_ports /opt/esp/idf/components/tcp_transport /opt/esp/idf/components/touch_element /opt/esp/idf/components/ulp /opt/esp/idf/components/unity /opt/esp/idf/components/usb /opt/esp/idf/components/vfs /opt/esp/idf/components/wear_levelling /opt/esp/idf/components/wifi_provisioning /opt/esp/idf/components/wpa_supplicant /opt/esp/idf/components/xtensa
+-- Configuring done (7.9s)
+-- Generating done (0.7s)
+-- Build files have been written to: /home/user/Documents/solaris-software/solaris-v1/build
+[1/25] Performing build step for 'bootloader'
+[1/1] cd /home/user/Documents/solaris-software/solaris-v1/build/bootloader/esp-idf/esptool_py && /opt/esp/python_env/idf6.0_py3.12_env/bin/python /opt/esp/idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/user/Documents/solaris-software/solaris-v1/build/bootloader/bootloader.bin
+Bootloader binary size 0x5260 bytes. 0x2da0 bytes (36%) free.
+[2/25] No install step for 'bootloader'
+[3/25] Completed 'bootloader'
+[4/25] Building C object esp-idf/esp_app_format/CMakeFiles/__idf_esp_app_format.dir/esp_app_desc.c.obj
+[5/25] Linking C static library esp-idf/esp_app_format/libesp_app_format.a
+[6/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/core/core.c.obj
+[7/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/pubsub/pubsub.c.obj
+[8/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/hal/dispatch.c.obj
+[9/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/core/error.c.obj
+[10/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/service.c.obj
+[11/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/log/log.c.obj
+[12/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/databank/databank.c.obj
+[13/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/datalogger/datalogger.c.obj
+[14/25] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj
+[15/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/bmp390/bmp390.c.obj
+[16/25] Building C object esp-idf/spp_ports/CMakeFiles/__idf_spp_ports.dir/__/__/spp/ports/hal/esp32/halEsp32.c.obj
+[17/25] Building C object esp-idf/spp/CMakeFiles/__idf_spp.dir/__/__/spp/services/icm20948/icm20948.c.obj
+[18/25] Linking C static library esp-idf/spp/libspp.a
+[19/25] Linking C static library esp-idf/spp_ports/libspp_ports.a
+[20/25] Linking C static library esp-idf/main/libmain.a
+[21/25] Generating esp-idf/esp_system/ld/sections.ld
+[22/25] Linking CXX executable solaris-v1.elf
+[23/25] Generating binary image from built executable
+esptool.py v4.9.dev8
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Generated /home/user/Documents/solaris-software/solaris-v1/build/solaris-v1.bin
+[24/25] cd /home/user/Documents/solaris-software/solaris-v1/build/esp-idf/esptool_py && /opt/esp/python_env/idf6.0_py3.12_env/bin/python /opt/esp/idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/user/Documents/solaris-software/solaris-v1/build/partition_table/partition-table.bin /home/user/Documents/solaris-software/solaris-v1/build/solaris-v1.bin
+solaris-v1.bin binary size 0x54c70 bytes. Smallest app partition is 0x100000 bytes. 0xab390 bytes (67%) free.
+[24/25] cd /opt/esp/idf/components/esptool_py && /opt/esp/tools/cmake/3.30.2/bin/cmake -D IDF_PATH=/opt/esp/idf -D "SERIAL_TOOL=/opt/esp/python_env/idf6.0_py3.12_env/bin/python;;/opt/esp/idf/components/esptool_py/esptool/esptool.py;--chip;esp32s3" -D "SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args" -D WORKING_DIRECTORY=/home/user/Documents/solaris-software/solaris-v1/build -P /opt/esp/idf/components/esptool_py/run_serial_tool.cmake
+esptool.py --chip esp32s3 -p /dev/ttyACM0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 solaris-v1.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.9.dev8
+Serial port /dev/ttyACM0
+Connecting....
+Chip is ESP32-S3 (QFN56) (revision v0.2)
+Features: WiFi, BLE, Embedded PSRAM 8MB (AP_3v3)
+Crystal is 40MHz
+USB mode: USB-Serial/JTAG
+MAC: e4:b0:63:ae:e2:6c
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00000000 to 0x00005fff...
+Flash will be erased from 0x00010000 to 0x00064fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+SHA digest in image updated
+Compressed 21088 bytes to 13422...
+Writing at 0x00000000... (100 %)
+Wrote 21088 bytes (13422 compressed) at 0x00000000 in 0.3 seconds (effective 560.3 kbit/s)...
+Hash of data verified.
+Compressed 347248 bytes to 191311...
+Writing at 0x00010000... (8 %)
+Writing at 0x0001c14c... (16 %)
+Writing at 0x00024b7c... (25 %)
+Writing at 0x0002af63... (33 %)
+Writing at 0x00031319... (41 %)
+Writing at 0x00037596... (50 %)
+Writing at 0x0003d0e8... (58 %)
+Writing at 0x00043555... (66 %)
+Writing at 0x00049613... (75 %)
+Writing at 0x0004f5de... (83 %)
+Writing at 0x000592bb... (91 %)
+Writing at 0x00060771... (100 %)
+Wrote 347248 bytes (191311 compressed) at 0x00010000 in 2.5 seconds (effective 1132.4 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 647.3 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...
