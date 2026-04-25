@@ -106,10 +106,11 @@ $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
 fi
 
 # Add the real user to the docker group so Docker works without sudo
+DOCKER_GROUP_ADDED=false
 if ! groups "$REAL_USER" | grep -q docker; then
     info "Adding $REAL_USER to the 'docker' group..."
     usermod -aG docker "$REAL_USER"
-    warn "Group change takes effect after the next login or: newgrp docker"
+    DOCKER_GROUP_ADDED=true
 fi
 
 # Start and enable Docker daemon
@@ -178,6 +179,119 @@ else
         warn "Could not install extension automatically. Install it manually: $EXTENSION_ID"
 fi
 
+# ── SSH keys & Git configuration ────────────────────────────────────────────
+section "SSH keys and Git configuration"
+
+SSH_DIR="$REAL_HOME/.ssh"
+mkdir -p "$SSH_DIR"
+chmod 700 "$SSH_DIR"
+chown "$REAL_USER:$REAL_USER" "$SSH_DIR"
+
+echo ""
+
+# --- GitHub SSH key
+read -r -p "  Generate a GitHub SSH key? [Y/n]: " _inp
+if [[ "${_inp:-Y}" =~ ^[Yy]$ ]]; then
+    read -r -p "  GitHub key name [id_ed25519]: " _inp
+    GITHUB_KEY_NAME="${_inp:-id_ed25519}"
+    read -r -p "  Email for key comment (Enter to skip): " GIT_EMAIL
+    GITHUB_KEY_PATH="$SSH_DIR/$GITHUB_KEY_NAME"
+    if [ -f "$GITHUB_KEY_PATH" ]; then
+        ok "GitHub SSH key already exists: $GITHUB_KEY_PATH"
+    else
+        info "Generating GitHub SSH key: $GITHUB_KEY_PATH"
+        sudo -u "$REAL_USER" ssh-keygen -t ed25519 -C "${GIT_EMAIL:-solaris}" -f "$GITHUB_KEY_PATH"
+        ok "GitHub SSH key created."
+        echo ""
+        info "Add this public key to GitHub -> Settings -> SSH keys -> New SSH key:"
+        echo ""
+        cat "${GITHUB_KEY_PATH}.pub"
+        echo ""
+    fi
+else
+    GIT_EMAIL=""
+    ok "GitHub SSH key skipped."
+fi
+
+# --- Raspberry Pi SSH key
+echo ""
+read -r -p "  Generate a Raspberry Pi SSH key? [Y/n]: " _inp
+if [[ "${_inp:-Y}" =~ ^[Yy]$ ]]; then
+    read -r -p "  Raspi key name [raspberry]: " _inp
+    RASPI_KEY_NAME="${_inp:-raspberry}"
+    [ -z "$GIT_EMAIL" ] && read -r -p "  Email for key comment (Enter to skip): " GIT_EMAIL
+    RASPI_KEY_PATH="$SSH_DIR/$RASPI_KEY_NAME"
+    if [ -f "$RASPI_KEY_PATH" ]; then
+        ok "Raspberry Pi SSH key already exists: $RASPI_KEY_PATH"
+    else
+        info "Generating Raspberry Pi SSH key: $RASPI_KEY_PATH"
+        sudo -u "$REAL_USER" ssh-keygen -t ed25519 -C "${GIT_EMAIL:-solaris}" -f "$RASPI_KEY_PATH"
+        ok "Raspberry Pi SSH key created."
+    fi
+
+    # ~/.ssh/config — add raspi block if missing
+    SSH_CONFIG="$SSH_DIR/config"
+    if grep -q "Host raspi" "$SSH_CONFIG" 2>/dev/null; then
+        ok "SSH config already has 'Host raspi' entry."
+    else
+        info "Adding raspi entry to $SSH_CONFIG..."
+        {
+            echo ""
+            echo "Host raspi"
+            echo "    HostName 192.168.XX.YYY"
+            echo "    User username"
+            echo "    IdentityFile $RASPI_KEY_PATH"
+            echo "    IdentitiesOnly yes"
+        } >> "$SSH_CONFIG"
+        chmod 600 "$SSH_CONFIG"
+        chown "$REAL_USER:$REAL_USER" "$SSH_CONFIG"
+        ok "SSH config updated."
+        warn "Edit $SSH_CONFIG -- replace 192.168.XX.YYY and 'username' with the actual values."
+    fi
+else
+    ok "Raspberry Pi SSH key skipped."
+fi
+
+# --- ~/.gitconfig
+echo ""
+read -r -p "  Configure Git identity (name + email)? [Y/n]: " _inp
+if [[ "${_inp:-Y}" =~ ^[Yy]$ ]]; then
+    read -r -p "  Git user name: " GIT_NAME
+    [ -z "$GIT_EMAIL" ] && read -r -p "  Git email:     " GIT_EMAIL
+    [ -n "$GIT_NAME"  ] && sudo -u "$REAL_USER" git config --global user.name  "$GIT_NAME"
+    [ -n "$GIT_EMAIL" ] && sudo -u "$REAL_USER" git config --global user.email "$GIT_EMAIL"
+    ok "Git identity configured."
+else
+    ok "Git identity skipped. Configure later: git config --global user.name / user.email"
+fi
+
+# ── Repository ──────────────────────────────────────────────────────────────
+section "Repository"
+
+REPO_URL="git@github.com:Software-Solaris/solaris-software.git"
+DEFAULT_CLONE_DIR="$REAL_HOME/solaris-software"
+
+echo ""
+read -r -p "  Clone/update the repository? [Y/n]: " _inp
+if [[ "${_inp:-Y}" =~ ^[Yy]$ ]]; then
+    read -r -p "  Destination directory [$DEFAULT_CLONE_DIR]: " _inp
+    CLONE_DIR="${_inp:-$DEFAULT_CLONE_DIR}"
+
+    if [ -d "$CLONE_DIR/.git" ]; then
+        info "Repository already exists at $CLONE_DIR — pulling latest changes..."
+        sudo -u "$REAL_USER" git -C "$CLONE_DIR" pull
+        sudo -u "$REAL_USER" git -C "$CLONE_DIR" submodule update --init --recursive
+        ok "Repository up to date."
+    else
+        info "Cloning into $CLONE_DIR..."
+        sudo -u "$REAL_USER" git clone --recurse-submodules "$REPO_URL" "$CLONE_DIR"
+        ok "Repository cloned."
+    fi
+else
+    ok "Repository step skipped."
+    CLONE_DIR="$DEFAULT_CLONE_DIR"
+fi
+
 # ── Summary ─────────────────────────────────────────────────────────────────────
 section "All done"
 
@@ -185,12 +299,14 @@ echo ""
 echo -e "${GREEN}${BOLD}Solaris development environment is ready.${NC}"
 echo ""
 echo "  Next steps:"
-echo "  1. Log out and back in (or run: newgrp docker) to apply the Docker group."
-echo "  2. Clone the repo:"
-echo "       git clone --recurse-submodules https://github.com/Software-Solaris/solaris-software.git"
-echo "  3. Open it in VS Code:"
-echo "       code solaris-software"
-echo "  4. Click 'Reopen in Container' when VS Code prompts."
-echo "  5. Inside the container terminal:"
+echo "  1. Open the repo in VS Code:"
+echo "       code $CLONE_DIR"
+echo "  2. Click 'Reopen in Container' when VS Code prompts."
+echo "  3. Inside the container terminal:"
 echo "       cd solaris-v1 && idf.py build"
 echo ""
+
+if [ "$DOCKER_GROUP_ADDED" = true ]; then
+    info "Applying docker group — switching to a new session as $REAL_USER..."
+    exec su - "$REAL_USER"
+fi
