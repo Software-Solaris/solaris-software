@@ -62,6 +62,7 @@ set(SPP_SRC_FILES
     "${SPP_ROOT}/services/databank/databank.c"
     "${SPP_ROOT}/services/pubsub/pubsub.c"
     "${SPP_ROOT}/services/log/log.c"
+    "${SPP_ROOT}/services/kalman/kalman.c"
     "${SPP_ROOT}/util/crc.c"
 )
 
@@ -72,6 +73,7 @@ option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"  ON)
 option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"            ON)
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"    ON)
 option(SPP_SERVICE_SX1261     "Compile SX1261 service"                  ON)
+option(SPP_SERVICE_KALMAN     "Compile KALMAN service"                  ON)
 
 set(SPP_SERVICE_FILES "")
 

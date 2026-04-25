@@ -22,25 +22,25 @@ static const char *const k_tag = "MAIN";
  * BMP390 service
  * ---------------------------------------------------------------- */
 
-static BMP390_ServiceCtx_t s_bmpCtx;
-static const BMP390_ServiceCfg_t s_bmpCfg = {
-    .spiDevIdx = 1U,   /* BMP390 = SPI device index 1 */
-    .intPin = 5U,      /* DRDY GPIO */
-    .intIntrType = 1U, /* Rising edge */
-    .intPull = 0U,     /* No pull */
-};
+// static BMP390_ServiceCtx_t s_bmpCtx;
+// static const BMP390_ServiceCfg_t s_bmpCfg = {
+//     .spiDevIdx = 1U,   /* BMP390 = SPI device index 1 */
+//     .intPin = 5U,      /* DRDY GPIO */
+//     .intIntrType = 1U, /* Rising edge */
+//     .intPull = 0U,     /* No pull */
+// };
 
 /* ----------------------------------------------------------------
  * ICM20948 service
  * ---------------------------------------------------------------- */
 
 static ICM20948_ServiceCtx_t s_icmCtx;
-static const ICM20948_ServiceCfg_t s_icmCfg = {
-    .spiDevIdx = 0U,   /* ICM20948 = SPI device index 0 */
-    .intPin = 4U,      /* INT GPIO */
-    .intIntrType = 1U, /* Rising edge */
-    .intPull = 0U,     /* No pull */
-};
+// static const ICM20948_ServiceCfg_t s_icmCfg = {
+//     .spiDevIdx = 0U,   /* ICM20948 = SPI device index 0 */
+//     .intPin = 4U,      /* INT GPIO */
+//     .intIntrType = 1U, /* Rising edge */
+//     .intPull = 0U,     /* No pull */
+// };
 
 /* ----------------------------------------------------------------
  * app_main
