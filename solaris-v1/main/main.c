@@ -99,7 +99,10 @@ void app_main(void)
     sensor_data data = {0};
     kalman_state kal;
 
-    SPP_SERVICES_KALMAN_ekfInit(&kal, &data, 1.0f, NULL, NULL);
+    float Q_init[16] = {0};
+    float R_init[3] = {0.001f, 0.001f, 0.001f};
+
+    SPP_SERVICES_KALMAN_ekfInit(&kal, &data, 0.01f, Q_init, R_init);
 
     SPP_LOGI(k_tag, "Services ready — entering superloop");
 
