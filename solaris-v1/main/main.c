@@ -94,7 +94,7 @@ void app_main(void)
 
         data.acc_new_data = 1;
         data.gyro_new_data = 1;
-
-        SPP_SERVICES_KALMAN_run(&kal, &data, T);
+        float dt = 1.0f / 225.0f;
+        SPP_SERVICES_KALMAN_run(&kal, &data, dt);
     }
 }
