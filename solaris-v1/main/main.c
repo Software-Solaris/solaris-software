@@ -94,6 +94,9 @@ void app_main(void)
 
         data.acc_new_data = 1;
         data.gyro_new_data = 1;
+        // dt = 1/gyro_sample_rate
+        // ret = SPP_SERVICES_ICM20948_dmpWrite16(p_data, K_ICM20948_DMP_ODR_GYRO,  0x0000U) -> gyro sample rate = dmp sample rate
+        // dmp sample rate = 225Hz -> dt = 1/225s
         float dt = 1.0f / 225.0f;
         SPP_SERVICES_KALMAN_run(&kal, &data, dt);
     }
