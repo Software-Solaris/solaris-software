@@ -128,15 +128,14 @@ void app_main(void)
         data.acc_data[1] = accy;
         data.acc_data[2] = accz;
 
-        data.gyro_data[0] = gyrox;
-        data.gyro_data[1] = gyroy;
-        data.gyro_data[2] = gyroz;
+        data.gyro_data[0] = gyrox * DEG_TO_RAD;
+        data.gyro_data[1] = gyroy * DEG_TO_RAD;
+        data.gyro_data[2] = gyroz * DEG_TO_RAD;
 
-        data.acc_new_data = 1;
-        data.gyro_new_data = 1;
-
-        float dt = 1.0f / 225.0f;
+        const float dt = 1.0f / 225.0f;
 
         SPP_SERVICES_KALMAN_run(&kal, &data, dt);
+
+        SPP_LOGI("EKF", "QUAT, (w=%.4f, x=%.4f, y=%.4f, z=%.4f)", kal.qw, kal.qx, kal.qy, kal.qz);
     }
 }
