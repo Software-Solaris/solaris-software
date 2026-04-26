@@ -4,7 +4,7 @@
 #include "macros.h"
 #include "icm20948.h"
 #include "kalman.h"
-
+#include "esp_timer.h"
 
 
 static const char *TAG = "MainApp";
@@ -54,6 +54,8 @@ int app_main(void)
 
     SPP_SERVICES_KALMAN_ekfInit(&kal, &data, 0.01f, Q_init, R_init);
 
+    int64_t last_time_us = esp_timer_get_time();
+
     ESP_LOGI(k_tag, "Services ready — entering superloop");
 
     /* ----------------------------------------------------------------
@@ -85,7 +87,9 @@ int app_main(void)
         data.gyro_data[1] = gyroy * DEG_TO_RAD;
         data.gyro_data[2] = gyroz * DEG_TO_RAD;
 
-        const float dt = 1.0f / 225.0f;
+        int64_t now_us = esp_timer_get_time();
+        float dt = (now_us - last_time_us) / 1000000.0f;
+        last_time_us = now_us;
 
         SPP_SERVICES_KALMAN_run(&kal, &data, dt);
 

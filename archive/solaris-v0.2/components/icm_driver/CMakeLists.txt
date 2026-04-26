@@ -6,4 +6,5 @@ idf_component_register(
             general
             driver       # Porque utilizamos driver/spi_master.h
             freertos     # Si usamos includes de FreeRTOS, opcional
+            esp_timer
 )
