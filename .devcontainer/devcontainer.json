@@ -6,30 +6,29 @@
     "esp32-dev"
   ],
   "workspaceFolder": "/home/user/Documents/solaris-software",
+  "runArgs": [
+    "--device=/dev/ttyACM0",
+    "--privileged"
+  ],
   "remoteUser": "root",
-
   "mounts": [
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/tmp/host-ssh,type=bind,consistency=cached,readonly",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
   ],
-
   "initializeCommand": {
     "linux": "echo 'Host: Linux'",
-    "mac":   "echo 'Host: macOS'",
+    "mac": "echo 'Host: macOS'",
     "windows": "echo Host: Windows"
   },
-
   "postCreateCommand": {
     "linux": "/bin/bash -lc 'mkdir -p /root/.ssh && cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true && chown -R root:root /root/.ssh && chmod 700 /root/.ssh && for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done && for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done && echo \"Dev container ready for ESP-IDF development!\"'",
-    "windows": "/bin/bash -lc 'set -e; command -v dos2unix >/dev/null 2>&1 || (apt-get update && apt-get install -y dos2unix); [ -f /root/setup-terminal.sh ] && dos2unix /root/setup-terminal.sh || true; find /home/user/Documents/solaris-software -type f -name \"*.sh\" -print0 | xargs -0 -r dos2unix || true; mkdir -p /root/.ssh; cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true; sed -i $\"s/\\xEF\\xBB\\xBF//g\" /root/.ssh/config 2>/dev/null || true; chown -R root:root /root/.ssh; chmod 700 /root/.ssh; for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done; for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done; echo \"Dev container ready for ESP-IDF development!\"'"
+    "windows": "/bin/bash -lc 'set -e; command -v dos2unix >/dev/null 2>&1 || (apt-get update && apt-get install -y dos2unix); [ -f /root/setup-terminal.sh ] && dos2unix /root/setup-terminal.sh || true; find /workspaces/solaris-software -type f -name \"*.sh\" -print0 | xargs -0 -r dos2unix || true; mkdir -p /root/.ssh; cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true; chown -R root:root /root/.ssh; chmod 700 /root/.ssh; for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done; for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done; echo \"Dev container ready for ESP-IDF development!\"'"
   },
-
   "remoteEnv": {
     "IDF_PATH": "/opt/esp/idf",
     "XTENSA_GDB": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
     "PATH": "/opt/esp/idf/tools:${containerEnv:PATH}"
   },
-
   "customizations": {
     "vscode": {
       "settings": {

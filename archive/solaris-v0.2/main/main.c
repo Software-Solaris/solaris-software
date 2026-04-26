@@ -12,7 +12,6 @@ static const char *k_tag = "Kalman";
 
 int app_main(void)
 {
-
     // Initial struct for setting up SPI communication
     esp_err_t ret;
     data_t icm = {0};
@@ -22,7 +21,8 @@ int app_main(void)
 
     //---------INIT---------
     ret = icm20948_init(&icm);
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error at ICM20948 init: %d", ret);
         return ret;
     }
@@ -30,7 +30,8 @@ int app_main(void)
 
     //---------CONFIG & CHECK---------
     ret = icm20948_config(&icm);
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error at ICM20948 setup: %d", ret);
         return ret;
     }
@@ -38,7 +39,8 @@ int app_main(void)
 
     //---------PREPARE READ---------
     ret = icm20948_prepare_read(&icm);
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error at ICM20948 calibration: %d", ret);
         return ret;
     }
@@ -62,17 +64,46 @@ int app_main(void)
      * Superloop
      * ---------------------------------------------------------------- */
 
+    float accx = 0.0f;
+    float accy = 0.0f;
+    float accz = 0.0f;
+    float gyrox = 0.0f;
+    float gyroy = 0.0f;
+    float gyroz = 0.0f;
+    float tot_offset_ax = 0.0f;
+    float tot_offset_ay = 0.0f;
+    float tot_offset_az = 0.0f;
+    float tot_offset_gx = 0.0f;
+    float tot_offset_gy = 0.0f;
+    float tot_offset_gz = 0.0f;
+
+    for (int j = 0; j < 100; j++)
+
+    {
+        float ax_offset, ay_offset, az_offset, gx_offset, gy_offset, gz_offset;
+        KALMAN_offsets(&icm, &accx, &accy, &accz, &gyrox, &gyroy, &gyroz, &ax_offset, &ay_offset,
+                       &az_offset, &gx_offset, &gy_offset, &gz_offset);
+        tot_offset_ax += ax_offset;
+        tot_offset_ay += ay_offset;
+        tot_offset_az += az_offset;
+        tot_offset_gx += gx_offset;
+        tot_offset_gy += gy_offset;
+        tot_offset_gz += gz_offset;
+    }
+
+    float ax_offset = tot_offset_ax / 100.0f;
+    float ay_offset = tot_offset_ay / 100.0f;
+    float az_offset = tot_offset_az / 100.0f;
+    float gx_offset = tot_offset_gx / 100.0f;
+    float gy_offset = tot_offset_gy / 100.0f;
+    float gz_offset = tot_offset_gz / 100.0f;
+
+    ESP_LOGI("OFFSETS", "ax: %.2f, ay: %.2f, az: %.2f | gx: %.2f, gy: %.2f, gz: %.2f", ax_offset,
+             ay_offset, az_offset, gx_offset, gy_offset, gz_offset);
     for (;;)
     {
-        float accx = 0.0f;
-        float accy = 0.0f;
-        float accz = 0.0f;
-        float gyrox = 0.0f;
-        float gyroy = 0.0f;
-        float gyroz = 0.0f;
-
-        ret = KALMAN_readFunction(&icm, &accx, &accy, &accz, &gyrox, &gyroy,
-                                                    &gyroz);
+        ret = KALMAN_readFunction(&icm, &accx, &accy, &accz, &gyrox, &gyroy, &gyroz, ax_offset,
+                                  ay_offset, az_offset, gx_offset, gy_offset, gz_offset);
         if (ret != ESP_OK)
         {
             ESP_LOGE(k_tag, "Failed to get ICM20948 measurements ret=%d", (int)ret);

@@ -1,13 +1,64 @@
 {
-    "configurations": [
-        {
-            "name": "ESP32",
-            "compileCommands": "${workspaceFolder}/solaris-v1/build/compile_commands.json",
-            "intelliSenseMode": "gcc-x64",
-            "compilerPath": "/opt/esp/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp-elf-gcc",
-            "cStandard": "c11",
-            "cppStandard": "c++17"
-        }
+    "name": "ESP32 - SW DEV",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "esp32-dev",
+    "runServices": [
+        "esp32-dev"
     ],
-    "version": 4
+    "workspaceFolder": "/home/user/Documents/solaris-software",
+    "runArgs": [
+        "--device=/dev/ttyACM0",
+        "--privileged"
+    ],
+    "remoteUser": "root",
+    "mounts": [
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/tmp/host-ssh,type=bind,consistency=cached,readonly",
+        "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached,readonly"
+    ],
+    "initializeCommand": {
+        "linux": "echo 'Host: Linux'",
+        "mac": "echo 'Host: macOS'",
+        "windows": "echo Host: Windows"
+    },
+    "postCreateCommand": {
+        "linux": "/bin/bash -lc 'mkdir -p /root/.ssh && cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true && chown -R root:root /root/.ssh && chmod 700 /root/.ssh && for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done && for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done && echo \"Dev container ready for ESP-IDF development!\"'",
+        "windows": "/bin/bash -lc 'set -e; command -v dos2unix >/dev/null 2>&1 || (apt-get update && apt-get install -y dos2unix); [ -f /root/setup-terminal.sh ] && dos2unix /root/setup-terminal.sh || true; find /workspaces/solaris-software -type f -name \"*.sh\" -print0 | xargs -0 -r dos2unix || true; mkdir -p /root/.ssh; cp -a /tmp/host-ssh/. /root/.ssh/ 2>/dev/null || true; chown -R root:root /root/.ssh; chmod 700 /root/.ssh; for f in /root/.ssh/config /root/.ssh/known_hosts /root/.ssh/id_rsa /root/.ssh/raspberrypi /root/.ssh/id_ed25519; do [ -f \"$f\" ] && chmod 600 \"$f\"; done; for f in /root/.ssh/id_rsa.pub /root/.ssh/raspberrypi.pub /root/.ssh/id_ed25519.pub; do [ -f \"$f\" ] && chmod 644 \"$f\"; done; echo \"Dev container ready for ESP-IDF development!\"'"
+    },
+    "remoteEnv": {
+        "IDF_PATH": "/opt/esp/idf",
+        "XTENSA_GDB": "/opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb",
+        "PATH": "/opt/esp/idf/tools:${containerEnv:PATH}"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "C_Cpp.intelliSenseEngine": "default",
+                "C_Cpp.autocomplete": "default",
+                "C_Cpp.errorSquiggles": "enabled",
+                "C_Cpp.default.compileCommands": "/home/user/Documents/solaris-software/solaris-v1/build/compile_commands.json",
+                "editor.formatOnSave": true,
+                "files.associations": {
+                    "*.h": "c",
+                    "*.c": "c"
+                },
+                "[c]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                },
+                "[cpp]": {
+                    "editor.defaultFormatter": "xaver.clang-format"
+                }
+            },
+            "extensions": [
+                "vsciot-vscode.vscode-arduino",
+                "ms-vscode.cpptools",
+                "eamodio.gitlens",
+                "cschlosser.doxdocgen",
+                "samubarb.vscode-doxyfile",
+                "openai.tu-extension-codex",
+                "github.vscode-pull-request-github",
+                "xaver.clang-format"
+            ]
+        }
+    }
 }
