@@ -24,7 +24,7 @@ ssh \
     -o ExitOnForwardFailure=yes \
     -o StrictHostKeyChecking=accept-new \
     -fN \
-    -L 127.0.0.1:3337:127.0.0.1:3333 \
+    -L 127.0.0.1:3334:127.0.0.1:3333 \
     -L 127.0.0.1:4447:127.0.0.1:4444 \
     -L 127.0.0.1:6667:127.0.0.1:6666 \
     raspi
@@ -35,13 +35,13 @@ echo "  ✔ Tunnel open."
 
 # ── 3. Wait for OpenOCD ───────────────────────────────────────────────────────
 
-echo "  Waiting for OpenOCD on :3337..."
+echo "  Waiting for OpenOCD on :3334..."
 for i in $(seq 1 40); do
     (echo > /dev/tcp/127.0.0.1/3337) >/dev/null 2>&1 && break
     sleep 0.1
 done
 (echo > /dev/tcp/127.0.0.1/3337) >/dev/null 2>&1 \
-    || echo "  (aviso) OpenOCD aún no escucha :3337" >&2
+    || echo "  (aviso) OpenOCD aún no escucha :3334" >&2
 
 # ── 4. Reset halt ─────────────────────────────────────────────────────────────
 

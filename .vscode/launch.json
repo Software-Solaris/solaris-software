@@ -32,7 +32,7 @@
       "cwd": "${workspaceFolder}/solaris-v1",
       "MIMode": "gdb",
       "miDebuggerPath": "${workspaceFolder}/.devcontainer/docker-gdb.sh",
-      "miDebuggerServerAddress": "127.0.0.1:3337",
+      "miDebuggerServerAddress": "127.0.0.1:3334",
       "externalConsole": false,
       "stopAtEntry": true,
       "preLaunchTask": "gdb-prepare",
