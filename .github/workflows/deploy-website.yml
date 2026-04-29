@@ -21,6 +21,17 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.CI_GH_TOKEN }}
 
+      - name: Verify privacy directives
+        run: |
+          NGINX_CONF="${{ github.workspace }}/website/nginx.conf"
+          FAILED=0
+
+          grep -q "access_log off" "$NGINX_CONF" || { echo "FAIL: access_log off missing"; FAILED=1; }
+          grep -q "error_log /dev/null" "$NGINX_CONF" || { echo "FAIL: error_log /dev/null missing"; FAILED=1; }
+          grep -q "real_ip_header" "$NGINX_CONF" && { echo "FAIL: real_ip_header must not be present"; FAILED=1; }
+
+          [ $FAILED -eq 0 ] && echo "OK: all privacy directives verified" || exit 1
+
       - name: Scan for secrets and misconfigurations
         run: |
           docker run --rm \
