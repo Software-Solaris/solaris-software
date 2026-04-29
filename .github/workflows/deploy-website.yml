@@ -47,7 +47,7 @@ jobs:
 
       - name: Deploy website files
         run: |
-          cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
+          sudo cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
 
       - name: Restart web container
         working-directory: /home/solaris/solaris-web
