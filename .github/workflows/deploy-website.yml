@@ -1,0 +1,56 @@
+name: Deploy Website
+
+on:
+  push:
+    paths:
+      - 'website/**'
+
+jobs:
+  security-scan:
+    runs-on: self-hosted
+    steps:
+      - name: Clean workspace
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "${{ github.workspace }}" 2>/dev/null || true
+          sudo rm -rf "${{ github.workspace }}"/* "${{ github.workspace }}"/.??* 2>/dev/null || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.CI_GH_TOKEN }}
+
+      - name: Scan for secrets and misconfigurations
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/website:/scan" \
+            aquasec/trivy:latest fs /scan \
+            --scanners secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --exit-code 1
+
+  deploy:
+    needs: security-scan
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - name: Clean workspace
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "${{ github.workspace }}" 2>/dev/null || true
+          sudo rm -rf "${{ github.workspace }}"/* "${{ github.workspace }}"/.??* 2>/dev/null || true
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.CI_GH_TOKEN }}
+
+      - name: Deploy website files
+        run: |
+          cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
+
+      - name: Restart web container
+        working-directory: /home/solaris/solaris-web
+        run: |
+          docker compose down
+          docker compose up -d
