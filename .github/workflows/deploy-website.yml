@@ -46,6 +46,18 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.CI_GH_TOKEN }}
 
+      - name: Generate version manifest
+        run: |
+          find "${{ github.workspace }}"/website/html -type f | sort | xargs sha256sum | sha256sum | awk '{print $1}' > /tmp/files_hash.txt
+          cat <<EOF > "${{ github.workspace }}"/website/html/version.json
+          {
+            "commit": "${{ github.sha }}",
+            "ref": "${{ github.ref_name }}",
+            "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "files_hash": "$(cat /tmp/files_hash.txt)"
+          }
+          EOF
+
       - name: Deploy website files
         run: |
           cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
