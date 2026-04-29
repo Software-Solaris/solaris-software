@@ -48,7 +48,8 @@ jobs:
 
       - name: Deploy website files
         run: |
-          sudo cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
+          sudo chown -R "$(id -u):$(id -g)" /home/solaris/solaris-web/
+          cp -r "${{ github.workspace }}"/website/. /home/solaris/solaris-web/
 
       - name: Restart web container
         working-directory: /home/solaris/solaris-web
