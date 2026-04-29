@@ -91,13 +91,26 @@ docker compose logs -f    # follow logs
 
 ## Deploying changes
 
-1. Edit the files under `html/` in this repository.
-2. Push them to the VPS:
+**Deployment is automatic.** Any push to `main` that modifies files under `website/` triggers the CI/CD pipeline (`.github/workflows/deploy-website.yml`), which:
+
+1. Verifies privacy directives in `nginx.conf` are intact (blocks deploy if tampered)
+2. Scans for secrets and misconfigurations (Trivy)
+3. Copies the files to `~/solaris-web/` on the server
+4. Restarts the container
+
+No manual steps needed — merge to `main` and the pipeline handles the rest.
+
+### Manual deploy (if needed)
+
+To trigger the pipeline without a code change:
 
 ```bash
-scp website/html/* raspi:~/solaris-web/html/
+gh workflow run deploy-website.yml
 ```
 
-The nginx container mounts `html/` as a read-only volume — **changes are live
-immediately**, no container restart needed. Only `nginx.conf` or `docker-compose.yml`
-changes require `docker compose up -d`.
+Or to deploy directly to the server, bypassing the pipeline:
+
+```bash
+scp -r website/html/* raspi:~/solaris-web/html/
+ssh raspi "cd ~/solaris-web && docker compose up -d"
+```
