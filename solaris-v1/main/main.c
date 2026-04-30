@@ -1,15 +1,3 @@
-/**
- * @file main.c
- * @brief Solaris v1 application entry point — bare-metal superloop.
- *
- * Data flow:
- *   ISR sets drdyFlag
- *     → callProducers() calls each sensor's produce()
- *       → produce() reads sensor, builds packet, calls publish()
- *         → SYNC subscribers run immediately inside publish()
- *         → other subscribers queued, dispatched one-per-call by callConsumers()
- */
-
 #include "spp/spp.h"
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
@@ -17,27 +5,19 @@
 
 extern const SPP_HalPort_t g_esp32HalPort;
 
-/* ----------------------------------------------------------------
- * Sensor instances
- * ---------------------------------------------------------------- */
-
 static ICM20948_t s_icm = {
-    .spiDevIdx   = 0U, /* SPI device index 0 */
+    .spiDevIdx   = 0U,
     .intPin      = 10U,
-    .intIntrType = 1U, /* Rising edge */
-    .intPull     = 0U, /* No pull */
+    .intIntrType = 1U,
+    .intPull     = 0U,
 };
 
 static BMP390_t s_bmp = {
-    .spiDevIdx   = 1U, /* SPI device index 1 */
+    .spiDevIdx   = 1U,
     .intPin      = 17U,
-    .intIntrType = 1U, /* Rising edge */
-    .intPull     = 0U, /* No pull */
+    .intIntrType = 1U,
+    .intPull     = 0U,
 };
-
-/* ----------------------------------------------------------------
- * SD card logger
- * ---------------------------------------------------------------- */
 
 static const SPP_StorageInitCfg_t s_sdCfg = {
     .p_basePath          = "/sdcard",
@@ -53,10 +33,6 @@ static Datalogger_t s_logger = {
     .p_filePath   = "/sdcard/log.txt",
 };
 
-/* ----------------------------------------------------------------
- * app_main
- * ---------------------------------------------------------------- */
-
 void app_main(void)
 {
     (void)SPP_CORE_boot(&g_esp32HalPort);
@@ -65,16 +41,13 @@ void app_main(void)
     (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(0U));
     (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(1U));
 
-    /* Producers first — registration order sets dispatch order in callProducers(). */
     (void)SPP_SERVICES_register(&g_icm20948Module, &s_icm);
     (void)SPP_SERVICES_register(&g_bmp390Module,   &s_bmp);
-
-    /* Consumer — subscribes to all packets at PRIO_LOW (deferred, never blocks sensors). */
     (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
 
     for (;;)
     {
-        SPP_SERVICES_callProducers();  /* each sensor: new data? → read → publish */
-        SPP_SERVICES_callConsumers();  /* one consumer per call — SD write spread across iterations */
+        SPP_SERVICES_callProducers();
+        SPP_SERVICES_callConsumers(); /* one per call — spreads SD writes across iterations */
     }
 }
