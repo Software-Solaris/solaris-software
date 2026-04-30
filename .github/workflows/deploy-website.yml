@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - 'website/**'
+  pull_request:
+    paths:
+      - 'website/**'
   workflow_dispatch:
 
 jobs:
@@ -59,6 +62,7 @@ jobs:
 
       - name: Generate version manifest
         run: |
+          # files_hash: covers source files only (reproducible from git checkout, excludes version.json)
           find "${{ github.workspace }}"/website/html -type f | sort | xargs sha256sum | sha256sum | awk '{print $1}' > /tmp/files_hash.txt
           cat <<EOF > "${{ github.workspace }}"/website/html/version.json
           {
@@ -68,6 +72,8 @@ jobs:
             "files_hash": "$(cat /tmp/files_hash.txt)"
           }
           EOF
+          # manifest.sha256: covers ALL deployed files including version.json (not self-referential)
+          find "${{ github.workspace }}"/website/html -type f | sort | xargs sha256sum | sha256sum | awk '{print $1}' > "${{ github.workspace }}"/website/html/manifest.sha256
 
       - name: Deploy website files
         run: |

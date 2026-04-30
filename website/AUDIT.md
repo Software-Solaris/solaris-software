@@ -23,35 +23,60 @@ error_log /dev/null;
 
 ## 2. Verify what is deployed matches the source code
 
-Every deployment generates a `version.json` file served at:
+Every deployment generates two integrity files served alongside the site:
 
-```
-http://<server>/version.json
-```
+| URL | Purpose |
+|---|---|
+| `/version.json` | Commit, branch, timestamp, and `files_hash` (hash of source files) |
+| `/manifest.sha256` | Hash of **all** deployed files, including `version.json` itself |
 
-Example response:
+### 2a. Verify source files (reproducible from git)
 
-```json
-{
-  "commit": "b880f4d...",
-  "ref": "main",
-  "deployed_at": "2026-04-29T18:55:00Z",
-  "files_hash": "a3f8c2d1..."
-}
-```
-
-To verify the deployed files match the commit:
+`files_hash` inside `version.json` is a SHA-256 over the source files that exist in the
+repository. Because `version.json` does not exist in git, this hash can be reproduced from
+any clean checkout:
 
 ```bash
-# 1. Clone the repository and check out the commit shown in version.json
+# 1. Check the commit currently deployed
+curl -s https://softwaresolaris.com/version.json
+
+# 2. Clone the repository and check out that commit
 git clone https://github.com/Software-Solaris/solaris-software.git
+cd solaris-software
 git checkout <commit>
 
-# 2. Reproduce the hash locally
+# 3. Reproduce the hash
 find website/html -type f | sort | xargs sha256sum | sha256sum
 ```
 
-The result must match `files_hash` in `version.json`. If it does, the files running on the server are exactly what is in the repository at that commit — nothing added, nothing removed.
+The result must match `files_hash`. If it does, every source file on the server is exactly
+what is in the repository — nothing added, nothing removed.
+
+### 2b. Verify the complete deployment (including version.json)
+
+`manifest.sha256` covers **all** files in `html/`, including `version.json`. Because
+`version.json` is generated at deploy time (it contains the commit SHA and timestamp), you
+cannot reproduce it from a plain git checkout — you need to fetch it from the live server.
+
+```bash
+# 1. Clone and check out the commit (same as above)
+git clone https://github.com/Software-Solaris/solaris-software.git
+cd solaris-software
+git checkout <commit>
+
+# 2. Download version.json from the live site into the html/ directory
+curl -s https://softwaresolaris.com/version.json -o website/html/version.json
+
+# 3. Compute the full deployment hash
+find website/html -type f | sort | xargs sha256sum | sha256sum
+
+# 4. Compare with the manifest on the server
+curl -s https://softwaresolaris.com/manifest.sha256
+```
+
+Steps 3 and 4 must produce the same hash. This confirms that both the source files **and**
+`version.json` are exactly what the pipeline deployed — no file has been swapped or altered
+on the server after deploy.
 
 ---
 
