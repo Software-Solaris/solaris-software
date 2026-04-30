@@ -1,64 +1,52 @@
-/**
- * @file main.c
- * @brief Solaris v1 application entry point — bare-metal superloop.
- *
- * Data flow:
- *   ISR sets drdyFlag
- *     → SPP_SERVICES_pollAll() calls each module's serviceTask
- *       → serviceTask reads sensor, builds packet, calls publish()
- *         → CRITICAL subscribers run synchronously inside publish()
- *         → other subscribers dispatched one-per-call via tick()
- */
-
 #include "spp/spp.h"
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
 
 extern const SPP_HalPort_t g_esp32HalPort;
 
-/* ----------------------------------------------------------------
- * Sensor instances — fill in config fields, runtime state set by init
- * ---------------------------------------------------------------- */
-
 static ICM20948_t s_icm = {
-    .spiDevIdx   = 0U, /* SPI device index 0 */
-    .intPin      = 10U,
-    .intIntrType = 1U, /* Rising edge */
-    .intPull     = 0U, /* No pull */
+    .spiDevIdx = 0U,
+    .intPin = 10U,
+    .intIntrType = 1U,
+    .intPull = 0U,
 };
 
 static BMP390_t s_bmp = {
-    .spiDevIdx   = 1U, /* SPI device index 1 */
-    .intPin      = 17U,
-    .intIntrType = 1U, /* Rising edge */
-    .intPull     = 0U, /* No pull */
+    .spiDevIdx = 1U,
+    .intPin = 17U,
+    .intIntrType = 1U,
+    .intPull = 0U,
 };
 
-/* ----------------------------------------------------------------
- * SD card logger — disabled; to enable:
- *   1. Include "spp/services/datalogger/datalogger.h"
- *   2. Declare: static Datalogger_t s_logger = { .p_storageCfg = ..., .p_filePath = ... };
- *   3. Add: SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
- * ---------------------------------------------------------------- */
+static const SPP_StorageInitCfg_t s_sdCfg = {
+    .p_basePath = "/sdcard",
+    .spiHostId = 1,
+    .pinCs = 9,
+    .maxFiles = 5U,
+    .allocationUnitSize = 16384U,
+    .formatIfMountFailed = false,
+};
 
-/* ----------------------------------------------------------------
- * app_main
- * ---------------------------------------------------------------- */
+static Datalogger_t s_logger = {
+    .p_storageCfg = (void *)&s_sdCfg,
+    .p_filePath = "/sdcard/log.txt",
+};
 
 void app_main(void)
 {
     (void)SPP_CORE_boot(&g_esp32HalPort);
 
     (void)SPP_HAL_spiBusInit();
-    (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(0U)); /* ICM20948 */
-    (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(1U)); /* BMP390   */
+    (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(0U));
+    (void)SPP_HAL_spiDeviceInit(SPP_HAL_spiGetHandle(1U));
 
     (void)SPP_SERVICES_register(&g_icm20948Module, &s_icm);
-    (void)SPP_SERVICES_register(&g_bmp390Module,   &s_bmp);
+    (void)SPP_SERVICES_register(&g_bmp390Module, &s_bmp);
+    (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
 
     for (;;)
     {
-        SPP_SERVICES_pollAll();
-        SPP_SERVICES_PUBSUB_tick();
+        SPP_SERVICES_callProducers();
+        SPP_SERVICES_callConsumers(); /* one per call — spreads SD writes across iterations */
     }
 }
