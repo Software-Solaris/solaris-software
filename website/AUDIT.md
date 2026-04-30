@@ -46,7 +46,7 @@ cd solaris-software
 git checkout <commit>
 
 # 3. Reproduce the hash
-find website/html -type f | sort | xargs sha256sum | sha256sum
+find website/html -type f | sort | xargs sha256sum | awk '{print $1}' | sha256sum
 ```
 
 The result must match `files_hash`. If it does, every source file on the server is exactly
@@ -68,7 +68,7 @@ git checkout <commit>
 curl -s https://softwaresolaris.com/version.json -o website/html/version.json
 
 # 3. Compute the full deployment hash
-find website/html -type f | sort | xargs sha256sum | sha256sum
+find website/html -type f | sort | xargs sha256sum | awk '{print $1}' | sha256sum
 
 # 4. Compare with the manifest on the server
 curl -s https://softwaresolaris.com/manifest.sha256
