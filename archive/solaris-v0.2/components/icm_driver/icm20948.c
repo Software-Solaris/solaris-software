@@ -439,8 +439,6 @@ esp_err_t KALMAN_readFunction(data_t *p_dev, float *accel_x, float *accel_y, flo
 
     ESP_LOGE(TAG, "A: x - %.2f, y - %.2f, z - %.2f | G: x - %.2f, y - %.2f, z - %.2f", *accel_x,
              *accel_y, *accel_z, *gyro_x, *gyro_y, *gyro_z);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
     return ESP_OK;
 }
 
