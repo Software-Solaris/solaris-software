@@ -43,6 +43,9 @@ bind "set completion-ignore-case on"  2>/dev/null
 bind "set show-all-if-ambiguous on"   2>/dev/null
 bind "set colored-stats on"           2>/dev/null
 
+# Safety: never shadow Bash builtin `test`
+unset -f test 2>/dev/null
+
 # ─── ESP-IDF aliases ──────────────────────────────────────────────────────────
 
 alias build='idf.py build && idf.py merge-bin'
@@ -85,7 +88,7 @@ goto() {
 
 # ─── Unit Testing ─────────────────────────────────────────────────────────────
 
-test() {
+spp_test() {
     local input_path="$SOLARIS_ROOT/solaris-v1/spp/tests"
 
     if [ ! -d "$input_path" ]; then
@@ -93,7 +96,6 @@ test() {
         return 1
     fi
 
-    # Walk up from input_path to find the CMakeLists.txt root
     local cmake_root="$input_path"
     while [ ! -f "$cmake_root/CMakeLists.txt" ]; do
         [ "$cmake_root" = "/" ] && {
@@ -113,33 +115,38 @@ test() {
     printf "  \033[0;37mBuild:\033[0m   %s\n" "$build_dir"
     echo -e "$L\n"
 
-    # ── Configure ────────────────────────────────────────────────────────────
     printf "  \033[1;33m[1/3]\033[0m Configuring...\n"
     rm -rf "$build_dir"
     mkdir -p "$build_dir"
-    cmake -S "$cmake_root" -B "$build_dir" -DCMAKE_BUILD_TYPE=Debug -DSPP_BUILD_TESTS=ON -DSPP_PORT=posix 2>&1 | sed 's/^/       /'
+
+    cmake -S "$cmake_root" \
+          -B "$build_dir" \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DSPP_BUILD_TESTS=ON \
+          -DSPP_PORT=posix 2>&1 | sed 's/^/       /'
+
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
         printf "\n  \033[1;31m✘  cmake failed.\033[0m\n\n"
         return 1
     fi
 
-    # ── Build ────────────────────────────────────────────────────────────────
     echo ""
     printf "  \033[1;33m[2/3]\033[0m Building...\n"
+
     cmake --build "$build_dir" --parallel 2>&1 | sed 's/^/       /'
+
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
         printf "\n  \033[1;31m✘  Build failed.\033[0m\n\n"
         return 1
     fi
 
-    # ── Run tests ────────────────────────────────────────────────────────────
     echo ""
     printf "  \033[1;33m[3/3]\033[0m Running tests...\n\n"
 
-    pushd "$build_dir" > /dev/null
+    pushd "$build_dir" > /dev/null || return 1
     ctest --output-on-failure --no-compress-output 2>&1 | sed 's/^/  /'
     local exit_code=${PIPESTATUS[0]}
-    popd > /dev/null
+    popd > /dev/null || return 1
 
     echo -e "\n$L"
     if [ "$exit_code" -eq 0 ]; then
@@ -151,6 +158,8 @@ test() {
 
     return "$exit_code"
 }
+
+alias stest='spp_test'
 
 # ─── Doxygen Template ─────────────────────────────────────────────────────────
 
@@ -349,7 +358,8 @@ help() {
     printf "  \033[1;32m%-18s\033[0m %s\n" "template macro"  "Macro / constant"
 
     echo -e "\n  \033[1;33mUnit Testing\033[0m"
-    printf "  \033[1;32m%-14s\033[0m %s\n" "test" "cmake + build + ctest  (solaris-v1/spp/tests/core)"
+    printf "  \033[1;32m%-14s\033[0m %s\n" "spp_test" "cmake + build + ctest  (solaris-v1/spp/tests/core)"
+    printf "  \033[1;32m%-14s\033[0m %s\n" "stest"    "alias for spp_test"
 
     echo -e "\n  \033[1;33mPrompt\033[0m"
     echo -e "  \033[1;35m(branch \033[1;33m★\033[1;35m)\033[0m  Uncommitted changes present"
@@ -377,14 +387,10 @@ elif [ "$HOUR" -ge 12 ] && [ "$HOUR" -lt 20 ]; then GREETING="Buenas tardes"
 else                                                  GREETING="Buenas noches"
 fi
 
-# Source ESP-IDF export.sh to activate the Python venv and populate IDF_VERSION.
-# Always run it — idf.py may already be in PATH via remoteEnv but the venv won't
-# be activated and IDF_VERSION won't be set until export.sh is sourced.
 if [ -n "$IDF_PATH" ] && [ -f "$IDF_PATH/export.sh" ]; then
     source "$IDF_PATH/export.sh" >/dev/null 2>&1
 fi
 
-# Collect all status data before printing (avoids interleaved delays)
 if [ -n "$IDF_PATH" ]; then
     if [ -n "$IDF_VERSION" ]; then
         IDF_VER="${IDF_VERSION#v}"
@@ -399,8 +405,6 @@ BRANCH=$(parse_git_branch)
 CHANGES=$(git status --porcelain --ignore-submodules=dirty 2>/dev/null | wc -l | tr -d ' ')
 
 timeout 2 bash -c "echo > /dev/tcp/192.168.20.236/22" >/dev/null 2>&1 && RASPI_OK=1 || RASPI_OK=0
-
-# ── Print ──────────────────────────────────────────────────────────────────────
 
 L="\033[1;36m  $(printf '─%.0s' {1..54})\033[0m"
 
