@@ -1,6 +1,7 @@
 #include "spp/spp.h"
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
+#include "spp/services/datalogger/datalogger.h"
 /* #include "spp/services/datalogger/datalogger.h" */
 
 extern const SPP_HalPort_t g_esp32HalPort;
@@ -57,7 +58,7 @@ void app_main(void)
 
     (void)SPP_SERVICES_register(&g_icm20948Module, &s_icm);
     (void)SPP_SERVICES_register(&g_bmp390Module, &s_bmp);
-    (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
+    // (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
 
     for (;;)
     {
