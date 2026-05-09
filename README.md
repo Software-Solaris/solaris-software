@@ -41,33 +41,6 @@ cd solaris-software
 > `--recurse-submodules` is required — ESP-IDF and the SPP libraries are git submodules.
 > Use HTTPS for this first clone since SSH keys are configured in the next step.
 
-### Checkout a specific release tag
-
-Solaris uses git submodules. A tag in the main repository stores the exact commit of each
-submodule that was used when that tag was created.
-
-To checkout a tagged version of Solaris and make sure all submodules are also placed at
-the correct commits, run:
-
-```bash
-git fetch --tags
-git checkout <tag-name>
-git submodule update --init --recursive
-```
-
-Do not manually checkout branches inside the submodules unless you are developing them.
-For a released tag, the submodules should remain at the commits recorded by the main
-repository.
-
-To verify the submodule state:
-
-```bash
-git submodule status
-```
-
-The commit shown for each submodule is the one associated with the checked-out tag of the
-main repository.
-
 ### Step 3 — Run the setup script
 
 The script installs Docker and VS Code, generates SSH keys, configures Git identity, and sets up everything for the Dev Container. It is safe to run multiple times — it skips anything already done and offers to pull the latest repo changes on subsequent runs.
@@ -138,6 +111,32 @@ See [System Architecture](docs/system-architecture.md) for the full setup.
 | `solaris-v1` | **Active** | Combined sensors + SPP v2 bare-metal superloop |
 
 ---
+### Checkout a specific release tag
+
+Solaris uses git submodules. A tag in the main repository stores the exact commit of each
+submodule that was used when that tag was created.
+
+To checkout a tagged version of Solaris and make sure all submodules are also placed at
+the correct commits, run:
+
+```bash
+git fetch --tags
+git checkout <tag-name>
+git submodule update --init --recursive
+```
+
+Do not manually checkout branches inside the submodules unless you are developing them.
+For a released tag, the submodules should remain at the commits recorded by the main
+repository.
+
+To verify the submodule state:
+
+```bash
+git submodule status
+```
+
+The commit shown for each submodule is the one associated with the checked-out tag of the
+main repository.
 
 ## Collaboration
 
