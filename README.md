@@ -111,6 +111,32 @@ See [System Architecture](docs/system-architecture.md) for the full setup.
 | `solaris-v1` | **Active** | Combined sensors + SPP v2 bare-metal superloop |
 
 ---
+### Checkout a specific release tag
+
+Solaris uses git submodules. A tag in the main repository stores the exact commit of each
+submodule that was used when that tag was created.
+
+To checkout a tagged version of Solaris and make sure all submodules are also placed at
+the correct commits, run:
+
+```bash
+git fetch --tags
+git checkout <tag-name>
+git submodule update --init --recursive
+```
+
+Do not manually checkout branches inside the submodules unless you are developing them.
+For a released tag, the submodules should remain at the commits recorded by the main
+repository.
+
+To verify the submodule state:
+
+```bash
+git submodule status
+```
+
+The commit shown for each submodule is the one associated with the checked-out tag of the
+main repository.
 
 ## Collaboration
 

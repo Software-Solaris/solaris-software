@@ -6,15 +6,23 @@
       "type": "shell",
       "command": "ssh",
       "args": [
-        "-o", "ControlMaster=auto",
-        "-o", "ControlPersist=600",
-        "-o", "ControlPath=/tmp/raspi-openocd-3337.ctl",
-        "-o", "ExitOnForwardFailure=yes",
-        "-o", "StrictHostKeyChecking=accept-new",
+        "-o",
+        "ControlMaster=auto",
+        "-o",
+        "ControlPersist=600",
+        "-o",
+        "ControlPath=/tmp/raspi-openocd-3337.ctl",
+        "-o",
+        "ExitOnForwardFailure=yes",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
         "-fN",
-        "-L", "127.0.0.1:3334:127.0.0.1:3334",
-        "-L", "127.0.0.1:4447:127.0.0.1:4444",
-        "-L", "127.0.0.1:6667:127.0.0.1:6666",
+        "-L",
+        "127.0.0.1:3334:127.0.0.1:3334",
+        "-L",
+        "127.0.0.1:4447:127.0.0.1:4444",
+        "-L",
+        "127.0.0.1:6667:127.0.0.1:6666",
         "raspi"
       ],
       "problemMatcher": []
@@ -97,7 +105,9 @@
         "panel": "shared",
         "group": "debug-pipeline"
       },
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
     },
     {
       "label": "docker-build-flash",
@@ -108,28 +118,25 @@
         "panel": "dedicated",
         "clear": true
       },
-      "problemMatcher": ["$gcc"]
+      "problemMatcher": [
+        "$gcc"
+      ]
     },
     {
       "label": "debug-cleanup",
-      "dependsOn": ["ssh-tunnel-openocd-down"],
+      "dependsOn": [
+        "ssh-tunnel-openocd-down"
+      ],
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
     {
       "label": "full-debug-prepare",
-      "dependsOn": ["docker-build-flash", "openocd-reset-halt-local"],
-      "dependsOrder": "sequence",
-      "problemMatcher": []
-    },
-    {
-      "label": "flash unit tests",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-lc",
-        "set -euo pipefail; source /opt/esp/idf/export.sh >/tmp/idf-env.log 2>&1; cd /opt/esp/idf/tools/unit-test-app; idf.py -T pressure_sensor_component merge-bin; BIN=/opt/esp/idf/tools/unit-test-app/build/merged-binary.bin; scp \"$BIN\" raspi:/tmp/merged.bin; ssh raspi \"python3 -m esptool --chip esp32s3 --port /dev/ttyACM0 --baud 460800 --before default-reset --after hard-reset write-flash 0x0 /tmp/merged.bin\""
+      "dependsOn": [
+        "docker-build-flash",
+        "openocd-reset-halt-local"
       ],
+      "dependsOrder": "sequence",
       "problemMatcher": []
     }
   ]
