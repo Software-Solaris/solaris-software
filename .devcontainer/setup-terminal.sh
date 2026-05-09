@@ -133,7 +133,7 @@ spp_test() {
     echo ""
     printf "  \033[1;33m[2/3]\033[0m Building...\n"
 
-    cmake --build "$build_dir" --parallel 2>&1 | sed 's/^/       /'
+    cmake --build "$build_dir" --parallel --verbose 2>&1 | sed 's/^/       /'
 
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
         printf "\n  \033[1;31m✘  Build failed.\033[0m\n\n"
@@ -143,10 +143,11 @@ spp_test() {
     echo ""
     printf "  \033[1;33m[3/3]\033[0m Running tests...\n\n"
 
-    pushd "$build_dir" > /dev/null || return 1
-    ctest --output-on-failure --no-compress-output 2>&1 | sed 's/^/  /'
-    local exit_code=${PIPESTATUS[0]}
-    popd > /dev/null || return 1
+    local exit_code=0
+    while IFS= read -r so_file; do
+        cgreen-runner "$so_file" 2>&1 | sed 's/^/  /'
+        [ "${PIPESTATUS[0]}" -ne 0 ] && exit_code=1
+    done < <(find "$build_dir" -maxdepth 1 -name "*.so" | sort)
 
     echo -e "\n$L"
     if [ "$exit_code" -eq 0 ]; then
