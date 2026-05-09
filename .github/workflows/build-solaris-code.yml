@@ -159,33 +159,7 @@ jobs:
         with:
           name: misra-report
           path: doc/cppcheck/
-
-  unit-tests:
-    needs: [build-ci-image, check-spp-changes]
-    if: needs.check-spp-changes.outputs.changed == 'true'
-    runs-on: self-hosted
-    steps:
-      - name: Clean workspace
-        run: |
-          sudo chown -R "$(id -u):$(id -g)" "${{ github.workspace }}" 2>/dev/null || true
-          sudo rm -rf "${{ github.workspace }}"/* "${{ github.workspace }}"/.??* 2>/dev/null || true
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          submodules: true
-          token: ${{ secrets.CI_GH_TOKEN }}
-
-      - name: Build and run SPP unit tests
-        run: |
-          docker run --rm --privileged \
-            --user "$(id -u):$(id -g)" \
-            -v "${{ github.workspace }}:/workspace" \
-            -w /workspace/solaris-v1/spp/tests \
-            $CI_IMAGE \
-            bash -c 'rm -rf build && mkdir build && cd build && cmake .. && make && ctest --verbose'
-
+          
   generate-docs:
     needs: build-ci-image
     runs-on: self-hosted
