@@ -53,7 +53,7 @@ jobs:
       - name: Check for SPP submodule changes
         id: filter
         run: |
-          if git diff --name-only HEAD~1 HEAD | grep -q '^solaris-v1/spp'; then
+          if git diff --name-only HEAD~1 HEAD | grep -q '^solaris-v2/spp'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -80,7 +80,7 @@ jobs:
         run: |
           git config --global --add safe.directory "${{ github.workspace }}"
           rm -rf .git/modules/* || true
-          rm -rf solaris-v1/esp-idf solaris-v1/spp || true
+          rm -rf solaris-v2/esp-idf solaris-v2/spp || true
           if [ -f .gitmodules ]; then
             sed -i \
               -e 's#git@github.com:#https://github.com/#g' \
@@ -91,9 +91,9 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "git@github.com:"
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
           git submodule sync --recursive
-          git submodule update --init solaris-v1/spp
-          git submodule add -f https://github.com/espressif/esp-idf.git solaris-v1/esp-idf
-          cd solaris-v1/esp-idf
+          git submodule update --init solaris-v2/spp
+          git submodule add -f https://github.com/espressif/esp-idf.git solaris-v2/esp-idf
+          cd solaris-v2/esp-idf
           git checkout v5.1
 
       - name: Build firmware
@@ -102,7 +102,7 @@ jobs:
             --user "$(id -u):$(id -g)" \
             -e IDF_CCACHE_ENABLE=0 \
             -v "${{ github.workspace }}:/workspace" \
-            -w /workspace/solaris-v1 \
+            -w /workspace/solaris-v2 \
             $CI_IMAGE \
             bash -c '. /opt/esp/idf/export.sh && idf.py build'
 
@@ -139,12 +139,12 @@ jobs:
                 --suppress=missingIncludeSystem \
                 --suppress=unusedFunction \
                 --xml \
-                -I solaris-v1/spp/include \
-                -I solaris-v1/spp/ports/hal/esp32/include \
-                solaris-v1/main/main.c \
-                solaris-v1/spp/src/ \
-                solaris-v1/spp/services/ \
-                solaris-v1/spp/ports/ \
+                -I solaris-v2/spp/include \
+                -I solaris-v2/spp/ports/hal/esp32/include \
+                solaris-v2/main/main.c \
+                solaris-v2/spp/src/ \
+                solaris-v2/spp/services/ \
+                solaris-v2/spp/ports/ \
                 2> cppcheck-result.xml
               cppcheck-htmlreport \
                 --file=cppcheck-result.xml \

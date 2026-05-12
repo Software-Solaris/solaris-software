@@ -1,11 +1,11 @@
 #!/bin/bash
-# Ensures the Solaris dev container is running, then builds solaris-v1 inside it.
+# Ensures the Solaris dev container is running, then builds solaris-v2 inside it.
 # Exits with the build's exit code so VS Code can report success or failure.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 WORKSPACE="/home/user/Documents/solaris-software"
-PROJECT="${WORKSPACE}/solaris-v1"
+PROJECT="${WORKSPACE}/solaris-v2"
 
 SEP="  ──────────────────────────────────────────────────────"
 
