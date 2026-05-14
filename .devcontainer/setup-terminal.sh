@@ -347,9 +347,7 @@ help() {
     printf "  \033[1;32m%-18s\033[0m %s\n" "goto services"  "solaris-v2/spp/services/"
     printf "  \033[1;32m%-18s\033[0m %s\n" "goto compiler"  "solaris-v2/compiler/"
     printf "  \033[1;32m%-18s\033[0m %s\n" "goto tests"     "solaris-v2/spp/tests/unit/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto docs"      "docs/"
-
-    echo -e "\n  \033[1;33mDoxygen Templates  →  template [type]\033[0m"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto docs"      "docs/"    echo -e "\n  \033[1;33mDoxygen Templates  →  template [type]\033[0m"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template"        "All templates"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template h"      "File header (.h)"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template c"      "File header (.c)"
