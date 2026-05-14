@@ -1,4 +1,4 @@
-# solaris-v1/components/pressure_sensor_driver/CMakeLists.txt
+# solaris-v2/components/pressure_sensor_driver/CMakeLists.txt
 idf_component_register(
     SRCS "kalman.c"
     INCLUDE_DIRS "include"

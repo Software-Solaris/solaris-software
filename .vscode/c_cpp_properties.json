@@ -36,7 +36,7 @@
                 "C_Cpp.intelliSenseEngine": "default",
                 "C_Cpp.autocomplete": "default",
                 "C_Cpp.errorSquiggles": "enabled",
-                "C_Cpp.default.compileCommands": "/home/user/Documents/solaris-software/solaris-v1/build/compile_commands.json",
+                "C_Cpp.default.compileCommands": "/home/user/Documents/solaris-software/solaris-v2/build/compile_commands.json",
                 "editor.formatOnSave": true,
                 "files.associations": {
                     "*.h": "c",

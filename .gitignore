@@ -4,7 +4,7 @@ sdkconfig.defaults
 sdkconfig.old
 sdkconfig
 .clangd
-solaris-v1/sdkconfig
+solaris-v2/sdkconfig
 settings.json 
 .espidf/
 *.cache*

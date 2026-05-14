@@ -92,7 +92,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "set -e; BIN=$(ls ${workspaceFolder}/solaris-v1/build/merged-*.bin | head -n1); scp \"$BIN\" raspi:/tmp/merged.bin; ssh raspi \"python3 -m esptool --chip esp32s3 --port /dev/ttyACM0 --baud 460800 --before default-reset --after hard-reset write-flash 0x0 /tmp/merged.bin\""
+        "set -e; BIN=$(ls ${workspaceFolder}/solaris-v2/build/merged-*.bin | head -n1); scp \"$BIN\" raspi:/tmp/merged.bin; ssh raspi \"python3 -m esptool --chip esp32s3 --port /dev/ttyACM0 --baud 460800 --before default-reset --after hard-reset write-flash 0x0 /tmp/merged.bin\""
       ],
       "problemMatcher": []
     },

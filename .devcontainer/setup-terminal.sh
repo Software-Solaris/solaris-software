@@ -62,24 +62,24 @@ SOLARIS_ROOT="/home/user/Documents/solaris-software"
 goto() {
     case "$1" in
         root)       cd "$SOLARIS_ROOT" ;;
-        v1)         cd "$SOLARIS_ROOT/solaris-v1" ;;
-        main)       cd "$SOLARIS_ROOT/solaris-v1/main" ;;
-        spp)        cd "$SOLARIS_ROOT/solaris-v1/spp" ;;
-        ports)      cd "$SOLARIS_ROOT/solaris-v1/spp/ports" ;;
-        services)   cd "$SOLARIS_ROOT/solaris-v1/spp/services" ;;
-        compiler)   cd "$SOLARIS_ROOT/solaris-v1/compiler" ;;
-        tests)      cd "$SOLARIS_ROOT/solaris-v1/spp/tests/unit" ;;
+        v1)         cd "$SOLARIS_ROOT/solaris-v2" ;;
+        main)       cd "$SOLARIS_ROOT/solaris-v2/main" ;;
+        spp)        cd "$SOLARIS_ROOT/solaris-v2/spp" ;;
+        ports)      cd "$SOLARIS_ROOT/solaris-v2/spp/ports" ;;
+        services)   cd "$SOLARIS_ROOT/solaris-v2/spp/services" ;;
+        compiler)   cd "$SOLARIS_ROOT/solaris-v2/compiler" ;;
+        tests)      cd "$SOLARIS_ROOT/solaris-v2/spp/tests/unit" ;;
         docs)       cd "$SOLARIS_ROOT/docs" ;;
         *)
             printf "\n  \033[1;33mUsage:\033[0m goto <destination>\n\n"
             printf "  \033[1;32m%-14s\033[0m %s\n" "root"      "solaris-software/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "v1"        "solaris-v1/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "main"      "solaris-v1/main/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "spp"       "solaris-v1/spp/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "ports"     "solaris-v1/spp/ports/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "services"  "solaris-v1/spp/services/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "compiler"  "solaris-v1/compiler/"
-            printf "  \033[1;32m%-14s\033[0m %s\n" "tests"     "solaris-v1/spp/tests/unit/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "v1"        "solaris-v2/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "main"      "solaris-v2/main/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "spp"       "solaris-v2/spp/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "ports"     "solaris-v2/spp/ports/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "services"  "solaris-v2/spp/services/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "compiler"  "solaris-v2/compiler/"
+            printf "  \033[1;32m%-14s\033[0m %s\n" "tests"     "solaris-v2/spp/tests/unit/"
             printf "  \033[1;32m%-14s\033[0m %s\n" "docs"      "docs/"
             echo ""
             ;;
@@ -89,7 +89,7 @@ goto() {
 # ─── Unit Testing ─────────────────────────────────────────────────────────────
 
 spp_test() {
-    local input_path="$SOLARIS_ROOT/solaris-v1/spp/tests"
+    local input_path="$SOLARIS_ROOT/solaris-v2/spp/tests"
 
     if [ ! -d "$input_path" ]; then
         printf "\n  \033[1;31m✘\033[0m  Directory not found: %s\n\n" "$input_path"
@@ -111,7 +111,7 @@ spp_test() {
     echo -e "\n$L"
     printf "  \033[1;37mSolaris Unit Tests\033[0m\n"
     echo -e "$L"
-    printf "  \033[0;37mPath:\033[0m    %s\n" "solaris-v1/spp/tests/core"
+    printf "  \033[0;37mPath:\033[0m    %s\n" "solaris-v2/spp/tests/core"
     printf "  \033[0;37mBuild:\033[0m   %s\n" "$build_dir"
     echo -e "$L\n"
 
@@ -133,7 +133,7 @@ spp_test() {
     echo ""
     printf "  \033[1;33m[2/3]\033[0m Building...\n"
 
-    cmake --build "$build_dir" --parallel 2>&1 | sed 's/^/       /'
+    cmake --build "$build_dir" --parallel --verbose 2>&1 | sed 's/^/       /'
 
     if [ "${PIPESTATUS[0]}" -ne 0 ]; then
         printf "\n  \033[1;31m✘  Build failed.\033[0m\n\n"
@@ -143,10 +143,11 @@ spp_test() {
     echo ""
     printf "  \033[1;33m[3/3]\033[0m Running tests...\n\n"
 
-    pushd "$build_dir" > /dev/null || return 1
-    ctest --output-on-failure --no-compress-output 2>&1 | sed 's/^/  /'
-    local exit_code=${PIPESTATUS[0]}
-    popd > /dev/null || return 1
+    local exit_code=0
+    while IFS= read -r so_file; do
+        cgreen-runner "$so_file" 2>&1 | sed 's/^/  /'
+        [ "${PIPESTATUS[0]}" -ne 0 ] && exit_code=1
+    done < <(find "$build_dir" -maxdepth 1 -name "*.so" | sort)
 
     echo -e "\n$L"
     if [ "$exit_code" -eq 0 ]; then
@@ -339,16 +340,14 @@ help() {
 
     echo -e "\n  \033[1;33mNavigation  →  goto <destination>\033[0m"
     printf "  \033[1;32m%-18s\033[0m %s\n" "goto root"      "solaris-software/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto v1"        "solaris-v1/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto main"      "solaris-v1/main/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto spp"       "solaris-v1/spp/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto ports"     "solaris-v1/spp/ports/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto services"  "solaris-v1/spp/services/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto compiler"  "solaris-v1/compiler/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto tests"     "solaris-v1/spp/tests/unit/"
-    printf "  \033[1;32m%-18s\033[0m %s\n" "goto docs"      "docs/"
-
-    echo -e "\n  \033[1;33mDoxygen Templates  →  template [type]\033[0m"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto v1"        "solaris-v2/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto main"      "solaris-v2/main/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto spp"       "solaris-v2/spp/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto ports"     "solaris-v2/spp/ports/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto services"  "solaris-v2/spp/services/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto compiler"  "solaris-v2/compiler/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto tests"     "solaris-v2/spp/tests/unit/"
+    printf "  \033[1;32m%-18s\033[0m %s\n" "goto docs"      "docs/"    echo -e "\n  \033[1;33mDoxygen Templates  →  template [type]\033[0m"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template"        "All templates"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template h"      "File header (.h)"
     printf "  \033[1;32m%-18s\033[0m %s\n" "template c"      "File header (.c)"
@@ -358,7 +357,7 @@ help() {
     printf "  \033[1;32m%-18s\033[0m %s\n" "template macro"  "Macro / constant"
 
     echo -e "\n  \033[1;33mUnit Testing\033[0m"
-    printf "  \033[1;32m%-14s\033[0m %s\n" "spp_test" "cmake + build + ctest  (solaris-v1/spp/tests/core)"
+    printf "  \033[1;32m%-14s\033[0m %s\n" "spp_test" "cmake + build + ctest  (solaris-v2/spp/tests/core)"
     printf "  \033[1;32m%-14s\033[0m %s\n" "stest"    "alias for spp_test"
 
     echo -e "\n  \033[1;33mPrompt\033[0m"

@@ -590,5 +590,5 @@ Write-Host "  3. Click 'Reopen in Container' when VS Code prompts." -ForegroundC
 Write-Host "     The first build takes a few minutes." -ForegroundColor Gray
 Write-Host ""
 Write-Host "  4. Inside the container terminal:" -ForegroundColor Gray
-Write-Host "       cd solaris-v1 && idf.py build" -ForegroundColor White
+Write-Host "       cd solaris-v2 && idf.py build" -ForegroundColor White
 Write-Host ""
