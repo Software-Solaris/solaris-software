@@ -4,9 +4,10 @@
 #define MACROS_H
 
 #include "driver/spi_master.h"
-    
+
 //Initial definion
-typedef struct {
+typedef struct
+{
     spi_device_handle_t handle;
     spi_bus_config_t buscfg;
     spi_device_interface_config_t devcfg;
