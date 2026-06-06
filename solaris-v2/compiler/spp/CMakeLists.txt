@@ -57,7 +57,11 @@ message(STATUS "spp: SPP_ROOT = ${SPP_ROOT}")
 set(SPP_SRC_FILES
     "${SPP_ROOT}/core/core.c"
     "${SPP_ROOT}/core/error.c"
-    "${SPP_ROOT}/hal/dispatch.c"
+    "${SPP_ROOT}/hal/hal.c"
+    "${SPP_ROOT}/hal/spi/spi.c"
+    "${SPP_ROOT}/hal/gpio/gpio.c"
+    "${SPP_ROOT}/hal/storage/storage.c"
+    "${SPP_ROOT}/hal/time/time.c"
     "${SPP_ROOT}/services/service.c"
     "${SPP_ROOT}/services/databank/databank.c"
     "${SPP_ROOT}/services/pubsub/pubsub.c"
@@ -69,9 +73,9 @@ set(SPP_SRC_FILES
 # Services — add one option() + if-block for each new service
 # ----------------------------------------------------------------
 option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"  ON)
-option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"            ON)
-option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"    ON)
-option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf" ON)
+option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"            OFF)
+option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"    OFF)
+option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf" OFF)
 
 set(SPP_SERVICE_FILES "")
 
