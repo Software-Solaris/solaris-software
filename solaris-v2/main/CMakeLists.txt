@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c"
+    SRCS "main.c" "init.c"
     INCLUDE_DIRS "."
     REQUIRES spp spp_ports
 )
