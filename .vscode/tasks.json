@@ -138,6 +138,102 @@
       ],
       "dependsOrder": "sequence",
       "problemMatcher": []
+    },
+    {
+      "label": "docker-build-flash-local",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/docker-build-flash-local.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "openocd-local-start",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/docker-openocd-local.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "label": "OpenOCD (local)"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-local-wait",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "for i in $(seq 1 50); do (echo > /dev/tcp/127.0.0.1/3333) >/dev/null 2>&1 && echo OpenOCD_ready && exit 0; sleep 0.2; done; echo OpenOCD_timeout >&2; exit 1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-local-up",
+      "dependsOn": [
+        "openocd-local-start",
+        "openocd-local-wait"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-local-reset-halt",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "(printf \"reset halt\\n\" > /dev/tcp/127.0.0.1/4444) >/dev/null 2>&1 || true"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-local-stop",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "CID=$(docker compose -f ${workspaceFolder}/.devcontainer/docker-compose.yml ps -q esp32-dev | head -1); [ -n \"$CID\" ] && docker exec \"$CID\" pkill openocd 2>/dev/null || true"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "openocd-local-prepare",
+      "dependsOn": [
+        "openocd-local-stop",
+        "openocd-local-up",
+        "openocd-local-reset-halt"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "docker-flash-local",
+      "type": "shell",
+      "command": "${workspaceFolder}/.devcontainer/docker-flash-local.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "full-debug-prepare-local",
+      "dependsOn": [
+        "openocd-local-stop",
+        "docker-build-flash-local",
+        "openocd-local-up",
+        "openocd-local-reset-halt"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
     }
   ]
 }
