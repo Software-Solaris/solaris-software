@@ -47,6 +47,7 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
+
     ret = SPP_CORE_init();
     return ret;
 }
