@@ -1,6 +1,7 @@
 #include "spp/core/returnTypes.h"
 #include "spp/spp.h"
 #include "spp/services/bmp390/bmp390.h"
+#include "spp/services/icm20948/icm20948.h"
 #include "spp/services/pubsub/pubsub.h"
 #include "spp/services/service.h"
 #include "spp/hal/hal.h"
@@ -64,6 +65,21 @@ void app_main(void)
     else
     {
         ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract);
+        if (ret != K_SPP_OK)
+        {
+            return;
+        }
+    }
+
+    //Register ICM20948 producer
+    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
+    if (p_icmProducerContract == NULL)
+    {
+        return;
+    }
+    else
+    {
+        ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract);
         if (ret != K_SPP_OK)
         {
             return;
