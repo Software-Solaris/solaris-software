@@ -2,20 +2,19 @@
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
 #include "spp/services/datalogger/datalogger.h"
-/* #include "spp/services/datalogger/datalogger.h" */
 
 extern const SPP_HalPort_t g_esp32HalPort;
 
 static ICM20948_t s_icm = {
     .spiDevIdx = 0U,
-    .intPin = 10U,
+    .intPin = 4U,
     .intIntrType = 1U,
     .intPull = 0U,
 };
 
 static BMP390_t s_bmp = {
     .spiDevIdx = 1U,
-    .intPin = 17U,
+    .intPin = 3U,
     .intIntrType = 1U,
     .intPull = 0U,
 };
@@ -23,7 +22,7 @@ static BMP390_t s_bmp = {
 static const SPP_StorageInitCfg_t s_sdCfg = {
     .p_basePath = "/sdcard",
     .spiHostId = 1,
-    .pinCs = 9,
+    .pinCs = 46,
     .maxFiles = 5U,
     .allocationUnitSize = 16384U,
     .formatIfMountFailed = false,
@@ -58,11 +57,24 @@ void app_main(void)
 
     (void)SPP_SERVICES_register(&g_icm20948Module, &s_icm);
     (void)SPP_SERVICES_register(&g_bmp390Module, &s_bmp);
-    // (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
+    (void)SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
+    static uint32_t loop_count = 0U;
 
     for (;;)
     {
         SPP_SERVICES_callProducers();
-        SPP_SERVICES_callConsumers(); /* one per call — spreads SD writes across iterations */
+        SPP_SERVICES_callConsumers();
+
+        loop_count++;
+
+        if (loop_count == 500U)
+        {
+            printf("DEBUG: closing SD logger\n");
+
+            SPP_SERVICES_DATALOGGER_flush(&s_logger);
+            SPP_SERVICES_DATALOGGER_deinit(&s_logger);
+
+            printf("DEBUG: SD logger closed, safe to remove SD\n");
+        }
     }
 }
