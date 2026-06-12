@@ -59,6 +59,7 @@ set(SPP_SRC_FILES
     "${SPP_ROOT}/core/error.c"
     "${SPP_ROOT}/hal/hal.c"
     "${SPP_ROOT}/hal/spi/spi.c"
+    "${SPP_ROOT}/hal/uart/uart.c"
     "${SPP_ROOT}/hal/gpio/gpio.c"
     "${SPP_ROOT}/hal/storage/storage.c"
     "${SPP_ROOT}/hal/time/time.c"
