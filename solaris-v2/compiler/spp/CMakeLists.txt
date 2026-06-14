@@ -72,16 +72,23 @@ set(SPP_SRC_FILES
 # ----------------------------------------------------------------
 # Services — add one option() + if-block for each new service
 # ----------------------------------------------------------------
-option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"  ON)
-option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"            ON)
-option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"    OFF)
-option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf" ON)
+option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"              ON)
+option(SPP_SERVICE_BMP390_SIM "Use simulated BMP390 flight data instead of sensor"  ON)
+option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                        ON)
+option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                OFF)
+option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"             ON)
+option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
 
 set(SPP_SERVICE_FILES "")
 
 if(SPP_SERVICE_BMP390)
-    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/bmp390/bmp390.c")
-    message(STATUS "spp: BMP390 service       ON")
+    if(SPP_SERVICE_BMP390_SIM)
+        list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/bmp390/bmp390_sim.c")
+        message(STATUS "spp: BMP390 service       SIM")
+    else()
+        list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/bmp390/bmp390.c")
+        message(STATUS "spp: BMP390 service       ON (real sensor)")
+    endif()
 else()
     message(STATUS "spp: BMP390 service       OFF")
 endif()
@@ -107,6 +114,14 @@ else()
     message(STATUS "spp: DEBUG_PRINT          OFF")
 endif()
 
+if(SPP_ENCRYPTION)
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/external/encryption/encryption.c")
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/external/encryption/cipher.c")
+    message(STATUS "spp: ENCRYPTION           ON")
+else()
+    message(STATUS "spp: ENCRYPTION           OFF")
+endif()
+
 # Include root is the parent of spp/ so #include "spp/core/packet.h" resolves correctly.
 idf_component_register(
     SRCS         ${SPP_SRC_FILES} ${SPP_SERVICE_FILES}
@@ -115,4 +130,9 @@ idf_component_register(
 
 if(SPP_DEBUG_PRINT)
     target_compile_definitions(${COMPONENT_LIB} PUBLIC SPP_DEBUG_PRINT=1)
+endif()
+
+if(SPP_ENCRYPTION)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC SPP_ENCRYPTION=1)
+    target_include_directories(${COMPONENT_LIB} PUBLIC "${SPP_ROOT}")
 endif()

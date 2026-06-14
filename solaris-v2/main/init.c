@@ -36,16 +36,16 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
-    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
-    if (p_icmProducerContract == NULL)
-    {
-        return K_SPP_ERROR_NULL_POINTER;
-    }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract);
-    if (ret != K_SPP_OK)
-    {
-        return ret;
-    }
+    // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
+    // if (p_icmProducerContract == NULL)
+    // {
+    //     return K_SPP_ERROR_NULL_POINTER;
+    // }
+    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract);
+    // if (ret != K_SPP_OK)
+    // {
+    //     return ret;
+    // }
 
 
     ret = SPP_CORE_init();
