@@ -2,7 +2,6 @@
 #include "spp/services/pubsub/pubsub.h"
 #include "init.h"
 
-
 void app_main(void)
 {
     SPP_RetVal_t ret = SPP_MAIN_init();

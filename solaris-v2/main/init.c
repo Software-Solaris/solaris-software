@@ -8,8 +8,9 @@
 #include "spp/spp.h"
 #include "spp/hal/hal.h"
 #include "spp/ports/hal/esp32/halEsp32.h"
-#include "spp/services/bmp390/bmp390.h"
-#include "spp/services/icm20948/icm20948.h"
+// #include "spp/services/bmp390/bmp390.h"
+// #include "spp/services/icm20948/icm20948.h"
+#include "spp/services/datalogger/datalogger.h"
 #include "spp/services/pubsub/pubsub.h"
 #include "spp/services/service.h"
 
@@ -25,16 +26,16 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
-    const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
-    if (p_bmpProducerContract == NULL)
-    {
-        return K_SPP_ERROR_NULL_POINTER;
-    }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract);
-    if (ret != K_SPP_OK)
-    {
-        return ret;
-    }
+    // const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
+    // if (p_bmpProducerContract == NULL)
+    // {
+    //     return K_SPP_ERROR_NULL_POINTER;
+    // }
+    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract);
+    // if (ret != K_SPP_OK)
+    // {
+    //     return ret;
+    // }
 
     // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
     // if (p_icmProducerContract == NULL)
@@ -47,6 +48,16 @@ SPP_RetVal_t SPP_MAIN_init(void)
     //     return ret;
     // }
 
+    const SPP_SERVICE_ConsumerContract_t *p_dataloggerConsumerContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
+    if (p_dataloggerConsumerContract == NULL)
+    {
+        return K_SPP_ERROR_NULL_POINTER;
+    }
+    ret = SPP_SERVICES_PUBSUB_registerConsumer(p_dataloggerConsumerContract);
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
 
     ret = SPP_CORE_init();
     return ret;

@@ -64,5 +64,5 @@ idf_component_register(
     SRCS         ${PORT_SRCS}
     INCLUDE_DIRS "${SPP_PORT_ROOT}/.." "${SPP_PORT_ROOT}/ports/hal/esp32"
     REQUIRES     spp esp_driver_spi esp_driver_gpio
-                 esp_driver_sdspi fatfs esp_timer
+                 esp_driver_sdspi esp_driver_uart fatfs esp_timer
 )

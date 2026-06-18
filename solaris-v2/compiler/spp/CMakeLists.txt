@@ -75,7 +75,7 @@ set(SPP_SRC_FILES
 option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"              ON)
 option(SPP_SERVICE_BMP390_SIM "Use simulated BMP390 flight data instead of sensor"  ON)
 option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                        ON)
-option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                OFF)
+option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                ON)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"             ON)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
 
