@@ -79,6 +79,8 @@ option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                    
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                ON)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"             ON)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
+option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                               ON)   
+
 
 set(SPP_SERVICE_FILES "")
 
@@ -121,6 +123,13 @@ if(SPP_ENCRYPTION)
     message(STATUS "spp: ENCRYPTION           ON")
 else()
     message(STATUS "spp: ENCRYPTION           OFF")
+endif()
+
+if(SPP_ANTENNA_DEVKIT)
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/e22-mbl01/e22-mbl01.c")
+    message(STATUS "spp: ANTENNA DEVKIT      ON")
+else()
+    message(STATUS "spp: ANTENNA DEVKIT      OFF")
 endif()
 
 # Include root is the parent of spp/ so #include "spp/core/packet.h" resolves correctly.
