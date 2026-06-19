@@ -1,0 +1,4 @@
+{
+    "script": "misra.py",
+    "args": ["--rule-texts=/home/user/Documents/solaris-software/.vscode/misra_c_2012_headlines.txt"]
+}

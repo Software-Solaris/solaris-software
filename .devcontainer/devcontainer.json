@@ -58,7 +58,8 @@
         "openai.tu-extension-codex",
         "github.vscode-pull-request-github",
         "xaver.clang-format",
-        "GitHub.vscode-pull-request-github"
+        "GitHub.vscode-pull-request-github",
+        "jbenden.c-cpp-flylint"
       ]
     }
   }
