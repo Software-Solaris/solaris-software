@@ -29,6 +29,9 @@ SPP_RetVal_t SPP_MAIN_init(void)
     SPP_Kpid_t sdSubscription = {0};
     SPP_Kpid_t e22mbl01Subscription = {0};
     SPP_RetVal_t ret = K_SPP_OK;
+
+    static spp_uint8_t testBlock[512] = {"------SD WRITE TEST-----"};
+
     ret = SPP_HAL_init(SPP_PORTS_ESP32S3_getHalPorts());
     if (ret != K_SPP_OK)
     {
@@ -44,30 +47,37 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
+    ret = SPP_HAL_STORAGE_write(testBlock, 16384, 1);
+    if (ret != K_SPP_OK)
+    {
+        printf("SD Write Failed\n");
+        return ret;
+    }
+
     printf("MAIN: ALL OK\n");
 
 
-    const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
-    if (p_bmpProducerContract == NULL)
-    {
-        return K_SPP_ERROR_NULL_POINTER;
-    }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
-    if (ret != K_SPP_OK)
-    {
-        return ret;
-    }
+    // const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
+    // if (p_bmpProducerContract == NULL)
+    // {
+    //     return K_SPP_ERROR_NULL_POINTER;
+    // }
+    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
+    // if (ret != K_SPP_OK)
+    // {
+    //     return ret;
+    // }
 
-    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
-    if (p_icmProducerContract == NULL)
-    {
-        return K_SPP_ERROR_NULL_POINTER;
-    }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
-    if (ret != K_SPP_OK)
-    {
-        return ret;
-    }
+    // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
+    // if (p_icmProducerContract == NULL)
+    // {
+    //     return K_SPP_ERROR_NULL_POINTER;
+    // }
+    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
+    // if (ret != K_SPP_OK)
+    // {
+    //     return ret;
+    // }
 
     // Example of use with subscriptions to differents producers
     // sdSubscription.value = bmp390Kpid.value | icm20948Kpid.value;
