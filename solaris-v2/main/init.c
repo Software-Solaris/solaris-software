@@ -28,9 +28,8 @@ SPP_RetVal_t SPP_MAIN_init(void)
 
     SPP_Kpid_t sdSubscription = {0};
     SPP_Kpid_t e22mbl01Subscription = {0};
-    SPP_RetVal_t ret = K_SPP_OK;
 
-    static spp_uint8_t testBlock[512] = {"------SD WRITE TEST-----"};
+    SPP_RetVal_t ret = K_SPP_OK;
 
     ret = SPP_HAL_init(SPP_PORTS_ESP32S3_getHalPorts());
     if (ret != K_SPP_OK)
@@ -38,66 +37,48 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
-    ret = SPP_CORE_init();
-
-    ret = SPP_HAL_STORAGE_init();
+    const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
+    if (p_bmpProducerContract == NULL)
+    {
+        return K_SPP_ERROR_NULL_POINTER;
+    }
+    ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
     if (ret != K_SPP_OK)
     {
-        printf("SD Init Failed\n");
         return ret;
     }
 
-    ret = SPP_HAL_STORAGE_write(testBlock, 16384, 1);
+    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
+    if (p_icmProducerContract == NULL)
+    {
+        return K_SPP_ERROR_NULL_POINTER;
+    }
+    ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
     if (ret != K_SPP_OK)
     {
-        printf("SD Write Failed\n");
         return ret;
     }
-
-    printf("MAIN: ALL OK\n");
-
-
-    // const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
-    // if (p_bmpProducerContract == NULL)
-    // {
-    //     return K_SPP_ERROR_NULL_POINTER;
-    // }
-    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
-    // if (ret != K_SPP_OK)
-    // {
-    //     return ret;
-    // }
-
-    // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
-    // if (p_icmProducerContract == NULL)
-    // {
-    //     return K_SPP_ERROR_NULL_POINTER;
-    // }
-    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
-    // if (ret != K_SPP_OK)
-    // {
-    //     return ret;
-    // }
 
     // Example of use with subscriptions to differents producers
-    // sdSubscription.value = bmp390Kpid.value | icm20948Kpid.value;
-    // e22mbl01Subscription.value = 0U;
+    sdSubscription.value = bmp390Kpid.value | icm20948Kpid.value;
+
+    const SPP_SERVICE_ConsumerContract_t *p_sdConsumerContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
+    ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sdConsumerContract, sdSubscription);
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
 
     // TO-DO: add this function to consumer drivers
-    // const SPP_SERVICE_ConsumerContract_t *p_sdConsumerContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
-    // const SPP_SERVICE_ConsumerContract_t *p_sdConsumerContract = NULL;
-    // ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sdConsumerContract, sdSubscription);
-    // if (ret != K_SPP_OK)
-    // {
-    //     return ret;
-    // }
-
+    // e22mbl01Subscription.value = 0U;
     // const SPP_SERVICE_ConsumerContract_t *p_e22mbl01ConsumerContract = SPP_SERVICES_E22MBL01_getConsumerContract();
     // ret = SPP_SERVICES_PUBSUB_registerConsumer(p_e22mbl01ConsumerContract, e22mbl01Subscription);
     // if (ret != K_SPP_OK)
     // {
     //     return ret;
     // }
+
+    ret = SPP_CORE_init();
 
     return ret;
 }
