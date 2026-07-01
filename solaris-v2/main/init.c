@@ -16,7 +16,6 @@
 #include "spp/services/log/log.h"
 #include "spp/services/service.h"
 
-#include "stdio.h"
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
  * ---------------------------------------------------------------- */
