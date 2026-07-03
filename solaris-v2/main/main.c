@@ -3,12 +3,14 @@
 #include "init.h"
 
 void app_main(void)
+
 {
     SPP_RetVal_t ret = SPP_MAIN_init();
     if (ret != K_SPP_OK)
     {
         return;
     }
+
 
     for (;;)
     {
