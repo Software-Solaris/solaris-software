@@ -17,10 +17,46 @@
 #include "spp/services/service.h"
 
 /* ----------------------------------------------------------------
+ * STATIC FUNCTION DECLARATIONS
+ * ---------------------------------------------------------------- */
+static SPP_RetVal_t SPP_MAIN_registerConsumerProducer(void);
+
+/* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
  * ---------------------------------------------------------------- */
 
 SPP_RetVal_t SPP_MAIN_init(void)
+{
+    SPP_RetVal_t ret = SPP_HAL_init(SPP_PORTS_ESP32S3_getHalPorts());
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
+
+    ret = SPP_MAIN_registerConsumerProducer();
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
+
+    ret = SPP_CORE_init();
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+
+/* ----------------------------------------------------------------
+ * STATIC FUNCTIONS
+ * ---------------------------------------------------------------- */
+/**
+* @brief    Register consumers and producers.
+* @return   K_SPP_OK on success.
+*/
+static SPP_RetVal_t SPP_MAIN_registerConsumerProducer(void)
 {
     SPP_Kpid_t bmp390Kpid = {0};
     SPP_Kpid_t icm20948Kpid = {0};
@@ -28,13 +64,8 @@ SPP_RetVal_t SPP_MAIN_init(void)
     SPP_Kpid_t sdSubscription = {0};
     SPP_Kpid_t e22mbl01Subscription = {0};
 
-    SPP_RetVal_t ret = K_SPP_OK;
+    SPP_RetVal_t ret = K_SPP_ERROR;
 
-    ret = SPP_HAL_init(SPP_PORTS_ESP32S3_getHalPorts());
-    if (ret != K_SPP_OK)
-    {
-        return ret;
-    }
 
     const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
     if (p_bmpProducerContract == NULL)
@@ -58,7 +89,6 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
-    // Example of use with subscriptions to differents producers
     sdSubscription.value = bmp390Kpid.value | icm20948Kpid.value;
 
     const SPP_SERVICE_ConsumerContract_t *p_sdConsumerContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
@@ -68,16 +98,13 @@ SPP_RetVal_t SPP_MAIN_init(void)
         return ret;
     }
 
-    // TO-DO: add this function to consumer drivers
-    // e22mbl01Subscription.value = 0U;
-    // const SPP_SERVICE_ConsumerContract_t *p_e22mbl01ConsumerContract = SPP_SERVICES_E22MBL01_getConsumerContract();
-    // ret = SPP_SERVICES_PUBSUB_registerConsumer(p_e22mbl01ConsumerContract, e22mbl01Subscription);
-    // if (ret != K_SPP_OK)
-    // {
-    //     return ret;
-    // }
+    e22mbl01Subscription.value = bmp390Kpid.value | icm20948Kpid.value;
+    const SPP_SERVICE_ConsumerContract_t *p_e22mbl01ConsumerContract = SPP_SERVICES_E22MBL01_getConsumerContract();
+    ret = SPP_SERVICES_PUBSUB_registerConsumer(p_e22mbl01ConsumerContract, e22mbl01Subscription);
+    if (ret != K_SPP_OK)
+    {
+        return ret;
+    }
 
-    ret = SPP_CORE_init();
-
-    return ret;
+    return K_SPP_OK;
 }
