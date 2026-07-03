@@ -11,9 +11,10 @@ IndentCaseLabels: true
 IndentCaseBlocks: false
 IndentPPDirectives: None
 NamespaceIndentation: None
+IndentExternBlock: NoIndent
 
 # --- Column limit ---
-ColumnLimit: 100
+ColumnLimit: 120
 
 # --- Braces: Allman (opening brace on its own line) ---
 BreakBeforeBraces: Allman

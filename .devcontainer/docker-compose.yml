@@ -18,5 +18,7 @@ services:
       LC_ALL: en_US.UTF-8
     volumes:
       - ..:/home/user/Documents/solaris-software:cached
+      - /home/user/.ssh:/root/.ssh
+      - /dev/bus/usb:/dev/bus/usb
     network_mode: host
     working_dir: /home/user/Documents/solaris-software
