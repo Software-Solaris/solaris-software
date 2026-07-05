@@ -1,19 +1,17 @@
-#include "spp/core/returnTypes.h"
-#include "spp/services/pubsub/pubsub.h"
-#include "init.h"
+#include "spp/services/fsm/fsm.h"
+#include "spp/ports/hal/esp32/halEsp32.h"
 
 void app_main(void)
 
 {
-    SPP_RetVal_t ret = SPP_MAIN_init();
-    if (ret != K_SPP_OK)
-    {
-        return;
-    }
+    //Get HAl port
+    const SPP_HalPort_t *p_halPorts = SPP_PORTS_ESP32S3_getHalPorts();
+    // Pass the HAL port to the FSM
+    (void)FSM_init((void *)p_halPorts);
 
-    for (;;)
+    // Call the Herarchical Finite State Machine
+    while (1)
     {
-        SPP_SERVICES_PUBSUB_callProducers();
-        SPP_SERVICES_PUBSUB_callConsumers();
+        FSM_tick();
     }
 }
