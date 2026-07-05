@@ -11,7 +11,6 @@ void app_main(void)
         return;
     }
 
-
     for (;;)
     {
         SPP_SERVICES_PUBSUB_callProducers();
