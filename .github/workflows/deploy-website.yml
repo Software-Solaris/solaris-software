@@ -1,0 +1,28 @@
+name: Deploy web
+on:
+  push:
+    paths:
+      - 'website/**'
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Compilar md4c
+        run: |
+          cd website
+          cmake -S md4c -B build
+          cmake --build build
+
+      - name: Montar la web
+        run: |
+          cd website
+          make clean && make
+
+      - name: Publicar en el servidor
+        run: |
+          rsync -av --delete website/output/ "/home/solaris/solaris-web/html/"
