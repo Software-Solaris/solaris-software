@@ -1,3 +1,6 @@
 [submodule "solaris-v2/spp"]
 	path = solaris-v2/spp
 	url = git@github.com:Software-Solaris/solaris-packet-protocol.git
+[submodule "website/md4c"]
+	path = website/md4c
+	url = https://github.com/mity/md4c
