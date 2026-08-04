@@ -56,7 +56,8 @@ message(STATUS "spp: SPP_ROOT = ${SPP_ROOT}")
 # ----------------------------------------------------------------
 set(SPP_SRC_FILES
     "${SPP_ROOT}/core/core.c"
-    "${SPP_ROOT}/core/error.c"
+    "${SPP_ROOT}/core/pubsub/pubsub.c"
+    "${SPP_ROOT}/core/commonbit.c"
     "${SPP_ROOT}/hal/hal.c"
     "${SPP_ROOT}/hal/spi/spi.c"
     "${SPP_ROOT}/hal/uart/uart.c"
@@ -65,8 +66,8 @@ set(SPP_SRC_FILES
     "${SPP_ROOT}/hal/time/time.c"
     "${SPP_ROOT}/services/service.c"
     "${SPP_ROOT}/services/databank/databank.c"
-    "${SPP_ROOT}/services/pubsub/pubsub.c"
     "${SPP_ROOT}/services/log/log.c"
+    "${SPP_ROOT}/services/fsm/fsm.c"
     "${SPP_ROOT}/util/crc.c"
 )
 
