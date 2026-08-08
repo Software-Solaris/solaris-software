@@ -93,7 +93,7 @@ $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
 
     elif is_fedora; then
         dnf install -y dnf-plugins-core
-        dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+        dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
         dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         systemctl enable --now docker
 
