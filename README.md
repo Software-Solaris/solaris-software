@@ -145,12 +145,11 @@ Fork the repository, make your changes on a branch, and open a pull request agai
 
 ## License
 
-**Solaris Software License v1.0** — key points:
+**Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** — key points:
 
-- Free for personal, educational and amateur rocketry use.
-- **Commercial use is unconditionally prohibited.** No commercial licence exists or will ever be granted. Any profits generated must be paid in full to Team Solaris.
-- **Military use is unconditionally prohibited.**
-- All modifications must be published under this same licence (copyleft).
-- Academic use (TFG/TFM) is allowed provided the work is public and credits this repository.
+- Free to share and adapt for personal, educational and amateur rocketry use.
+- **Commercial use is not permitted.**
+- **Attribution** to Team Solaris — Uvigo Aerotech is required.
+- Any adaptations must be shared under the same license (ShareAlike).
 
 See [LICENSE.md](LICENSE.md) for the full terms.
