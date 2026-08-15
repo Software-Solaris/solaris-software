@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SOFTWARE SOLARIS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/favicon.ico">
+  </head>
+  <body>
+    <div class="navbar">
+      <a href="index.html" class="active">Home</a>
+      <a href="documentation.html">Documentation</a>
+      <a href="https://github.com/Software-Solaris">GitHub</a>
+
+    </div>
+    <main><h2>GitHub repository</h2>
+<p>Our GitHub repository is organized in three repositories as of right now:</p>
+<ul>
+<li>solaris-software: our platform dependent code.</li>
+<li>solaris-packet-protocol: Our own home-made protocol for amateur rocketry.</li>
+<li>.github: this is just for the welcome page of our GitHub.</li>
+</ul>
+<p>Let&#x27;s explain a small brief about each other.</p>
+<h2>Solaris Software</h2>
+<p>In this repository, we have all the dependencies that are strictly tied to our board. Currently, we are using the ESP32S3 board, from Espressif. The directory is organized as follows:</p>
+<ul>
+<li><p>.devcontainer:</p>
+<ul>
+<li>This contains all the utilities needed to run our docker container using the VSCode devcontainer extension.</li>
+<li>It also contains the Dockerfile that is used to build the container. In this Dockerfile, we are installing all the dependencies needed to compile our code.</li>
+<li>The .devcontainer/devcontainer.json file is used to configure the devcontainer, this inlcudes importing USB ports, and installing the required extensions for working together.</li>
+</ul>
+<p>We decided to use this approach, because it is more comfortable to have all the devs working wih the same dependencies. We don&#x27;t want a: &quot;In my computer works!&quot; moments. This way, all the code works in every computer, either Windows or Linux.</p>
+</li>
+<li><p>.github:</p>
+<ul>
+<li>This is where we have our GitHub Actions and pipelines.</li>
+<li>Currently we have just two pipelines. One that build and publish this website to our servers and another that compiles our code. The latest is useful to check if the code we have just pushed to GitHub is wrong or have some compilation problems.</li>
+<li>We also have some cppcheck to implement MISRA C:2012 rules and we plan on implementing an open source alternative for SonarQube, to check our code quality, but this will be impose more strictly once we have a good code base.</li>
+</ul>
+</li>
+</ul>
+</main>
+    <hr>
+    <footer class="rss" style="text-align: center;">
+      <a href="index.html">Home</a> ·
+      <a href="https://github.com/Software-Solaris" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://uvigoaerotech.com/" target="_blank" rel="noopener">Web</a> ·
+      <a href="https://www.instagram.com/uvigoaerotech/?hl=es" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://www.linkedin.com/company/uvigo-aerotech/" target="_blank" rel="noopener">LinkedIn</a> ·
+      <a href="https://www.tiktok.com/@uvigo_aerotech" target="_blank" rel="noopener">TikTok</a> ·
+      <a href="mailto:contacto@uvigoaerotech.com">Email</a>
+      <hr>
+    </footer>
+  </body>
+</html>

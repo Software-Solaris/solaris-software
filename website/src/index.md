@@ -5,23 +5,18 @@
 
 ## Welcome to Solaris Uvigo Aerotech!
 
-We're glad you're here. Before diving into the code, know that Solaris Software is built on a few principles:
+We're glad you're here!
 
-- **Open source and fully auditable.** Every line is public. You can see exactly how we capture data and how we process it.
+At Solaris Software we believe that software should not be a limitation for a team to compete. That is why our software is free to use with a [CC BY-NC-SA creative commons license](https://creativecommons.org/cc-licenses/). What this means:
 
-- **Anyone can contribute** — newcomer or veteran. We're all still learning.
+- Credit must be given to UVigo Aerotech Solaris, the creator.
 
-- **Anyone can join.** Bring the desire to learn and we'll help you set up the software for your own rocket.
+- Only noncommercial use of our work is permitted. Noncommercial means not primarily intended for or directed towards commercial advantage or monetary compensation. We do this to avoid our software to be used in military or any kind of business advantage. We want our code to be free to use and free of charge without causing harm to others.
 
-- **Anyone can use it.** Except militaries: we don't want our work to end up killing people.
+- Adaptations must be shared under the same terms.
 
-- **Use us as inspiration**, but credit the project.
 
-- **We never charge for explaining the code.** We do it for free, so every team gets a competitive edge.
-
-- **We welcome scrutiny.** Challenge our code, our data, our results — we have no ego, and good improvements get merged. How else can we assure a 3km apogee?
-
-- **We prove it in the air.** The code is tested on real hardware and flown on real rockets.
+We want all the teams and people around the globe to collaborate on our project. Join us to make a better software!
 
 
 
