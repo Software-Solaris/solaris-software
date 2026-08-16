@@ -10,3 +10,5 @@ settings.json
 *.cache*
 launch.json
 doc/
+website/site/
+website/.venv/

@@ -1,1 +1,0 @@
-/usr/bin/cc -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/md4c.dir/link.d -shared -Wl,-soname,libmd4c.so.0 -o libmd4c.so.0.5.3 CMakeFiles/md4c.dir/md4c.c.o

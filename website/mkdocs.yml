@@ -1,0 +1,62 @@
+site_name: SOFTWARE SOLARIS
+site_description: Documentation for Solaris Software, the UVigo Aerotech rocketry avionics protocol.
+repo_url: https://github.com/Software-Solaris/solaris-packet-protocol
+repo_name: Solaris Packet Protocol
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    scheme: slate
+    primary: custom
+    accent: custom
+  features:
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+    - toc.integrate
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Software-Solaris
+    - icon: fontawesome/brands/instagram
+      link: https://www.instagram.com/uvigoaerotech/?hl=es
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/uvigo-aerotech/
+    - icon: fontawesome/brands/tiktok
+      link: https://www.tiktok.com/@uvigo_aerotech
+    - icon: fontawesome/solid/envelope
+      link: mailto:contacto@uvigoaerotech.com
+    - icon: material/web
+      link: https://uvigoaerotech.com/
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Documentation:
+      - Start here:
+        - Philosophy behind the architecture: philosophy.md
+        - Solaris Software with the use of AI: ai.md
+      - Solaris Packet Protocol:
+        - SPP Layers: spp-layers.md
+        - HAL: hal.md
+        - Overview: architecture.md

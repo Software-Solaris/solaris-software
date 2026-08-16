@@ -1,1 +1,0 @@
-/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/md2html.dir/link.d CMakeFiles/md2html.dir/cmdline.c.o CMakeFiles/md2html.dir/md2html.c.o -o md2html  -Wl,-rpath,/home/user/Documents/solaris-software/website/build/src: ../src/libmd4c-html.so.0.5.3 ../src/libmd4c.so.0.5.3

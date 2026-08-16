@@ -1,1 +1,0 @@
-/usr/bin/cc -fPIC -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/md4c-html.dir/link.d -shared -Wl,-soname,libmd4c-html.so.0 -o libmd4c-html.so.0.5.3 "CMakeFiles/md4c-html.dir/md4c-html.c.o" "CMakeFiles/md4c-html.dir/entity.c.o"  -Wl,-rpath,/home/user/Documents/solaris-software/website/build/src: libmd4c.so.0.5.3

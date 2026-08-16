@@ -12,17 +12,13 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Compilar md4c
-        run: |
-          cd website
-          cmake -S md4c -B build
-          cmake --build build
-
       - name: Montar la web
         run: |
           cd website
-          make clean && make
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet -r requirements.txt
+          .venv/bin/mkdocs build
 
       - name: Publicar en el servidor
         run: |
-          rsync -av --delete website/output/ "/home/solaris/solaris-web/html/"
+          rsync -av --delete website/site/ "/home/solaris/solaris-web/html/"

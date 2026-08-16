@@ -1,11 +1,20 @@
-## Build the webiste 
+## Build the website
+
+The site is built with [MkDocs](https://www.mkdocs.org/) and the
+[Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme.
 
 ```
-cmake -S md4c -B build
-cmake --build build
-make
+pip install -r requirements.txt
+mkdocs build
 ```
 
-The `cmake` steps build the `md2html` converter (from the `md4c` submodule).
-The `make` step uses that converter to generate `output/*.html` from `src/*.md`,
-and copies `style.css` and `assets/` into `output/`.
+This generates the static site in `site/`. Source pages live in `docs/`
+and the site configuration (theme, navigation, colors) is in `mkdocs.yml`.
+
+To preview locally with live reload:
+
+```
+source .venv/bin/activate
+mkdocs build
+mkdocs serve
+```

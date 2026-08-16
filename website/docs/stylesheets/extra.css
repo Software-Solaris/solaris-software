@@ -1,0 +1,160 @@
+@font-face {
+	font-family: nrk;
+	src: url(../assets/jetbrains_mono_regular.woff2);
+}
+
+/* site font size: 2px smaller than the theme default, matching its own breakpoints */
+html {
+	font-size: 112.5%;
+}
+@media screen and (min-width: 100em) {
+	html {
+		font-size: 125%;
+	}
+}
+@media screen and (min-width: 125em) {
+	html {
+		font-size: 137.5%;
+	}
+}
+
+:root,
+[data-md-color-scheme="slate"] {
+	--col_fg: #ebdbb2;
+	--col_bg: #141818;
+	--col_bg_alt: #202323;
+	--col_lred: #e53231;
+	--col_lorange: #d8813a;
+	--col_lblue: #4093cb;
+	--col_lfg: #ead59d;
+
+	--md-default-bg-color: var(--col_bg);
+	--md-default-fg-color: var(--col_fg);
+	--md-default-fg-color--light: #bdae93;
+	--md-default-fg-color--lighter: #8f8368;
+	--md-default-fg-color--lightest: #454545;
+
+	--md-primary-fg-color: var(--col_bg_alt);
+	--md-primary-bg-color: var(--col_fg);
+
+	--md-accent-fg-color: var(--col_lorange);
+
+	--md-typeset-color: var(--col_fg);
+	--md-typeset-a-color: var(--col_lblue);
+
+	--md-code-bg-color: #202020;
+	--md-code-fg-color: var(--col_lfg);
+
+	--md-footer-bg-color: var(--col_bg_alt);
+	--md-footer-bg-color--dark: #131616;
+	--md-footer-fg-color: var(--col_fg);
+	--md-footer-fg-color--light: var(--col_fg);
+}
+
+body,
+.md-typeset {
+	font-family: "nrk", "monospace";
+	font-variant-ligatures: none;
+}
+
+.md-typeset a:hover {
+	color: #efb551;
+}
+
+.md-typeset h1 {
+	color: var(--col_lred);
+}
+
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+	color: var(--col_lorange);
+}
+
+.md-typeset code {
+	border: 1px solid #282828;
+}
+
+.md-typeset blockquote {
+	color: #bdae93;
+	border-left: 2px solid #454545;
+	background-color: #1d1d1d;
+}
+
+/* header: keep the site title at full width (default), search bar sits
+   to the right next to the repo link at its normal compact size */
+@media screen and (min-width: 60em) {
+	.md-search__form {
+		height: 2.1rem;
+		border-radius: 0.2rem;
+	}
+}
+
+/* left nav: force it to always behave as a slide-out drawer (opened via the
+   header's menu icon), instead of becoming a permanently static column on
+   wide desktop viewports */
+@media screen and (min-width: 76.25em) {
+	.md-sidebar--primary {
+		position: fixed;
+		top: 0;
+		left: -12.1rem;
+		height: 100%;
+		z-index: 5;
+		background-color: var(--md-default-bg-color);
+		transform: translateX(0);
+		transition:
+			transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+			box-shadow 0.25s;
+	}
+
+	.md-sidebar--primary .md-sidebar__scrollwrap {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		margin: 0;
+		overflow: hidden;
+	}
+
+	[data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+		transform: translateX(12.1rem);
+		box-shadow: var(--md-shadow-z3);
+	}
+
+	.md-header__button[for="__drawer"] {
+		display: inline-block;
+	}
+}
+
+/* left nav: drop the "SOFTWARE SOLARIS" title bar at the top of the drawer,
+   the site name is already shown in the header */
+.md-nav__title[for="__drawer"] {
+	display: none !important;
+}
+
+/* footer */
+.md-copyright {
+	display: none;
+}
+
+.md-social {
+	justify-content: center;
+	width: 100%;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: #151515;
+}
+::-webkit-scrollbar-thumb {
+	background-color: #454545;
+	border: 1px solid #1a1a1a;
+	border-radius: 1px;
+}
