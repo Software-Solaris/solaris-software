@@ -13,7 +13,7 @@ The major challenge is to make a software that is reusable in any platform, almo
 
 Everything in the code is tought to be atomic and isolated. "Atomic" in some sense. You will see later.
 
-If we absract the hardware and all the "services", then the software could be tought as an "app store" where you can install or uninstall apps. It does matter which device you have. 
+If we absract the hardware and all the "services", then the software could be tought as an "app store" where you can install or uninstall apps. It does not matter which device you have. 
 
 In the next sections, we will explain the main architecture and all of its parts one by one. I hope it is clear and that you enjoy reading it.
 

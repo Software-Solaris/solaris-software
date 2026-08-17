@@ -145,6 +145,15 @@ body,
 	width: 100%;
 }
 
+/* markdown images: opt into centering with ![alt](src){ .center } */
+.md-typeset img.center {
+	display: block;
+	margin: 24px auto 0;
+	max-width: 500px;
+	width: 100%;
+	height: auto;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
 	width: 5px;

@@ -26,6 +26,9 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - javascripts/drawer-persist.js
+
 extra:
   social:
     - icon: fontawesome/brands/github
@@ -43,6 +46,7 @@ extra:
 
 markdown_extensions:
   - admonition
+  - attr_list
   - tables
   - toc:
       permalink: true
@@ -54,9 +58,12 @@ markdown_extensions:
 nav:
   - Documentation:
       - Start here:
+        - Roadmap: roadmap.md
         - Philosophy behind the architecture: philosophy.md
-        - Solaris Software with the use of AI: ai.md
+        - Solaris Software with the use of AI: ai.md        
+      - Repositories:
+        - Repositories structure: architecture.md
       - Solaris Packet Protocol:
         - SPP Layers: spp-layers.md
         - HAL: hal.md
-        - Overview: architecture.md
+        

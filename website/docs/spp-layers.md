@@ -1,12 +1,13 @@
 # General Layer Description
-Solaris Software is built in layers. Each layer does not know the existance of the layers below or above. You can switch or cange layers contents without affecting the functionality of the code. This is shown in the image below.
+Solaris Software is built in layers. Each layer has no knowledge of the layers above or below it, so you can swap out or change what's inside a layer without breaking the rest of the code. The image below shows how they stack.
 
-<img src="assets/layers-1.svg" alt="logo" style="display:block; margin:50px auto 0; max-width:500px; width:100%; height:auto;">
+![Layer stack](assets/layers-1.svg){ .center }
 
 
-### HAL layer
-The lowest layer is called HAL or Hardware Abstraction Layer. This layer is the one responsible to talk with the hardware of the board. This includes all the functions such as SPI, UART, Clocks, I2C, etc. If you need to talk to hardware, the layer will be the place where you will find the functions needed. 
-As an interesting concept, since the HAL pertains to the "abstracted code", it does not implement functionality. For example, in the HAL layer you will find a function like this one:
+## HAL layer
+The lowest layer is the HAL, or Hardware Abstraction Layer. It's the layer responsible for talking to the board's hardware — SPI, UART, clocks, I2C, and so on. If you need to reach a peripheral, this is where you'll find the function for it.
+
+The interesting part is that, because the HAL is the "abstracted" side of the code, it doesn't actually implement any functionality itself. For example, in the HAL layer you'll find a function like this one:
 
 ```
 /**
@@ -21,7 +22,7 @@ As an interesting concept, since the HAL pertains to the "abstracted code", it d
 SPP_RetVal_t SPP_HAL_SPI_transmit(void *p_handle, spp_uint8_t *p_data, spp_uint8_t length);
 ```
 
-This function is responsible for sending an SPI transaction, located at: solaris-packet-protocol/hal/spi/spi.h. But if you go into the implementation...you will be greatly disapointed, because you will find something like this:
+This function sends an SPI transaction, and lives at solaris-packet-protocol/hal/spi/spi.h. But look at its implementation and you'll be a little underwhelmed — it looks like this:
 
 ```
 SPP_RetVal_t SPP_HAL_SPI_transmit(void *p_handle, spp_uint8_t *p_data, spp_uint8_t length)
@@ -45,17 +46,18 @@ SPP_RetVal_t SPP_HAL_SPI_transmit(void *p_handle, spp_uint8_t *p_data, spp_uint8
 }
 ```
 
-As you can see, we don't call any function of any custom board, but rather a function pointer __p_port->spi.spiTransmit(p_handle, p_data, length);__. This is what makes the abstraction great. We make our HAL independent of the platform. Later on, when detailing the HAL, we will explain how to set it up and how to modify it.
+Notice that no board-specific code is called directly — instead, it goes through a function pointer, __p_port->spi.spiTransmit(p_handle, p_data, length)__. That's what makes the abstraction work: the HAL itself stays independent of the platform. We go into how this gets set up and modified in the [HAL section](hal.md).
 
-### SPP Core layer
-The SPP Core layer contains basic functonality for the SPP to work. This includes some compulssory services such as the databank, packet generation, crc, pubsub service,.... We will see later on all of its parts. This is the core and should always be included in the final binary file.
+## SPP Core layer
+Above the HAL sits the SPP Core layer, which holds the basic functionality the SPP needs to run — mandatory services such as the databank, packet generation, CRC, and the pub/sub service. We'll go through each of these in later sections. The core is always included in the final binary.
 
-### Services layer
-Above the core we have the service layer. This is tought as the "app store". Developers can create and validate independent modules and the plug them into the core to make them run. There are two types of services in SPP. Consumers of data and producers of data. They both have a "contract" that they follow. This will be explained more in detail later. You can have as many services as you whish, but this can mean a higher control cycle time. In a rocket, we normally don't have that many services, but in a bigger system you have to take this into account. The more amount of service you have, more time it will take your control cycle.
+## Services layer
+Above the core sits the services layer, which we like to think of as the "app store". Developers write and validate independent modules, then plug them into the core to make them run. SPP has two kinds of services — consumers of data and producers of data — and both follow a "contract" that we'll detail later. You can add as many services as you like, but each one adds to the control cycle time. A rocket usually doesn't need many services, but on a bigger system this is worth keeping in mind: the more services you add, the longer your control cycle takes.
 
-### Driver implementations
-Lastly we have the drivers. This is the part that is implemented based on the platform you are using. Here is where the function pointer we saw earlier, will be implemented. It is the function it will be called with the function pointer above.
-You can have an implementation fo driver for each board SDK (Software Development Kit). For each platform, you need to develop the drivers or implement them according to the SPP function signatures in the HAL. This is a bit cumbersome, but it should not take much and you can reuse all the software in very few weeks. As an example, we are currently modifying our software to have support for both the ESP32S3 and the RP2350 boards. So you will find implementations for both. This can serve you as inspiration. It can also happen we have not tought correctly on this abstraction and that we missed something. In that case, let us know to fix it right away!
+## Driver implementations
+Last come the drivers — the platform-specific part, where the function pointers we saw earlier finally get implemented. This is the real code that ends up being called through those pointers.
+
+You write one driver implementation per board SDK (Software Development Kit). For each platform, the drivers need to be developed to match the SPP function signatures defined in the HAL. It's a bit of extra work, but not much, and once it's done you get to reuse the rest of the software as-is. Right now we're adding support for both the ESP32S3 and the RP2350, so you'll find implementations for both — feel free to use them as a reference. And if you run into a case where our abstraction doesn't quite fit and something's missing, let us know and we'll fix it right away.
 
 
-And that's it! Well, it is a bit more complex, that is why the documenation is long, but with this entry you should get the main idea. As you saw, there is no OSAL (Operating System Abstraction Layer) because we do it all baremetal, for a good amount of reasons, and one of them is control on the execution.
+And that's the gist of it. There's more nuance to it, of course, which is why the rest of the documentation goes deeper, but this should give you the main idea. One thing worth pointing out: there's no OSAL (Operating System Abstraction Layer) here — Solaris runs bare-metal, for several reasons, one of the biggest being control over execution.
