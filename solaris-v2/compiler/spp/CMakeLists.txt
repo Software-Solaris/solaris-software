@@ -80,7 +80,8 @@ option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                    
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                ON)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"            ON)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
-option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              ON)   
+option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              OFF)  
+option(SPP_MAXM10M20B         "Compile GNSS"                                        ON) 
 
 
 set(SPP_SERVICE_FILES "")
@@ -131,6 +132,13 @@ if(SPP_ANTENNA_DEVKIT)
     message(STATUS "spp: ANTENNA DEVKIT      ON")
 else()
     message(STATUS "spp: ANTENNA DEVKIT      OFF")
+endif()
+
+if(SPP_MAXM10M20B)
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/maxm10m20b/maxm10m20b.c")
+    message(STATUS "spp: MAX-M10M-20B      ON")
+else()
+    message(STATUS "spp: MAX-M10M-20B      OFF")
 endif()
 
 # Include root is the parent of spp/ so #include "spp/core/packet.h" resolves correctly.
