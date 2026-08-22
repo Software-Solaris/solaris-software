@@ -80,8 +80,8 @@ option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                    
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                ON)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"            ON)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
-option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              ON)  
-option(SPP_MAXM10M20B       "Compile GNSS"                                        ON) 
+option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              OFF)  
+option(SPP_MAXM10M20B         "Compile GNSS"                                        ON) 
 
 
 set(SPP_SERVICE_FILES "")
