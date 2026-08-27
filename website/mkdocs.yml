@@ -63,7 +63,15 @@ nav:
         - Solaris Software with the use of AI: ai.md        
       - Repositories:
         - Repositories structure: architecture.md
+        - Build System (CMake): build-system.md
       - Solaris Packet Protocol:
-        - SPP Layers: spp-layers.md
-        - HAL: hal.md
-        
+        - Architectural design:
+          - SPP Layers: spp-layers.md
+          - HAL: hal.md
+        - Detailed design:
+          - Reading the code: core-overview.md
+          - Solaris Packet: packet.md
+          - Databank: databank.md
+          - Publish-Suscribe (PUBSUB): pubsub.md
+          - Finite State Machine (FSM): fsm.md
+  - API (Doxygen): api.md
