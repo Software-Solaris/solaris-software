@@ -7,7 +7,16 @@
 /* ----------------------------------------------------------------
  * INCLUDES
  * ---------------------------------------------------------------- */
-#include "spp/services/fsm/fsm.h"
+#include "custom.h"
+
+#include "spp/core/core.h"
+#include "spp/core/commonbit.h"
+#include "spp/core/pubsub/pubsub.h"
+
+#include "spp/services/bmp390/bmp390.h"
+#include "spp/services/databank/databank.h"
+#include "spp/services/kpid.h"
+#include "spp/services/service.h"
 
 /* ----------------------------------------------------------------
  * STATIC FUNCTIONS DECLARATIONS
@@ -41,14 +50,16 @@ static FSM_Transition_t s_transitionTable[] = {
     },
 };
 
+static FsmErrors_t s_fsmErrors = {0};
 
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
  * ---------------------------------------------------------------- */
-FSM_Transition_t *CUSTOM_getFsmTable(void)
+const FSM_Transition_t *CUSTOM_getFsmTable(void)
 {
-    return &s_transitionTable;
+    return s_transitionTable;
 }
+
 /* ----------------------------------------------------------------
  * PRIVATE FUNCTIONS
  * ---------------------------------------------------------------- */
@@ -57,29 +68,18 @@ FSM_Transition_t *CUSTOM_getFsmTable(void)
 
 static spp_bool_t guard_startInitializationOfModules(void)
 {
-    // Init the hardware abstraction layer (HAL)
-    SPP_RetVal_t ret = SPP_HAL_init(s_p_ports);
-    if (ret != K_SPP_OK)
+    spp_bool_t initialized = CUSTOM_registerConsumerProducer();
+    if (initialized == false)
     {
-        s_fsmErrors.halInitError = 1;
         return false;
     }
-    else
+
+    SPP_RetVal_t ret = SPP_CORE_init();
+    if (ret != K_SPP_OK)
     {
-        spp_bool_t initialized = SPP_CORE_FSM_registerConsumerProducer();
-        if (initialized == false)
-        {
-            return false;
-        }
-        else
-        {
-            ret = SPP_CORE_init();
-            if (ret != K_SPP_OK)
-            {
-                return false;
-            }
-        }
+        return false;
     }
+
 
     return true;
 }
@@ -133,11 +133,11 @@ static void statefunction_pubSubLoop(void)
 static spp_bool_t CUSTOM_registerConsumerProducer(void)
 {
     SPP_Kpid_t bmp390Kpid = {0};
-    SPP_Kpid_t icm20948Kpid = {0};
-    SPP_Kpid_t m10mKpid = {0};
+    // SPP_Kpid_t icm20948Kpid = {0};
+    // SPP_Kpid_t m10mKpid = {0};
 
-    SPP_Kpid_t sdSubscription = {0};
-    SPP_Kpid_t e22mbl01Subscription = {0};
+    // SPP_Kpid_t sdSubscription = {0};
+    // SPP_Kpid_t e22mbl01Subscription = {0};
 
     SPP_RetVal_t ret = K_SPP_ERROR;
 
@@ -146,10 +146,13 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
     {
         s_fsmErrors.bmpPubsubError = 1;
     }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
-    if (ret != K_SPP_OK)
+    else
     {
-        s_fsmErrors.bmpPubsubError = 1;
+        ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
+        if (ret != K_SPP_OK)
+        {
+            s_fsmErrors.bmpPubsubError = 1;
+        }
     }
 
     // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
