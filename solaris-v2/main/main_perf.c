@@ -7,8 +7,11 @@
 
 #include <stdio.h>
 
+#define K_PERFORMANCE_TICKS (10000U)
+
 void app_main(void)
 {
+    static spp_uint32_t s_tickTimes[K_PERFORMANCE_TICKS] = {0U};
     // Get HAL port
     const SPP_HalPort_t *p_halPorts = SPP_PORTS_ESP32S3_getHalPorts();
 
@@ -35,19 +38,21 @@ void app_main(void)
         }
     }
 
-    spp_uint32_t t0 = 0U;
-    spp_uint32_t t1 = 0U;
-    spp_uint32_t ticks = 0;
+    FSM_tick();
 
-    t0 = SPP_HAL_TIME_getTimeUs();
-
-    while (CUSTOM_isPerformanceFinished() == false)
+    for (spp_uint32_t i = 0U; i < K_PERFORMANCE_TICKS; i++)
     {
+        spp_uint32_t t0 = SPP_HAL_TIME_getTimeUs();
+
         FSM_tick();
-        ticks++;
+
+        spp_uint32_t t1 = SPP_HAL_TIME_getTimeUs();
+
+        s_tickTimes[i] = t1 - t0;
     }
 
-    t1 = SPP_HAL_TIME_getTimeUs();
-    printf("Total time: %lu us\n", t1 - t0);
-    printf("FSM ticks: %lu\n", ticks);
+    for (spp_uint32_t i = 0U; i < K_PERFORMANCE_TICKS; i++)
+    {
+        printf("%lu\n", (unsigned long)s_tickTimes[i]);
+    }
 }

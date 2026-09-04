@@ -136,28 +136,30 @@ static void action_emitTelemetry(void)
 
 static void statefunction_bmpPerformanceLoop(void)
 {
-    if (s_performanceFinished == true)
-    {
-        return;
-    }
+    // if (s_performanceFinished == true)
+    // {
+    //     return;
+    // }
 
-    spp_uint8_t c0 = SPP_SERVICES_PUBSUB_queueDepth();
+    // spp_uint8_t c0 = SPP_SERVICES_PUBSUB_queueDepth();
 
     (void)SPP_SERVICES_PUBSUB_callProducers();
 
-    spp_uint8_t c1 = SPP_SERVICES_PUBSUB_queueDepth();
+    // spp_uint8_t c1 = SPP_SERVICES_PUBSUB_queueDepth();
 
-    if (c1 > c0)
-    {
-        s_performanceSamples++;
-    }
+    // if (c1 > c0)
+    // {
+    //     s_performanceSamples++;
+    // }
 
     (void)SPP_SERVICES_PUBSUB_callConsumers();
 
-    if (s_performanceSamples >= K_CUSTOM_PERFORMANCE_SAMPLES)
-    {
-        s_performanceFinished = true;
-    }
+    // s_performanceSamples++;
+
+    // if (s_performanceSamples >= K_CUSTOM_PERFORMANCE_SAMPLES)
+    // {
+    //     s_performanceFinished = true;
+    // }
 }
 
 
