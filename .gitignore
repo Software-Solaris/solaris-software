@@ -1,6 +1,5 @@
 **/solaris-v*/build/
 /.devcontainer/devcontainer.json
-sdkconfig.defaults
 sdkconfig.old
 sdkconfig
 .clangd

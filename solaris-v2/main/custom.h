@@ -16,7 +16,7 @@
  * ---------------------------------------------------------------- */
 #define K_CUSTOM_FSM_TABLE_SIZE (spp_uint8_t)(2U)
 
-#define K_CUSTOM_PERFORMANCE_SAMPLES 300
+#define K_CUSTOM_PERFORMANCE_SAMPLES 1000
 
 /* ----------------------------------------------------------------
 * STRUCTS

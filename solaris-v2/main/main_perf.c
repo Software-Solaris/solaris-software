@@ -1,4 +1,6 @@
 #include "spp/services/fsm/fsm.h"
+#include "spp/services/bmp390/bmp390.h"
+
 #include "spp/ports/hal/esp32/halEsp32.h"
 #include "spp/hal/hal.h"
 #include "spp/hal/time/time.h"
@@ -7,11 +9,8 @@
 
 #include <stdio.h>
 
-#define K_PERFORMANCE_TICKS (10000U)
-
 void app_main(void)
 {
-    static spp_uint32_t s_tickTimes[K_PERFORMANCE_TICKS] = {0U};
     // Get HAL port
     const SPP_HalPort_t *p_halPorts = SPP_PORTS_ESP32S3_getHalPorts();
 
@@ -40,19 +39,25 @@ void app_main(void)
 
     FSM_tick();
 
-    for (spp_uint32_t i = 0U; i < K_PERFORMANCE_TICKS; i++)
-    {
-        spp_uint32_t t0 = SPP_HAL_TIME_getTimeUs();
+    spp_uint32_t t0 = SPP_HAL_TIME_getTimeUs();
 
+    while (SPP_SERVICES_BMP390_getPerformanceSampleCount() < K_CUSTOM_PERFORMANCE_SAMPLES)
+    {
         FSM_tick();
-
-        spp_uint32_t t1 = SPP_HAL_TIME_getTimeUs();
-
-        s_tickTimes[i] = t1 - t0;
     }
 
-    for (spp_uint32_t i = 0U; i < K_PERFORMANCE_TICKS; i++)
+    spp_uint32_t t1 = SPP_HAL_TIME_getTimeUs();
+
+    for (spp_uint16_t i = 0U; i < K_CUSTOM_PERFORMANCE_SAMPLES; i++)
     {
-        printf("%lu\n", (unsigned long)s_tickTimes[i]);
+        spp_uint32_t bmpUs = 0U;
+        spp_uint32_t tempSpiUs = 0U;
+        spp_uint32_t pressSpiUs = 0U;
+
+        if (SPP_SERVICES_BMP390_getPerformanceSample(i, &bmpUs, &tempSpiUs, &pressSpiUs) == K_SPP_OK)
+        {
+            printf("%lu,%lu,%lu\n", (unsigned long)bmpUs, (unsigned long)tempSpiUs, (unsigned long)pressSpiUs);
+        }
     }
+    printf("Benchmark time: %lu us\n", (unsigned long)(t1 - t0));
 }
