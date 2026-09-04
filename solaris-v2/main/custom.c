@@ -22,6 +22,7 @@
  * STATIC FUNCTIONS DECLARATIONS
  * ---------------------------------------------------------------- */
 static spp_bool_t CUSTOM_registerConsumerProducer(void);
+static spp_bool_t CUSTOM_initCheck(void);
 static spp_bool_t guard_startInitializationOfModules(void);
 static void action_emitTelemetry(void);
 static void statefunction_pubSubLoop(void);
@@ -51,6 +52,7 @@ static FSM_Transition_t s_transitionTable[] = {
 };
 
 static FsmErrors_t s_fsmErrors = {0};
+static const SPP_SERVICE_ProducerContract_t *s_p_bmpProducerContract = NULL;
 
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -68,22 +70,27 @@ const FSM_Transition_t *CUSTOM_getFsmTable(void)
 
 static spp_bool_t guard_startInitializationOfModules(void)
 {
-    spp_bool_t initialized = CUSTOM_registerConsumerProducer();
-    if (initialized == false)
+    spp_bool_t registered = CUSTOM_registerConsumerProducer();
+    if (registered == false)
     {
         return false;
     }
 
     SPP_RetVal_t ret = SPP_CORE_init();
+
+    spp_bool_t initCheck = CUSTOM_initCheck();
+
     if (ret != K_SPP_OK)
     {
         return false;
     }
 
-
+    if (initCheck == false)
+    {
+        return false;
+    }
     return true;
 }
-
 
 /* Actions*/
 
@@ -141,14 +148,14 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
 
     SPP_RetVal_t ret = K_SPP_ERROR;
 
-    const SPP_SERVICE_ProducerContract_t *p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
-    if (p_bmpProducerContract == NULL)
+    s_p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
+    if (s_p_bmpProducerContract == NULL)
     {
         s_fsmErrors.bmpPubsubError = 1;
     }
     else
     {
-        ret = SPP_SERVICES_PUBSUB_registerProducer(p_bmpProducerContract, &bmp390Kpid);
+        ret = SPP_SERVICES_PUBSUB_registerProducer(s_p_bmpProducerContract, &bmp390Kpid);
         if (ret != K_SPP_OK)
         {
             s_fsmErrors.bmpPubsubError = 1;
@@ -200,6 +207,24 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
 
     if (s_fsmErrors.bmpPubsubError)
     {
+        return false;
+    }
+
+    return true;
+}
+
+static spp_bool_t CUSTOM_initCheck(void)
+{
+    SPP_RetVal_t bmpInitResult = K_SPP_ERROR_NOT_INITIALIZED;
+    SPP_RetVal_t ret = SPP_SERVICES_PUBSUB_getProducerInitResult(s_p_bmpProducerContract, &bmpInitResult);
+    if (ret != K_SPP_OK || bmpInitResult == K_SPP_ERROR_NOT_INITIALIZED)
+    {
+        return false;
+    }
+
+    if (bmpInitResult != K_SPP_OK)
+    {
+        s_fsmErrors.bmpInitError = 1;
         return false;
     }
 
