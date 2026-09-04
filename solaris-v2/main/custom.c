@@ -25,7 +25,7 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void);
 static spp_bool_t CUSTOM_initCheck(void);
 static spp_bool_t guard_startInitializationOfModules(void);
 static void action_emitTelemetry(void);
-static void statefunction_pubSubLoop(void);
+static void statefunction_bmpPerformanceLoop(void);
 
 /* ----------------------------------------------------------------
  * VARIABLES
@@ -43,16 +43,19 @@ static FSM_Transition_t s_transitionTable[] = {
     {
         .fromState = FSM_STATE_READY,
         .fromSubState = FSM_SUBSTATE_NONE,
-        .toState = FSM_STATE_FLIGHT,
-        .toSubState = FSM_SUBSTATE_FLIGHT_ASCENDING,
+        .toState = FSM_STATE_READY,
+        .toSubState = FSM_SUBSTATE_NONE,
         .guard = NULL,
         .action = NULL,
-        .stateFunction = statefunction_pubSubLoop,
+        .stateFunction = statefunction_bmpPerformanceLoop,
     },
 };
 
 static FsmErrors_t s_fsmErrors = {0};
 static const SPP_SERVICE_ProducerContract_t *s_p_bmpProducerContract = NULL;
+
+static spp_uint16_t s_performanceSamples = 0U;
+static spp_bool_t s_performanceFinished = false;
 
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -60,6 +63,11 @@ static const SPP_SERVICE_ProducerContract_t *s_p_bmpProducerContract = NULL;
 const FSM_Transition_t *CUSTOM_getFsmTable(void)
 {
     return s_transitionTable;
+}
+
+spp_bool_t CUSTOM_isPerformanceFinished(void)
+{
+    return s_performanceFinished;
 }
 
 /* ----------------------------------------------------------------
@@ -126,10 +134,30 @@ static void action_emitTelemetry(void)
 
 /* State functions */
 
-static void statefunction_pubSubLoop(void)
+static void statefunction_bmpPerformanceLoop(void)
 {
+    if (s_performanceFinished == true)
+    {
+        return;
+    }
+
+    spp_uint8_t c0 = SPP_SERVICES_PUBSUB_queueDepth();
+
     (void)SPP_SERVICES_PUBSUB_callProducers();
+
+    spp_uint8_t c1 = SPP_SERVICES_PUBSUB_queueDepth();
+
+    if (c1 > c0)
+    {
+        s_performanceSamples++;
+    }
+
     (void)SPP_SERVICES_PUBSUB_callConsumers();
+
+    if (s_performanceSamples >= K_CUSTOM_PERFORMANCE_SAMPLES)
+    {
+        s_performanceFinished = true;
+    }
 }
 
 

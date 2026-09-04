@@ -35,38 +35,19 @@ void app_main(void)
         }
     }
 
-    spp_uint32_t i = 0U;
-    spp_uint16_t stored = 0U;
     spp_uint32_t t0 = 0U;
     spp_uint32_t t1 = 0U;
-    spp_uint32_t dt = 0U;
+    spp_uint32_t ticks = 0;
 
-    static spp_uint32_t s_dt[500] = {0};
+    t0 = SPP_HAL_TIME_getTimeUs();
 
-    FSM_tick();
-    FSM_tick();
-
-    while (i < 1000000U)
+    while (CUSTOM_isPerformanceFinished() == false)
     {
-        t0 = SPP_HAL_TIME_getTimeUs();
-
         FSM_tick();
-
-        t1 = SPP_HAL_TIME_getTimeUs();
-
-        dt = t1 - t0;
-
-        if ((dt > 15U) && (stored < 500U))
-        {
-            s_dt[stored] = dt;
-            stored++;
-        }
-
-        i++;
+        ticks++;
     }
 
-    for (spp_uint16_t j = 0U; j < stored; j++)
-    {
-        printf("dt[%u] = %lu\n", j, s_dt[j]);
-    }
+    t1 = SPP_HAL_TIME_getTimeUs();
+    printf("Total time: %lu us\n", t1 - t0);
+    printf("FSM ticks: %lu\n", ticks);
 }
