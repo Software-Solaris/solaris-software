@@ -1,5 +1,3 @@
-# Publish / Subscribe   {#pubsub}
-
 The Publish-Subscribe (PUBSUB) service coordinates the system. It registers producers and assigns them an APID, and it registers consumers, subscribing each of them to the producers they are interested in.
 
 ## Producers
@@ -64,7 +62,7 @@ typedef struct
 
 This can be a bit overwhelming, so let's go through how the PUBSUB service works internally.
 
-![PUBSUB inner workings](pubsub.svg)
+![PUBSUB inner workings](assets/pubsub.svg){ .center }
 
 Based on the figure above, there are three distinct stages. The first is when consumers and producers are registered with the PUBSUB service. This is custom, defined by the team or user building the binary — you choose how many producers and consumers your project has, and which consumers subscribe to which producers. In our FSM (Finite State Machine), this happens in the init state, inside a private function called __SPP_CORE_FSM_registerConsumerProducer__: just before anything else runs, the user registers the services it wants as producers and consumers. A quick look at that function in fsm.c should make it clear; the FSM is covered in more detail in the next chapter. This is the top part of the figure.
 

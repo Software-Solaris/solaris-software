@@ -1,37 +1,34 @@
 # Documentation site (Doxygen)
 
-The whole Solaris Software site **is** Doxygen: the narrative guides and the C
-API reference are one generated site, themed to match the old MkDocs look
-(dark, JetBrains Mono, doxygen-awesome-css).
+This is the **C API reference** only — every file, struct, function and macro,
+generated straight from the source comments. The narrative guides (roadmap,
+philosophy, architecture, SPP design) live on the main website
+(`website/`, built with MkDocs) instead, to avoid keeping the same content in
+two places. This Doxygen output is published nested under `/doxygen/` on that
+site, and opens in its own browser tab — it's Doxygen's own default template
+(dark mode, red hue to match the logo), deliberately not restyled to look
+like the rest of the site.
 
 ## Layout
 
 | Path | What |
 |------|------|
-| `../Doxyfile`        | configuration |
-| `pages/`             | the narrative guides, as Markdown (`*.md`); `pages/index.md` is the front page |
-| `pages/assets/`      | images used by those pages |
-| `header.html` / `footer.html` | Doxygen 1.9.8 templates, wired for the theme and forced dark |
-| `solaris.css`        | palette / font overrides + search-box placement |
-| `theme/`             | vendored [doxygen-awesome-css](https://github.com/jothepro/doxygen-awesome-css) v2.3.4 (MIT, see `theme/LICENSE`) |
-| `assets/`            | logo, favicon, font copied into the output |
+| `../Doxyfile`  | configuration |
+| `pages/`       | `index.md` (front page) and `spp-api.md` (API tour) — the only two guide pages left here |
+| `assets/`      | `logo.png`, used as `PROJECT_LOGO` |
 
 The API side is generated from the source comments in `solaris-v2/main` and
 `solaris-v2/spp` (see `INPUT` in the Doxyfile).
 
-## Adding / editing a guide
+## Adding / editing a page here
 
-1. Add or edit `pages/<name>.md`. Start it with `# Title   {#name}` so the
-   page has a stable id.
-2. Link it into the nav: add `@subpage <name>` to the relevant parent page
-   (`index.md`, `start-here.md`, `repositories.md`, `spp-arch.md`,
-   `spp-detail.md`).
-3. Put images under `pages/assets/` and reference them by bare filename:
-   `![alt](foo.svg)`.
+Only add a page under `pages/` if it's genuinely about the generated API
+(cross-referencing files/structs/functions with `@ref`). Anything narrative
+belongs in `website/docs/` instead.
 
 ## Building locally
 
-From the repository root, with `doxygen` (>= 1.9.8) and `graphviz`:
+From the repository root, with `doxygen` (>= 1.9.5, for `HTML_COLORSTYLE = DARK`):
 
 ```bash
 doxygen Doxyfile          # output in doc/html/ ; open doc/html/index.html
@@ -41,16 +38,13 @@ doxygen Doxyfile          # output in doc/html/ ; open doc/html/index.html
 
 ## CI
 
-`.github/workflows/deploy-website.yml` rebuilds the site in the `solaris-ci`
-container on **every push to `main`** (and on manual dispatch) and rsyncs
-`doc/html/` to the web server.
+`.github/workflows/deploy-website.yml`, on every push to `main` (and on manual
+dispatch): generates this Doxygen output, builds the MkDocs site, copies the
+Doxygen output into `website/site/doxygen/`, then rsyncs that combined tree to
+the web server in one shot — so neither publish step can clobber the other.
 
 ## Notes
 
-- Dark-only: `header.html` ships `<html class="dark-mode">` and `solaris.css`
-  pins the palette; `HTML_COLORSTYLE` stays `LIGHT` (doxygen-awesome needs it).
-- `DISABLE_INDEX = YES` so the search box sits in the title bar (with
-  `DISABLE_INDEX = NO` the sidebar layout was hiding it).
 - `*/README.md` and `*/LICENSE.md` are excluded so stray source-tree markdown
   doesn't turn into pages.
 - Source doc-comment warnings (mismatched `@param`, etc.) are pre-existing and

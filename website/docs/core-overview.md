@@ -1,5 +1,3 @@
-# Reading the code   {#core-overview}
-
 This chapter is the detailed design part of the documentation: one page per component, each one explaining what it's for, how it behaves, and how it talks to the others.
 
 This page is the map for that chapter. If you've just opened main.c for the first time and you're wondering where to go next, start here.
@@ -28,7 +26,7 @@ That while loop is where everything happens. There's no scheduler and no tasks �
 Reading the chapters in this order follows what happens on the board, from power-on to steady state:
 
 1. **Finite State Machine.** The first tick matches the FSM's INIT row, whose guard initializes the HAL, registers every producer and consumer, and initializes the core. If that succeeds, the FSM moves to READY and stays there — see this chapter for the full transition table, and for why "stays there" is the accurate description right now instead of "moves on to FLIGHT".
-2. **HAL** (in the architectural design section). The first thing that guard does is call SPP_HAL_init. This chapter explains why producers and consumers never touch a register directly — they always go through a function pointer that gets wired up to a board-specific implementation at startup.
+2. **HAL.** The first thing that guard does is call SPP_HAL_init. This chapter explains why producers and consumers never touch a register directly — they always go through a function pointer that gets wired up to a board-specific implementation at startup.
 3. **Publish-Subscribe (PUBSUB).** Registering producers and consumers, and the runtime loop that calls acquireData and consumeData every tick, is covered here.
 4. **Solaris Packet.** Every time a producer publishes something, what moves through the system is one of these — a fixed 64-byte structure. This chapter describes what's inside one.
 5. **Databank.** Packets aren't allocated on the fly — there's no dynamic memory in this codebase. This chapter explains the fixed-size pool they're borrowed from and returned to.
@@ -44,7 +42,7 @@ The chapters above explain how things work. This is about where to make a given 
 - **Change what's inside a packet, or add a new field.** Start at the Solaris Packet chapter. The packet is a fixed 64 bytes end to end, and every existing consumer already assumes that layout, so this affects all of them — check what reads the fields you're changing before you touch them.
 - **Change how many packets can be in flight at once.** That's K_SPP_DATABANK_SIZE, covered in the Databank chapter.
 - **Add real flight logic** — detecting liftoff, apogee, parachute deployment, landing. That's the FSM's transition table. Read the Finite State Machine chapter first: it explains exactly what's missing today and why.
-- **Remove something to make the binary smaller, or port to a new board.** That's the Build System and Repository structure chapters, under Repositories.
+- **Remove something to make the binary smaller, or port to a new board.** That's the Build System and Repository structure chapters, under Getting Started.
 
 ## Ground rules, wherever you're working
 

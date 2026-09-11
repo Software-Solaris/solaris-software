@@ -1,5 +1,3 @@
-# HAL — Hardware Abstraction Layer   {#hal}
-
 ## What a HAL is, and why it uses function pointers
 This section explains the Hardware Abstraction Layer, or HAL. As the name says, its job is to abstract the hardware. In software design, "hardware" means anything the software talks to through peripherals, and peripherals are, in the end, just registers on the microprocessor.
 
@@ -123,7 +121,7 @@ Once this is wired up, everything is abstracted: the same services work on any b
 ## Following a call through the HAL
 That covers the pieces, but you're probably wondering what actually happens, step by step, when a hardware function gets called. The figure below shows the flow.
 
-![HAL diagram](hal.svg)
+![HAL diagram](assets/hal.svg){ .center }
 
 Let's imagine a service called "the messenger", responsible for sending logs over UART. To send its message, it calls SPP_HAL_UART_transmit, the same abstracted function from the very first example. That function looks up the active HAL port and calls p_port->uart.uartTransmit, the pointer from the SPP_HALUart_t struct above. On the ESP32S3, that pointer was set to SPP_PORTS_HAL_ESP32_uartTransmit, the code that actually writes to the UART registers.
 

@@ -1,8 +1,6 @@
 # Doxyfile for Solaris Software
 
 PROJECT_NAME           = "Solaris Software"
-PROJECT_BRIEF          = "Open-source software for amateur rocketry"
-PROJECT_NUMBER         = "v2"
 PROJECT_LOGO           = doxygen/assets/logo.png
 
 # Input - the narrative pages (doxygen/pages) plus the firmware sources.
@@ -12,8 +10,7 @@ INPUT                  = doxygen/pages \
 FILE_PATTERNS          = *.c *.h *.dox *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */build/* */tests/* */.cache/* */README.md */LICENSE.md
-IMAGE_PATH             = doxygen/pages/assets \
-                         doxygen/assets
+IMAGE_PATH             = doxygen/assets
 USE_MDFILE_AS_MAINPAGE = doxygen/pages/index.md
 MARKDOWN_SUPPORT       = YES
 TOC_INCLUDE_HEADINGS   = 3
@@ -26,24 +23,16 @@ HTML_DYNAMIC_SECTIONS  = YES
 GENERATE_LATEX         = NO
 SEARCHENGINE           = YES
 
-# HTML theme - doxygen-awesome-css (vendored under doxygen/theme/) plus the
-# Solaris overrides. doxygen-awesome requires HTML_COLORSTYLE = LIGHT; the
-# site is dark-only, so doxygen/header.html ships <html class="dark-mode">
-# and doxygen/solaris.css pins the dark palette.
-HTML_COLORSTYLE        = LIGHT
+# HTML theme - Doxygen's own built-in template, no third-party CSS/JS, no
+# custom hue/sat/gamma tuning either — just its native dark palette (added
+# in Doxygen 1.9.5+) with its own default colors. doxygen/tweaks.css is two
+# small fixes on top (bigger base text, hide a hardcoded-color badge), not a
+# redesign. doxygen/header.html is Doxygen's own stock header (extracted
+# with `doxygen -w html`), with a single change: the logo links to "/".
+HTML_COLORSTYLE        = DARK
 GENERATE_TREEVIEW      = YES
-DISABLE_INDEX          = YES
-FULL_SIDEBAR           = NO
+HTML_EXTRA_STYLESHEET  = doxygen/tweaks.css
 HTML_HEADER            = doxygen/header.html
-HTML_FOOTER            = doxygen/footer.html
-HTML_EXTRA_STYLESHEET  = doxygen/theme/doxygen-awesome.css \
-                         doxygen/solaris.css
-HTML_EXTRA_FILES       = doxygen/theme/doxygen-awesome-fragment-copy-button.js \
-                         doxygen/theme/doxygen-awesome-paragraph-link.js \
-                         doxygen/theme/doxygen-awesome-interactive-toc.js \
-                         doxygen/theme/doxygen-awesome-tabs.js \
-                         doxygen/assets/jetbrains_mono_regular.woff2 \
-                         doxygen/assets/favicon.png
 
 # Extraction
 EXTRACT_ALL            = YES

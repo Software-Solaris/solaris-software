@@ -11,3 +11,5 @@ launch.json
 doc/
 misra_rules.generated.txt
 cppcheck-result.xml
+website/site/
+website/.venv/

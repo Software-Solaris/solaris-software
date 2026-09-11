@@ -1,4 +1,4 @@
-# AI usage in Solaris Software   {#ai}
+# AI usage in Solaris Software
 
 We know AI is used almost everywhere, all the time. We encourage our developers **NOT** to use it. We've tried it, and we think the risk and the time lost aren't worth it. Here's why:
 
@@ -10,3 +10,4 @@ Some students, or people who want to join the team just to pad their CV before c
 - You are responsible for what you do. If you commit lines of code that an AI wrote, you are still responsible for those lines. If AI is a black box whose behaviour you don't understand, then so is the code it hands you, unless you review it entirely. And even then, it probably would have been better to just write it yourself in the first place.
 
 We will keep encouraging our developers not to use AI for software development, and we will always ask them to explain any code we suspect they don't fully understand. AI should be a tool: something you reach for on the repetitive, mechanical tasks that just eat your time, never something you let think through a problem for you. Develop accordingly.
+

@@ -1,5 +1,3 @@
-# Finite State Machine   {#fsm}
-
 This is a work in progress. The FSM is where all the pieces we've covered so far — the HAL, the DATABANK, the PUBSUB service — actually get wired together and run, but the flight logic itself is only partially built: right now the FSM can boot the system up and keep it running, but it doesn't yet know how to detect liftoff, apogee, or landing. As that logic gets built, it will show up here as new rows in the transition table below.
 
 Even though the files currently live under services/fsm, the FSM is conceptually part of the SPP core: like the DATABANK and the PUBSUB service, it's mandatory, always-on infrastructure, not an opt-in service — which is why it's grouped here alongside them rather than under Services.

@@ -1,7 +1,7 @@
-# General Layer Description   {#spp-layers}
+# General Layer Description
 Solaris Software is built in layers. Each layer has no knowledge of the layers above or below it, so you can swap out or change what's inside a layer without breaking the rest of the code. The image below shows how they stack.
 
-![Layer stack](layers-1.svg)
+![Layer stack](assets/layers-1.svg){ .center }
 
 
 ## HAL layer

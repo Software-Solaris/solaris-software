@@ -1,5 +1,3 @@
-# Databank   {#databank}
-
 The databank is where the SPP packets — the 64-byte structure described in the previous chapter — are stored. You can think of it as the safe guard of all the packets. 
 When you start the program execution, you have to call the function DATABANK_init() - this is called in the core.c file in the CORE_init() since it is SPP core functionality - to initialize the array of packets.
 

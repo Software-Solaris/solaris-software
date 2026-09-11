@@ -3,6 +3,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'website/**'
+      - 'doxygen/**'
+      - 'Doxyfile'
+      - 'solaris-v2/main/**'
+      - 'solaris-v2/spp'
+      - '.github/workflows/deploy-website.yml'
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
@@ -30,17 +37,30 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.CI_GH_TOKEN }}@github.com/".insteadOf "https://github.com/"
           git submodule update --init --depth 1 solaris-v2/spp
 
-      - name: Build docs site (Doxygen)
+      - name: Generate API reference (Doxygen)
         run: |
-          docker image inspect "$CI_IMAGE" >/dev/null 2>&1 \
-            || docker build -f .github/Dockerfile.ci -t "$CI_IMAGE" .
-          mkdir -p doc
+          LOCAL_HASH=$(sha256sum .github/Dockerfile.ci | cut -d' ' -f1)
+          REMOTE_HASH=$(docker inspect "$CI_IMAGE" --format '{{index .Config.Labels "dockerfile.hash"}}' 2>/dev/null || echo "")
+          if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
+            docker build -f .github/Dockerfile.ci --label "dockerfile.hash=$LOCAL_HASH" -t "$CI_IMAGE" .
+          fi
           docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
             --security-opt label=disable \
             -v "${{ github.workspace }}:/workspace" -w /workspace \
             "$CI_IMAGE" \
             bash -c 'doxygen Doxyfile'
 
-      - name: Publish to server
+      - name: Publish Doxygen to server
         run: |
-          rsync -av --delete doc/html/ "/home/solaris/solaris-web/html/"
+          rsync -av --delete doc/html/ "/home/solaris/solaris-web/html/doxygen/"
+
+      - name: Build website
+        run: |
+          cd website
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet -r requirements.txt
+          .venv/bin/mkdocs build
+
+      - name: Publish website to server
+        run: |
+          rsync -av --delete --exclude 'doxygen' website/site/ "/home/solaris/solaris-web/html/"
