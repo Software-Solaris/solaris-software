@@ -1,0 +1,172 @@
+@font-face {
+	font-family: nrk;
+	src: url(../assets/jetbrains_mono_regular.woff2);
+}
+
+/* site font size: 2px smaller than the theme default, matching its own breakpoints */
+html {
+	font-size: 112.5%;
+}
+@media screen and (min-width: 100em) {
+	html {
+		font-size: 125%;
+	}
+}
+@media screen and (min-width: 125em) {
+	html {
+		font-size: 137.5%;
+	}
+}
+
+:root,
+[data-md-color-scheme="slate"] {
+	--col_fg: #ebdbb2;
+	--col_bg: #141818;
+	--col_bg_alt: #202323;
+	--col_lred: #e53231;
+	--col_lorange: #d8813a;
+	--col_lblue: #4093cb;
+	--col_lfg: #ead59d;
+
+	--md-default-bg-color: var(--col_bg);
+	--md-default-fg-color: var(--col_fg);
+	--md-default-fg-color--light: #bdae93;
+	--md-default-fg-color--lighter: #8f8368;
+	--md-default-fg-color--lightest: #454545;
+
+	--md-primary-fg-color: var(--col_bg_alt);
+	--md-primary-bg-color: var(--col_fg);
+
+	--md-accent-fg-color: var(--col_lorange);
+
+	--md-typeset-color: var(--col_fg);
+	--md-typeset-a-color: var(--col_lblue);
+
+	--md-code-bg-color: #202020;
+	--md-code-fg-color: var(--col_lfg);
+
+	--md-footer-bg-color: var(--col_bg_alt);
+	--md-footer-bg-color--dark: #131616;
+	--md-footer-fg-color: var(--col_fg);
+	--md-footer-fg-color--light: var(--col_fg);
+}
+
+body,
+.md-typeset {
+	font-family: "nrk", "monospace";
+	font-variant-ligatures: none;
+}
+
+.md-typeset a:hover {
+	color: #efb551;
+}
+
+.md-typeset h1 {
+	color: var(--col_lred);
+}
+
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+	color: var(--col_lorange);
+}
+
+.md-typeset code {
+	border: 1px solid #282828;
+}
+
+.md-typeset blockquote {
+	color: #bdae93;
+	border-left: 2px solid #454545;
+	background-color: #1d1d1d;
+}
+
+/* header: keep the site title at full width (default), search bar sits
+   to the right at its normal compact size */
+@media screen and (min-width: 60em) {
+	.md-search__form {
+		height: 2.1rem;
+		border-radius: 0.2rem;
+	}
+}
+
+/* current page/section: red, not the default accent orange */
+.md-tabs__link--active {
+	color: var(--col_lred);
+}
+.md-tabs__link--active::after {
+	background-color: var(--col_lred);
+}
+.md-nav__link--active,
+.md-nav__link:focus,
+.md-nav__link:hover {
+	color: var(--col_lred) !important;
+}
+
+/* left nav: drop the "SOFTWARE SOLARIS" title bar at the top of the drawer,
+   the site name is already shown in the header */
+.md-nav__title[for="__drawer"] {
+	display: none !important;
+}
+
+/* footer */
+.md-copyright {
+	display: none;
+}
+
+.md-social {
+	justify-content: center;
+	width: 100%;
+}
+
+/* home page, desktop only: it's the only page with no active section, so
+   every top-level entry sits collapsed (aria-expanded="false") in the
+   sidebar's server-rendered HTML — every other page always has exactly one
+   expanded. Pure CSS, no JS dependency, so it still works with JS disabled
+   (e.g. Tor Browser at a stricter security level). Scoped to desktop widths
+   only: on mobile this same element is the drawer menu, the only way to
+   reach any other page, so it must stay populated there even on the home
+   page — hiding it there left the hamburger opening empty. */
+@media screen and (min-width: 76.25em) {
+	.md-sidebar--primary:not(:has(.md-nav--primary [aria-expanded="true"])) {
+		display: none;
+	}
+	.md-sidebar--primary:not(:has(.md-nav--primary [aria-expanded="true"])) ~ .md-content {
+		flex-grow: 0;
+		width: 100%;
+		max-width: 48rem;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	/* and the hamburger button that would open that (now hidden) drawer
+	   has no business showing on desktop at all, on any page. */
+	.md-header__button[for="__drawer"] {
+		display: none;
+	}
+}
+
+/* markdown images: opt into centering with ![alt](src){ .center } */
+.md-typeset img.center {
+	display: block;
+	margin: 24px auto 0;
+	max-width: 500px;
+	width: 100%;
+	height: auto;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: #151515;
+}
+::-webkit-scrollbar-thumb {
+	background-color: #454545;
+	border: 1px solid #1a1a1a;
+	border-radius: 1px;
+}

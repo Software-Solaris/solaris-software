@@ -1,0 +1,4 @@
+Total time: 99694527 us
+Busy time: 6097909 us
+Processed samples: 10000
+SPP processing utilization: 6.12 %

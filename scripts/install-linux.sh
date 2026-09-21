@@ -312,7 +312,7 @@ echo "  1. Open the repo in VS Code:"
 echo "       code $CLONE_DIR"
 echo "  2. Click 'Reopen in Container' when VS Code prompts."
 echo "  3. Inside the container terminal:"
-echo "       cd solaris-v1 && idf.py build"
+echo "       cd solaris-v2 && idf.py build"
 echo ""
 
 if [ "$DOCKER_GROUP_ADDED" = true ]; then

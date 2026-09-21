@@ -1,0 +1,13 @@
+/* Two small, targeted fixes on top of Doxygen's own default template — not
+   a redesign. */
+
+/* Base text a bit bigger (default is 14px). */
+body, table, div, p, dl {
+    font-size: 16px;
+}
+
+/* Hide the hardcoded-blue "C" badge on the Data Structures page: it's a
+   fixed light-blue color that never adapts to dark mode. */
+.icon {
+    display: none;
+}

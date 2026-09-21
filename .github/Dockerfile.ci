@@ -1,7 +1,10 @@
 FROM espressif/idf:v6.0-dev
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    doxygen \
+    curl \
+    build-essential \
+    flex \
+    bison \
     graphviz \
     texlive-latex-base \
     texlive-latex-extra \
@@ -14,3 +17,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-tidy \
     cppcheck \
     && rm -rf /var/lib/apt/lists/*
+
+# Doxygen: pinned to a specific release instead of apt-get (whose version
+# drifts with the base image and has broken our doxygen/header.html before
+# — it's not backward compatible across versions, e.g. $logosize wasn't
+# substituted on an older apt-provided doxygen). Built from source rather
+# than the official Linux binary release: that one is x86_64-only, and this
+# runner is aarch64.
+RUN curl -fsSL https://github.com/doxygen/doxygen/releases/download/Release_1_18_0/doxygen-1.18.0.src.tar.gz \
+    | tar -xz -C /tmp \
+    && cmake -S /tmp/doxygen-1.18.0 -B /tmp/doxygen-build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build /tmp/doxygen-build --parallel "$(nproc)" \
+    && cmake --install /tmp/doxygen-build \
+    && rm -rf /tmp/doxygen-1.18.0 /tmp/doxygen-build

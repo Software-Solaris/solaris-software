@@ -1,10 +1,10 @@
 #!/bin/bash
-# Build solaris-v1 inside the dev container, then flash to the ESP32-S3 via Raspi.
+# Build solaris-v2 inside the dev container, then flash to the ESP32-S3 via Raspi.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 WORKSPACE="/home/user/Documents/solaris-software"
-PROJECT="${WORKSPACE}/solaris-v1"
+PROJECT="${WORKSPACE}/solaris-v2"
 
 SEP="  ──────────────────────────────────────────────────────"
 

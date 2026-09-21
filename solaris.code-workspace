@@ -1,0 +1,19 @@
+{
+    "folders": [
+        { "path": "." }
+    ],
+    "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "[c]": {
+            "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "[cpp]": {
+            "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "clangd.arguments": [
+            "--clang-tidy",
+            "--header-insertion=never"
+        ]
+    }
+}

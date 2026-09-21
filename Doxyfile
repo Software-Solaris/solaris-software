@@ -1,33 +1,38 @@
 # Doxyfile for Solaris Software
 
 PROJECT_NAME           = "Solaris Software"
-PROJECT_BRIEF          = "Open-source amateur rocketry firmware for ESP32-S3"
-PROJECT_NUMBER         = "v1"
+PROJECT_LOGO           = doxygen/assets/logo.png
 
-# Input
-INPUT                  = mainpage.dox \
-                         solaris-v1/main \
-                         solaris-v1/spp/core \
-                         solaris-v1/spp/hal \
-                         solaris-v1/spp/util \
-                         solaris-v1/spp/services \
-                         solaris-v1/spp/ports
-FILE_PATTERNS          = *.c *.h *.dox
+# Input - the narrative pages (doxygen/pages) plus the firmware sources.
+INPUT                  = doxygen/pages \
+                         solaris-v2/main \
+                         solaris-v2/spp
+FILE_PATTERNS          = *.c *.h *.dox *.md
 RECURSIVE              = YES
-EXCLUDE_PATTERNS       = */build/* */tests/*
+EXCLUDE_PATTERNS       = */build/* */tests/* */.cache/* */README.md */LICENSE.md
+IMAGE_PATH             = doxygen/assets
+USE_MDFILE_AS_MAINPAGE = doxygen/pages/index.md
+MARKDOWN_SUPPORT       = YES
+TOC_INCLUDE_HEADINGS   = 3
 
 # Output
 OUTPUT_DIRECTORY       = doc
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
-HTML_COLORSTYLE        = LIGHT
 HTML_DYNAMIC_SECTIONS  = YES
-HTML_TIMESTAMP         = YES
 GENERATE_LATEX         = NO
-GENERATE_TREEVIEW      = YES
-DISABLE_INDEX          = NO
-FULL_SIDEBAR           = NO
 SEARCHENGINE           = YES
+
+# HTML theme - Doxygen's own built-in template, no third-party CSS/JS, no
+# custom hue/sat/gamma tuning either — just its native dark palette (added
+# in Doxygen 1.9.5+) with its own default colors. doxygen/tweaks.css is two
+# small fixes on top (bigger base text, hide a hardcoded-color badge), not a
+# redesign. doxygen/header.html is Doxygen's own stock header (extracted
+# with `doxygen -w html`), with a single change: the logo links to "/".
+HTML_COLORSTYLE        = DARK
+GENERATE_TREEVIEW      = YES
+HTML_EXTRA_STYLESHEET  = doxygen/tweaks.css
+HTML_HEADER            = doxygen/header.html
 
 # Extraction
 EXTRACT_ALL            = YES
@@ -49,7 +54,6 @@ CALL_GRAPH             = YES
 CALLER_GRAPH           = YES
 DOT_IMAGE_FORMAT       = svg
 INTERACTIVE_SVG        = YES
-CLASS_DIAGRAMS         = YES
 COLLABORATION_GRAPH    = YES
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES

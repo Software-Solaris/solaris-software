@@ -85,14 +85,14 @@ HAL defines *what* hardware operations exist (SPI, GPIO, SD card storage) but co
 
 | Function | What it does |
 |---|---|
-| `SPP_HAL_spiBusInit()` | Initialises SPI2_HOST (MISO 47, MOSI 38, CLK 48) |
-| `SPP_HAL_spiDeviceInit()` | Registers a device on the bus (ICM at CS 21, BMP at CS 18) |
-| `SPP_HAL_spiTransmit()` | Full-duplex SPI transaction; handles R/W bit per device |
-| `SPP_HAL_gpioConfigInterrupt()` | Configures a GPIO pin for edge-triggered interrupts |
-| `SPP_HAL_gpioRegisterIsr()` | Attaches an ISR that sets a `volatile spp_bool_t` flag |
-| `SPP_HAL_storageMount()` | Mounts the SD card via FATFS + SDSPI |
-| `SPP_HAL_storageUnmount()` | Unmounts the SD card safely |
-| `SPP_HAL_getTimeMs()` | Returns the current time in milliseconds |
+| `SPP_HAL_SPI_busInit()` | Initialises SPI2_HOST (MISO 47, MOSI 38, CLK 48) |
+| `SPP_HAL_SPI_deviceInit()` | Registers a device on the bus (ICM at CS 21, BMP at CS 18) |
+| `SPP_HAL_SPI_transmit()` | Full-duplex SPI transaction; handles R/W bit per device |
+| `SPP_HAL_GPIO_configInterrupt()` | Configures a GPIO pin for edge-triggered interrupts |
+| `SPP_HAL_GPIO_registerIsr()` | Attaches an ISR that sets a `volatile spp_bool_t` flag |
+| `SPP_HAL_STORAGE_mount()` | Mounts the SD card via FATFS + SDSPI |
+| `SPP_HAL_STORAGE_unmount()` | Unmounts the SD card safely |
+| `SPP_HAL_TIME_getTimeMs()` | Returns the current time in milliseconds |
 
 GPIO ISRs are minimal: they set a `volatile spp_bool_t` flag and return immediately. No RTOS calls, no yield.
 

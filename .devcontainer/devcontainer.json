@@ -57,7 +57,9 @@
         "samubarb.vscode-doxyfile",
         "openai.tu-extension-codex",
         "github.vscode-pull-request-github",
-        "xaver.clang-format"
+        "xaver.clang-format",
+        "GitHub.vscode-pull-request-github",
+        "jbenden.c-cpp-flylint"
       ]
     }
   }
