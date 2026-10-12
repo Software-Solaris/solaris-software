@@ -175,7 +175,7 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
     // SPP_Kpid_t m10mKpid = {0};
 
     // SPP_Kpid_t sdSubscription = {0};
-    // SPP_Kpid_t e22mbl01Subscription = {0};
+    // SPP_Kpid_t sx1262Subscription = {0};
 
     SPP_RetVal_t ret = K_SPP_ERROR;
 
@@ -224,17 +224,17 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
     //     s_fsmErrors.datalogggerPubsubError = 1;
     // }
 
-    // e22mbl01Subscription.value = bmp390Kpid.value | icm20948Kpid.value | K_SPP_KPID_FSM;
-    // const SPP_SERVICE_ConsumerContract_t *p_e22mbl01ConsumerContract = SPP_SERVICES_E22MBL01_getConsumerContract();
-    // ret = SPP_SERVICES_PUBSUB_registerConsumer(p_e22mbl01ConsumerContract, e22mbl01Subscription);
-    // if (ret != K_SPP_OK)
-    // {
-    //     s_fsmErrors.e22mbl01PubsubError = 1;
-    // }
+    sx1262Subscription.value = bmp390Kpid.value | icm20948Kpid.value;
+    const SPP_SERVICE_ConsumerContract_t *p_sx1262ConsumerContract = SPP_SERVICES_sx1262_getConsumerContract();
+    ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sx1262ConsumerContract, sx1262Subscription);
+    if (ret != K_SPP_OK)
+    {
+         s_fsmErrors.sx1262PubsubError = 1;
+    }
 
     // spp_bool_t producersFailed =
     //     (s_fsmErrors.bmpPubsubError && s_fsmErrors.icmPubsubError && s_fsmErrors.m10mPubsubError);
-    // spp_bool_t consumersFailed = (s_fsmErrors.datalogggerPubsubError && s_fsmErrors.e22mbl01PubsubError);
+    // spp_bool_t consumersFailed = (s_fsmErrors.datalogggerPubsubError && s_fsmErrors.sx1262PubsubError);
 
     if (s_fsmErrors.bmpPubsubError)
     {
