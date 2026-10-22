@@ -76,11 +76,12 @@ set(SPP_SRC_FILES
 # ----------------------------------------------------------------
 option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"              ON)
 option(SPP_SERVICE_BMP390_SIM "Use simulated BMP390 flight data instead of sensor"  OFF)
-option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                        OFF)
+option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                        ON)
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                OFF)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"            OFF)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
-option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              OFF)  
+option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              OFF)
+option(SPP_SX1262             "Compile SX1262 service"                              ON)    
 option(SPP_MAXM10M20B         "Compile GNSS"                                        OFF) 
 
 
@@ -132,6 +133,13 @@ if(SPP_ANTENNA_DEVKIT)
     message(STATUS "spp: ANTENNA DEVKIT      ON")
 else()
     message(STATUS "spp: ANTENNA DEVKIT      OFF")
+endif()
+
+if(SPP_SX1262)
+    list(APPEND SPP_SERVICE_FILES "${SPP_ROOT}/services/sx1262/sx1262.c")
+    message(STATUS "spp: SX1262      ON")
+else()
+    message(STATUS "spp: SX1262      OFF")
 endif()
 
 if(SPP_MAXM10M20B)

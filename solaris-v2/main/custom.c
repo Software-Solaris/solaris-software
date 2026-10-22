@@ -14,6 +14,8 @@
 #include "spp/core/pubsub/pubsub.h"
 
 #include "spp/services/bmp390/bmp390.h"
+#include "spp/services/icm20948/icm20948.h"
+#include "spp/services/sx1262/sx1262.h"
 #include "spp/services/databank/databank.h"
 #include "spp/services/kpid.h"
 #include "spp/services/service.h"
@@ -171,11 +173,11 @@ static void statefunction_bmpPerformanceLoop(void)
 static spp_bool_t CUSTOM_registerConsumerProducer(void)
 {
     SPP_Kpid_t bmp390Kpid = {0};
-    // SPP_Kpid_t icm20948Kpid = {0};
+    SPP_Kpid_t icm20948Kpid = {0};
     // SPP_Kpid_t m10mKpid = {0};
 
-    // SPP_Kpid_t sdSubscription = {0};
-    // SPP_Kpid_t sx1262Subscription = {0};
+    SPP_Kpid_t sdSubscription = {0};
+    SPP_Kpid_t sx1262Subscription = {0};
 
     SPP_RetVal_t ret = K_SPP_ERROR;
 
@@ -193,16 +195,16 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
         }
     }
 
-    // const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
-    // if (p_icmProducerContract == NULL)
-    // {
-    //     s_fsmErrors.icmPubsubError = 1;
-    // }
-    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
-    // if (ret != K_SPP_OK)
-    // {
-    //     s_fsmErrors.icmPubsubError = 1;
-    // }
+    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
+    if (p_icmProducerContract == NULL)
+    {
+        s_fsmErrors.icmPubsubError = 1;
+    }
+    ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
+    if (ret != K_SPP_OK)
+    {
+        s_fsmErrors.icmPubsubError = 1;
+    }
 
     // const SPP_SERVICE_ProducerContract_t *p_m10mProducerContract = SPP_SERVICES_M10M_getProducerContract();
     // if (p_m10mProducerContract == NULL)
@@ -225,11 +227,11 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
     // }
 
     sx1262Subscription.value = bmp390Kpid.value | icm20948Kpid.value;
-    const SPP_SERVICE_ConsumerContract_t *p_sx1262ConsumerContract = SPP_SERVICES_sx1262_getConsumerContract();
+    const SPP_SERVICE_ConsumerContract_t *p_sx1262ConsumerContract = SPP_SERVICES_SX1262_getConsumerContract();
     ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sx1262ConsumerContract, sx1262Subscription);
     if (ret != K_SPP_OK)
     {
-         s_fsmErrors.sx1262PubsubError = 1;
+        s_fsmErrors.sx1262PubsubError = 1;
     }
 
     // spp_bool_t producersFailed =
