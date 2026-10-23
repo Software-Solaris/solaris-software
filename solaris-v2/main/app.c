@@ -9,10 +9,17 @@
  * INCLUDES
  * ---------------------------------------------------------------- */
 #include "app.h"
-
 #include "spp/services/fsm/fsm.h"
 #include "spp/ports/hal/esp32/halEsp32.h"
 #include "custom.h"
+
+/* ----------------------------------------------------------------
+ * STATIC FUNCTIONS
+ * ---------------------------------------------------------------- */
+/**
+ * @brief Boot error handler.
+ */
+static inline void BootError();
 
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -26,10 +33,7 @@ void APP_initHal(void)
     SPP_RetVal_t ret = SPP_HAL_init((void *)p_halPorts);
     if (ret != K_SPP_OK)
     {
-        while (1)
-        {
-            // Infinite loop
-        }
+        BootError();
     }
 }
 
@@ -42,10 +46,7 @@ void APP_initFsm(void)
     SPP_RetVal_t ret = FSM_init(p_fsmTable, K_CUSTOM_FSM_TABLE_SIZE);
     if (ret != K_SPP_OK)
     {
-        while (1)
-        {
-            // Infinite loop
-        }
+        BootError();
     }
 }
 
@@ -55,5 +56,17 @@ void APP_fsmLoop(void)
     while (1)
     {
         FSM_tick();
+    }
+}
+
+/* ----------------------------------------------------------------
+ * STATIC FUNCTIONS IMPLEMENTATIONS
+ * ---------------------------------------------------------------- */
+static inline void BootError()
+{
+    while (1)
+    {
+        // Update Watchdog (future expansion)
+        // Send error bit to ground station (future expansion)
     }
 }
