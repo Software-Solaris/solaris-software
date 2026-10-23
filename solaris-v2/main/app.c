@@ -39,11 +39,18 @@ void APP_initHal(void)
 
 void APP_initFsm(void)
 {
-    // Get the custom FSM
+    // Get the custom FSM table
     const FSM_Transition_t *p_fsmTable = CUSTOM_getFsmTable();
 
-    // FSM init
-    SPP_RetVal_t ret = FSM_init(p_fsmTable, K_CUSTOM_FSM_TABLE_SIZE);
+    // Init the FSM with the internal service table
+    SPP_RetVal_t ret = FSM_init();
+    if (ret != K_SPP_OK)
+    {
+        BootError();
+    }
+
+    // Add the application transition table
+    ret = FSM_addTable(p_fsmTable, K_CUSTOM_FSM_TABLE_SIZE);
     if (ret != K_SPP_OK)
     {
         BootError();
