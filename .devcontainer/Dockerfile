@@ -56,7 +56,8 @@ RUN curl -fsSL -o /tmp/sonar-scanner.zip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN git config --system core.editor "nano" \
-    && git config --system --add safe.directory /home/user/Documents/solaris-software
+    && git config --system --add safe.directory /home/user/Documents/solaris-software \
+    && git config --system --add safe.directory /home/user/Documents/solaris-software/solaris-v2/spp
 
 WORKDIR /root
 
