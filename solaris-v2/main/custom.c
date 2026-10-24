@@ -15,6 +15,7 @@
 
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
+#include "spp/services/datalogger/datalogger.h"
 #include "spp/services/databank/databank.h"
 #include "spp/services/uart/uart.h"
 #include "spp/services/kpid.h"
@@ -105,7 +106,7 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
 {
     SPP_Kpid_t bmpKpid = {0};
     SPP_Kpid_t icmKpid = {0};
-    SPP_Kpid_t uartSubscription = {0};
+    SPP_Kpid_t sdSubscription = {0};
 
     const SPP_SERVICE_ProducerContract_t *p_bmpContract = SPP_SERVICES_BMP390_getProducerContract();
     if (p_bmpContract == NULL || SPP_SERVICES_PUBSUB_registerProducer(p_bmpContract, &bmpKpid) != K_SPP_OK)
@@ -119,15 +120,17 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
         s_fsmErrors.icmPubsubError = 1;
     }
 
-    uartSubscription.value = bmpKpid.value | icmKpid.value | K_SPP_KPID_FSM;
+    sdSubscription.value = bmpKpid.value | icmKpid.value | K_SPP_KPID_FSM;
 
-    const SPP_SERVICE_ConsumerContract_t *p_uartContract = SPP_SERVICES_UART_getConsumerContract();
-    if (p_uartContract == NULL || SPP_SERVICES_PUBSUB_registerConsumer(p_uartContract, uartSubscription) != K_SPP_OK)
+    const SPP_SERVICE_ConsumerContract_t *p_sdContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
+
+    SPP_RetVal_t ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sdContract, sdSubscription);
+    if (p_sdContract == NULL || ret != K_SPP_OK)
     {
-        s_fsmErrors.uartPubsubError = 1;
+        s_fsmErrors.datalogggerPubsubError = 1;
     }
 
-    if (s_fsmErrors.bmpPubsubError || s_fsmErrors.icmPubsubError || s_fsmErrors.uartPubsubError)
+    if (s_fsmErrors.bmpPubsubError & s_fsmErrors.icmPubsubError)
     {
         return false;
     }
