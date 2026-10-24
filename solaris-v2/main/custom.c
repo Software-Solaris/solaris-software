@@ -124,13 +124,12 @@ static spp_bool_t CUSTOM_registerConsumerProducer(void)
 
     const SPP_SERVICE_ConsumerContract_t *p_sdContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
 
-    SPP_RetVal_t ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sdContract, sdSubscription);
-    if (p_sdContract == NULL || ret != K_SPP_OK)
+    if (p_sdContract == NULL || SPP_SERVICES_PUBSUB_registerConsumer(p_sdContract, sdSubscription) != K_SPP_OK)
     {
         s_fsmErrors.datalogggerPubsubError = 1;
     }
 
-    if (s_fsmErrors.bmpPubsubError & s_fsmErrors.icmPubsubError)
+    if (s_fsmErrors.bmpPubsubError && s_fsmErrors.icmPubsubError)
     {
         return false;
     }

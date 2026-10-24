@@ -11,7 +11,6 @@ services:
     user: root
     tty: true
     stdin_open: true
-    entrypoint: ["/bin/bash", "/home/user/Documents/solaris-software/.devcontainer/container-entrypoint.sh"]
     environment:
       IDF_PATH: /opt/esp/idf
       XTENSA_GDB: /opt/esp/tools/xtensa-esp-elf-gdb/16.2_20250324/xtensa-esp-elf-gdb/bin/xtensa-esp32s3-elf-gdb
