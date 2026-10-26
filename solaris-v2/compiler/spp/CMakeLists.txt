@@ -78,7 +78,7 @@ option(SPP_SERVICE_BMP390     "Compile BMP390 pressure sensor service"          
 option(SPP_SERVICE_BMP390_SIM "Use simulated BMP390 flight data instead of sensor"  OFF)
 option(SPP_SERVICE_ICM20948   "Compile ICM20948 IMU service"                        ON)
 option(SPP_SERVICE_DATALOGGER "Compile datalogger (SD card) service"                ON)
-option(SPP_SERVICE_UART       "Compile UART telemetry consumer service"            ON)
+option(SPP_SERVICE_UART       "Compile UART telemetry consumer service"             OFF)
 option(SPP_DEBUG_PRINT        "Print sensor values to stdout via printf"            OFF)
 option(SPP_ENCRYPTION         "Compile AES-128-GCM encryption module"               OFF)
 option(SPP_ANTENNA_DEVKIT     "Compile antenna devkit"                              OFF)
