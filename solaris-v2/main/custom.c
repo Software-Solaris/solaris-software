@@ -21,6 +21,8 @@
 #include "spp/services/kpid.h"
 #include "spp/services/service.h"
 
+#include <stdio.h>
+
 /* ----------------------------------------------------------------
  * STATIC FUNCTIONS DECLARATIONS
  * ---------------------------------------------------------------- */
@@ -61,12 +63,35 @@ const FSM_Transition_t *CUSTOM_getFsmTable(void)
 
 static spp_bool_t guard_startInitializationOfModules(void)
 {
-    if (CUSTOM_registerConsumerProducer() == false)
+    spp_bool_t pubsubOk = CUSTOM_registerConsumerProducer();
+
+    printf("PUBSUB REG | BMP=%u ICM=%u SD=%u SX1262=%u\n", s_fsmErrors.bmpPubsubError, s_fsmErrors.icmPubsubError,
+           s_fsmErrors.datalogggerPubsubError, s_fsmErrors.sx1262PubsubError);
+
+    if (pubsubOk == false)
     {
         return false;
     }
 
-    return (SPP_CORE_init() == K_SPP_OK);
+    SPP_RetVal_t ret = SPP_CORE_init();
+
+    SPP_RetVal_t bmpInit = K_SPP_ERROR;
+    SPP_RetVal_t icmInit = K_SPP_ERROR;
+    SPP_RetVal_t sdInit = K_SPP_ERROR;
+    SPP_RetVal_t sx1262Init = K_SPP_ERROR;
+
+    (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_BMP390_getProducerContract(), &bmpInit);
+
+    (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_ICM20948_getProducerContract(), &icmInit);
+
+    (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_DATALOGGER_getConsumerContract(), &sdInit);
+
+    (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_SX1262_getConsumerContract(), &sx1262Init);
+
+    printf("INIT | CORE=%d BMP=%d ICM=%d SD=%d SX1262=%d\n", (int)ret, (int)bmpInit, (int)icmInit, (int)sdInit,
+           (int)sx1262Init);
+
+    return ret;
 }
 
 /* Actions*/

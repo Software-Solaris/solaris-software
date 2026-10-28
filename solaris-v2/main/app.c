@@ -13,6 +13,8 @@
 #include "spp/ports/hal/esp32/halEsp32.h"
 #include "custom.h"
 
+#include <stdio.h>
+
 /* ----------------------------------------------------------------
  * STATIC FUNCTIONS
  * ---------------------------------------------------------------- */
@@ -33,6 +35,7 @@ void APP_initHal(void)
     SPP_RetVal_t ret = SPP_HAL_init((void *)p_halPorts);
     if (ret != K_SPP_OK)
     {
+        printf("BOOT FAIL: HAL ret=%d\n", (int)ret);
         BootError();
     }
 }
@@ -46,6 +49,7 @@ void APP_initFsm(void)
     SPP_RetVal_t ret = FSM_init();
     if (ret != K_SPP_OK)
     {
+        printf("BOOT FAIL: FSM init ret=%d\n", (int)ret);
         BootError();
     }
 
@@ -53,6 +57,7 @@ void APP_initFsm(void)
     ret = FSM_addTable(p_fsmTable, K_CUSTOM_FSM_TABLE_SIZE);
     if (ret != K_SPP_OK)
     {
+        printf("BOOT FAIL: FSM addTable ret=%d\n", (int)ret);
         BootError();
     }
 }
