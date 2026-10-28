@@ -91,7 +91,12 @@ static spp_bool_t guard_startInitializationOfModules(void)
     printf("INIT | CORE=%d BMP=%d ICM=%d SD=%d SX1262=%d\n", (int)ret, (int)bmpInit, (int)icmInit, (int)sdInit,
            (int)sx1262Init);
 
-    return ret;
+    if (ret != K_SPP_OK)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 /* Actions*/
