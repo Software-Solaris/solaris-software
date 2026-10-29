@@ -81,12 +81,28 @@ static spp_bool_t guard_startInitializationOfModules(void)
     SPP_RetVal_t sx1262Init = K_SPP_ERROR;
 
     (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_BMP390_getProducerContract(), &bmpInit);
+    if (bmpInit != K_SPP_OK)
+    {
+        s_fsmErrors.bmpInitError = 1;
+    }
 
     (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_ICM20948_getProducerContract(), &icmInit);
+    if (icmInit != K_SPP_OK)
+    {
+        s_fsmErrors.icmInitError = 1;
+    }
 
     (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_DATALOGGER_getConsumerContract(), &sdInit);
+    if (sdInit != K_SPP_OK)
+    {
+        s_fsmErrors.dataloggerInitError = 1;
+    }
 
     (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_SX1262_getConsumerContract(), &sx1262Init);
+    if (sx1262Init != K_SPP_OK)
+    {
+        s_fsmErrors.sx1262InitError = 1;
+    }
 
     printf("INIT | CORE=%d BMP=%d ICM=%d SD=%d SX1262=%d\n", (int)ret, (int)bmpInit, (int)icmInit, (int)sdInit,
            (int)sx1262Init);
