@@ -52,7 +52,14 @@ option(SPP_HAL_ESP32 "Compile ESP32-S3 HAL (polling SPI)" ON)
 set(PORT_SRCS "")
 
 if(SPP_HAL_ESP32)
-    list(APPEND PORT_SRCS "${SPP_PORT_ROOT}/ports/hal/esp32/halEsp32.c")
+    list(APPEND PORT_SRCS
+        "${SPP_PORT_ROOT}/ports/hal/esp32/halEsp32.c"
+        "${SPP_PORT_ROOT}/ports/hal/esp32/spi/spiPort.c"
+        "${SPP_PORT_ROOT}/ports/hal/esp32/gpio/gpioPort.c"
+        "${SPP_PORT_ROOT}/ports/hal/esp32/storage/storagePort.c"
+        "${SPP_PORT_ROOT}/ports/hal/esp32/time/timePort.c"
+        "${SPP_PORT_ROOT}/ports/hal/esp32/uart/uartPort.c"
+    )
     message(STATUS "spp_ports: HAL ESP32       ON")
 else()
     message(STATUS "spp_ports: HAL ESP32       OFF")

@@ -15,22 +15,20 @@
 
 #include "spp/services/bmp390/bmp390.h"
 #include "spp/services/icm20948/icm20948.h"
-#include "spp/services/sx1262/sx1262.h"
+#include "spp/services/datalogger/datalogger.h"
 #include "spp/services/databank/databank.h"
+#include "spp/services/sx1262/sx1262.h"
 #include "spp/services/kpid.h"
 #include "spp/services/service.h"
 
-#include "spp/ports/hal/esp32/halEsp32.h"
-#include "spp/hal/hal.h"
-#include "spp/hal/time/time.h"
+#include <stdio.h>
+
 /* ----------------------------------------------------------------
  * STATIC FUNCTIONS DECLARATIONS
  * ---------------------------------------------------------------- */
 static spp_bool_t CUSTOM_registerConsumerProducer(void);
-static spp_bool_t CUSTOM_initCheck(void);
 static spp_bool_t guard_startInitializationOfModules(void);
 static void action_emitTelemetry(void);
-static void statefunction_bmpPerformanceLoop(void);
 
 /* ----------------------------------------------------------------
  * VARIABLES
@@ -45,22 +43,9 @@ static FSM_Transition_t s_transitionTable[] = {
         .action = action_emitTelemetry,
         .stateFunction = NULL,
     },
-    {
-        .fromState = FSM_STATE_READY,
-        .fromSubState = FSM_SUBSTATE_NONE,
-        .toState = FSM_STATE_READY,
-        .toSubState = FSM_SUBSTATE_NONE,
-        .guard = NULL,
-        .action = NULL,
-        .stateFunction = statefunction_bmpPerformanceLoop,
-    },
 };
 
 static FsmErrors_t s_fsmErrors = {0};
-static const SPP_SERVICE_ProducerContract_t *s_p_bmpProducerContract = NULL;
-
-static spp_uint16_t s_processedSamples = 0U;
-static spp_uint32_t s_busyTimeUs = 0U;
 
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -68,16 +53,6 @@ static spp_uint32_t s_busyTimeUs = 0U;
 const FSM_Transition_t *CUSTOM_getFsmTable(void)
 {
     return s_transitionTable;
-}
-
-spp_uint32_t CUSTOM_getBusyTimeUs(void)
-{
-    return s_busyTimeUs;
-}
-
-spp_uint16_t CUSTOM_getProcessedSamples(void)
-{
-    return s_processedSamples;
 }
 
 /* ----------------------------------------------------------------
@@ -88,25 +63,55 @@ spp_uint16_t CUSTOM_getProcessedSamples(void)
 
 static spp_bool_t guard_startInitializationOfModules(void)
 {
-    spp_bool_t registered = CUSTOM_registerConsumerProducer();
-    if (registered == false)
+    spp_bool_t pubsubOk = CUSTOM_registerConsumerProducer();
+
+    printf("PUBSUB REG | BMP=%u ICM=%u SD=%u SX1262=%u\n", s_fsmErrors.bmpPubsubError, s_fsmErrors.icmPubsubError,
+           s_fsmErrors.datalogggerPubsubError, s_fsmErrors.sx1262PubsubError);
+
+    if (pubsubOk == false)
     {
         return false;
     }
 
     SPP_RetVal_t ret = SPP_CORE_init();
 
-    spp_bool_t initCheck = CUSTOM_initCheck();
+    SPP_RetVal_t bmpInit = K_SPP_ERROR;
+    SPP_RetVal_t icmInit = K_SPP_ERROR;
+    SPP_RetVal_t sdInit = K_SPP_ERROR;
+    SPP_RetVal_t sx1262Init = K_SPP_ERROR;
+
+    (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_BMP390_getProducerContract(), &bmpInit);
+    if (bmpInit != K_SPP_OK)
+    {
+        s_fsmErrors.bmpInitError = 1;
+    }
+
+    (void)SPP_SERVICES_PUBSUB_getProducerInitResult(SPP_SERVICES_ICM20948_getProducerContract(), &icmInit);
+    if (icmInit != K_SPP_OK)
+    {
+        s_fsmErrors.icmInitError = 1;
+    }
+
+    (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_DATALOGGER_getConsumerContract(), &sdInit);
+    if (sdInit != K_SPP_OK)
+    {
+        s_fsmErrors.dataloggerInitError = 1;
+    }
+
+    (void)SPP_SERVICES_PUBSUB_getConsumerInitResult(SPP_SERVICES_SX1262_getConsumerContract(), &sx1262Init);
+    if (sx1262Init != K_SPP_OK)
+    {
+        s_fsmErrors.sx1262InitError = 1;
+    }
+
+    printf("INIT | CORE=%d BMP=%d ICM=%d SD=%d SX1262=%d\n", (int)ret, (int)bmpInit, (int)icmInit, (int)sdInit,
+           (int)sx1262Init);
 
     if (ret != K_SPP_OK)
     {
         return false;
     }
 
-    if (initCheck == false)
-    {
-        return false;
-    }
     return true;
 }
 
@@ -136,128 +141,56 @@ static void action_emitTelemetry(void)
         return;
     }
 
-    // Call the consumers (to force the telemetry to be sent)
-    //(void)SPP_SERVICES_PUBSUB_callConsumers();
-
     return;
 }
 
-/* State functions */
-
-static void statefunction_bmpPerformanceLoop(void)
-{
-    spp_uint8_t c0 = SPP_SERVICES_PUBSUB_queueDepth();
-
-    spp_uint32_t t0 = SPP_HAL_TIME_getTimeUs();
-
-    SPP_SERVICES_PUBSUB_callProducers();
-
-    spp_uint8_t c1 = SPP_SERVICES_PUBSUB_queueDepth();
-
-    SPP_SERVICES_PUBSUB_callConsumers();
-
-    spp_uint32_t t1 = SPP_HAL_TIME_getTimeUs();
-
-    if (c1 > c0)
-    {
-        s_busyTimeUs += t1 - t0;
-        s_processedSamples++;
-    }
-}
-
-
 /**
 * @brief    Register consumers and producers.
-* @return   K_SPP_OK on success.
+* @return   true on success.
 */
 static spp_bool_t CUSTOM_registerConsumerProducer(void)
 {
-    SPP_Kpid_t bmp390Kpid = {0};
-    SPP_Kpid_t icm20948Kpid = {0};
-    // SPP_Kpid_t m10mKpid = {0};
-
+    SPP_Kpid_t bmpKpid = {0};
+    SPP_Kpid_t icmKpid = {0};
     SPP_Kpid_t sdSubscription = {0};
     SPP_Kpid_t sx1262Subscription = {0};
 
-    SPP_RetVal_t ret = K_SPP_ERROR;
-
-    s_p_bmpProducerContract = SPP_SERVICES_BMP390_getProducerContract();
-    if (s_p_bmpProducerContract == NULL)
+    const SPP_SERVICE_ProducerContract_t *p_bmpContract = SPP_SERVICES_BMP390_getProducerContract();
+    if (p_bmpContract == NULL || SPP_SERVICES_PUBSUB_registerProducer(p_bmpContract, &bmpKpid) != K_SPP_OK)
     {
         s_fsmErrors.bmpPubsubError = 1;
     }
-    else
-    {
-        ret = SPP_SERVICES_PUBSUB_registerProducer(s_p_bmpProducerContract, &bmp390Kpid);
-        if (ret != K_SPP_OK)
-        {
-            s_fsmErrors.bmpPubsubError = 1;
-        }
-    }
 
-    const SPP_SERVICE_ProducerContract_t *p_icmProducerContract = SPP_SERVICES_ICM20948_getProducerContract();
-    if (p_icmProducerContract == NULL)
-    {
-        s_fsmErrors.icmPubsubError = 1;
-    }
-    ret = SPP_SERVICES_PUBSUB_registerProducer(p_icmProducerContract, &icm20948Kpid);
-    if (ret != K_SPP_OK)
+    const SPP_SERVICE_ProducerContract_t *p_icmContract = SPP_SERVICES_ICM20948_getProducerContract();
+    if (p_icmContract == NULL || SPP_SERVICES_PUBSUB_registerProducer(p_icmContract, &icmKpid) != K_SPP_OK)
     {
         s_fsmErrors.icmPubsubError = 1;
     }
 
-    // const SPP_SERVICE_ProducerContract_t *p_m10mProducerContract = SPP_SERVICES_M10M_getProducerContract();
-    // if (p_m10mProducerContract == NULL)
-    // {
-    //     s_fsmErrors.m10mPubsubError = 1;
-    // }
-    // ret = SPP_SERVICES_PUBSUB_registerProducer(p_m10mProducerContract, &m10mKpid);
-    // if (ret != K_SPP_OK)
-    // {
-    //     s_fsmErrors.m10mPubsubError = 1;
-    // }
+    sdSubscription.value = bmpKpid.value | icmKpid.value | K_SPP_KPID_FSM;
 
-    // sdSubscription.value = bmp390Kpid.value | icm20948Kpid.value | m10mKpid.value;
+    const SPP_SERVICE_ConsumerContract_t *p_sdContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
 
-    // const SPP_SERVICE_ConsumerContract_t *p_sdConsumerContract = SPP_SERVICES_DATALOGGER_getConsumerContract();
-    // ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sdConsumerContract, sdSubscription);
-    // if (ret != K_SPP_OK)
-    // {
-    //     s_fsmErrors.datalogggerPubsubError = 1;
-    // }
+    if (p_sdContract == NULL || SPP_SERVICES_PUBSUB_registerConsumer(p_sdContract, sdSubscription) != K_SPP_OK)
+    {
+        s_fsmErrors.datalogggerPubsubError = 1;
+    }
 
-    sx1262Subscription.value = bmp390Kpid.value | icm20948Kpid.value;
-    const SPP_SERVICE_ConsumerContract_t *p_sx1262ConsumerContract = SPP_SERVICES_SX1262_getConsumerContract();
-    ret = SPP_SERVICES_PUBSUB_registerConsumer(p_sx1262ConsumerContract, sx1262Subscription);
-    if (ret != K_SPP_OK)
+    sx1262Subscription.value = bmpKpid.value | icmKpid.value | K_SPP_KPID_FSM;
+
+    const SPP_SERVICE_ConsumerContract_t *p_sx1262Contract = SPP_SERVICES_SX1262_getConsumerContract();
+
+    if (p_sx1262Contract == NULL ||
+        SPP_SERVICES_PUBSUB_registerConsumer(p_sx1262Contract, sx1262Subscription) != K_SPP_OK)
     {
         s_fsmErrors.sx1262PubsubError = 1;
     }
 
-    // spp_bool_t producersFailed =
-    //     (s_fsmErrors.bmpPubsubError && s_fsmErrors.icmPubsubError && s_fsmErrors.m10mPubsubError);
-    // spp_bool_t consumersFailed = (s_fsmErrors.datalogggerPubsubError && s_fsmErrors.sx1262PubsubError);
+    spp_uint8_t producersFailed = (s_fsmErrors.bmpPubsubError && s_fsmErrors.icmPubsubError);
+    spp_uint8_t consumersFailed = (s_fsmErrors.datalogggerPubsubError && s_fsmErrors.sx1262PubsubError);
 
-    if (s_fsmErrors.bmpPubsubError)
+    if (producersFailed || consumersFailed)
     {
-        return false;
-    }
-
-    return true;
-}
-
-static spp_bool_t CUSTOM_initCheck(void)
-{
-    SPP_RetVal_t bmpInitResult = K_SPP_ERROR_NOT_INITIALIZED;
-    SPP_RetVal_t ret = SPP_SERVICES_PUBSUB_getProducerInitResult(s_p_bmpProducerContract, &bmpInitResult);
-    if (ret != K_SPP_OK || bmpInitResult == K_SPP_ERROR_NOT_INITIALIZED)
-    {
-        return false;
-    }
-
-    if (bmpInitResult != K_SPP_OK)
-    {
-        s_fsmErrors.bmpInitError = 1;
         return false;
     }
 
