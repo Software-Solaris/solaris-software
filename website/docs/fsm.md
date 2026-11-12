@@ -2,20 +2,19 @@ This is a work in progress. The FSM is where all the pieces we've covered so far
 
 Even though the files currently live under services/fsm, the FSM is conceptually part of the SPP core: like the DATABANK and the PUBSUB service, it's mandatory, always-on infrastructure, not an opt-in service — which is why it's grouped here alongside them rather than under Services.
 
-Once the board boots, app_main hands the HAL ports to FSM_init and then just ticks the FSM forever:
 
-```
+Once the board boots, `app_main()` initializes the HAL, configures the FSM and starts the execution loop:
+
+```c
 void app_main(void)
 {
-    const SPP_HalPort_t *p_halPorts = SPP_PORTS_ESP32S3_getHalPorts();
-    FSM_init((void *)p_halPorts);
-
-    while (1)
-    {
-        FSM_tick();
-    }
+    APP_initHal();
+    APP_initFsm();
+    APP_fsmLoop();
 }
 ```
+
+`APP_initFsm()` initializes the internal FSM table and registers the application-specific transition table.
 
 Everything else — initializing the core, registering producers and consumers, running the PUBSUB loop, emitting telemetry — happens because FSM_tick decides it should, tick after tick.
 
@@ -34,6 +33,8 @@ FLIGHT is further broken down into sub-states, tracked separately from the top-l
 - FLIGHT_ASCENDING
 - FLIGHT_DESCENDING
 - FLIGHT_PARACHUTE_DEPLOYED
+
+These states and sub-states are defined in the FSM interface, but the current application only implements the transition from INIT to READY. Flight-state transitions remain pending.
 
 At any point, the FSM's position is a (state, sub-state) pair, held in a handle together with the pair it came from:
 
@@ -70,25 +71,51 @@ typedef struct
 - action: runs once, right after the transition happens.
 - stateFunction: the ongoing work associated with a state.
 
-Every call to FSM_tick walks the table looking for the first row whose fromState/fromSubState matches where the FSM currently is, and then:
+Every call to `FSM_tick()` iterates through the registered tables in registration order, evaluating rows that match the current state and sub-state:
 
-- If that row has no guard, its stateFunction runs immediately and the FSM stays exactly where it is — toState/toSubState are simply not used until a real guard gets attached to that row. This is how the READY row works today: with no guard set, its stateFunction runs on every single tick, without the FSM ever actually moving into FLIGHT. Once a liftoff-detection guard is added to that row, it will start transitioning as intended.
-- If the row does have a guard and it returns true, the FSM updates prevState/prevSubState, moves into toState/toSubState, runs action if there is one, then runs stateFunction if there is one.
-- If the guard returns false, that row doesn't apply this tick, and the search moves on to the next row.
+- **No guard:** The row's `stateFunction` runs, if defined, without changing the current state. Evaluation continues with the remaining rows.
+- **Guard returns true:** The FSM updates its current and previous states, executes the optional action and state function, then stops processing the current tick.
+- **Guard returns false:** The FSM continues evaluating subsequent rows.
 
-Only one row is acted on per tick — as soon as a match is found, FSM_tick stops looking at the rest of the table.
+Multiple unguarded rows may execute during a single tick, but at most one guarded transition can occur.
 
 ## What the table looks like today
 
-Right now there are only two rows:
+The current implementation uses two transition tables:
 
-1. INIT/NONE → READY/NONE, guarded by guard_startInitializationOfModules. This guard initializes the HAL, then calls the private registration function mentioned back in the PUBSUB chapter — the one that registers producers and subscribes consumers to them — and finally initializes the core. If all three succeed, the FSM moves to READY and runs an action that packs the FSM's and the common-bit's error flags into a packet and publishes it, as a first bit of telemetry.
-2. READY/NONE, with no guard, running the PUBSUB runtime loop on every tick — calling acquireData on every producer and consumeData on every consumer, exactly as described in the Flow of information section of the PUBSUB chapter.
+**Internal table (`fsm.c`)**
 
-That second row is where the system spends effectively all of its time today: once initialization succeeds, the FSM just sits in READY and keeps the sensors and consumers running, tick after tick, until FLIGHT, LANDED and the flight sub-states are wired in.
+Contains six rows that execute the PUBSUB cycle in the following states:
 
-One thing worth flagging precisely because this page is about a moving target: the registration function currently reaches for the antenna consumer through a driver that's mid-migration in the SPP repository (the old E22-MBL01 module is being replaced by a newer SX1262 one). If you're working on the FSM and something in that area doesn't build, that's most likely why — check which antenna driver is actually present under spp/services before assuming your own change broke it.
+- READY/NONE
+- FLIGHT/NONE
+- FLIGHT/ASCENDING
+- FLIGHT/DESCENDING
+- FLIGHT/PARACHUTE_DEPLOYED
+- LANDED/NONE
+
+Each row has no guard and executes `FSM_pubsubCycle()`, which invokes the registered producers and consumers.
+
+**Application table (`custom.c`)**
+
+Currently contains one transition:
+
+`INIT/NONE → READY/NONE`
+
+Its guard, `guard_startInitializationOfModules()`, registers producers and consumers, initializes the SPP core, and checks initialization results.
+
+If registration requirements are satisfied and core initialization succeeds, the FSM transitions to READY and executes `action_emitTelemetry()`, publishing the initialization error flags.
+
+During normal operation, the FSM remains in READY and executes the PUBSUB cycle on every tick. Flight transitions have not yet been implemented.
 
 ## Error tracking
 
-Errors picked up while ticking the FSM — a failed init, a failed producer or consumer registration, and so on — are tracked in a bitfield, retrievable at any point through SPP_CORE_FSM_getErrorsBit. Nothing halts execution when a bit gets set; the intent is for these to be surfaced as telemetry, the way action_emitTelemetry already does, rather than to stop the rocket mid-flight because a non-critical service failed to register.
+Initialization errors are tracked through separate bitfields:
+
+- **Application errors (`FsmErrors_t`):** Track producer and consumer registration and initialization failures.
+- **Core errors (`CommonBitErrors_t`):** Track errors encountered during SPP core initialization.
+- **FSM internal errors:** Accessible through `SPP_CORE_FSM_getErrorsBit()`.
+
+The application publishes its initialization error flags together with the core error flags through `action_emitTelemetry()`.
+
+A failed initialization guard prevents the transition to READY. Errors do not necessarily terminate execution, but they can prevent normal operation.

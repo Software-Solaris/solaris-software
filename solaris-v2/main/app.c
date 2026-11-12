@@ -1,8 +1,10 @@
 /**
  * @file app.c
- * @brief Application layer for Solaris.
+ * @brief Solaris application initialization and execution.
  *
- * TODO: describe the purpose and responsibilities of this module.
+ * Initializes the hardware abstraction layer and the FSM,
+ * registers application-specific transitions, and runs the
+ * main execution loop. Handles fatal boot errors.
  */
 
 /* ----------------------------------------------------------------

@@ -61,6 +61,11 @@ const FSM_Transition_t *CUSTOM_getFsmTable(void)
 
 /* Guards */
 
+/**
+ * @brief Registers producers and consumers and initializes the SPP core.
+ * @return true if registration requirements and core initialization succeed,
+ *         false otherwise.
+ */
 static spp_bool_t guard_startInitializationOfModules(void)
 {
     spp_bool_t pubsubOk = CUSTOM_registerConsumerProducer();
@@ -117,6 +122,12 @@ static spp_bool_t guard_startInitializationOfModules(void)
 
 /* Actions*/
 
+/**
+ * @brief Publishes application and core initialization error flags.
+ *
+ * Encodes both 16-bit error bitfields into an SPP packet
+ * and publishes it using the FSM KPID.
+ */
 static void action_emitTelemetry(void)
 {
     SPP_Packet_t *p_packet = SPP_SERVICES_DATABANK_getPacket();
@@ -145,9 +156,14 @@ static void action_emitTelemetry(void)
 }
 
 /**
-* @brief    Register consumers and producers.
-* @return   true on success.
-*/
+ * @brief Registers the application's producers and consumers.
+ *
+ * Assigns producer KPIDs, configures consumer subscriptions
+ * and records registration failures.
+ *
+ * @return true if at least one producer and one consumer
+ *         were registered successfully, false otherwise.
+ */
 static spp_bool_t CUSTOM_registerConsumerProducer(void)
 {
     SPP_Kpid_t bmpKpid = {0};

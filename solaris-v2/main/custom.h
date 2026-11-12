@@ -1,6 +1,6 @@
 /**
  * @file custom.h
- * @brief Finite State Machine (FSM) module for the SPP core.
+ * @brief Application-specific FSM configuration and error tracking.
  */
 
 #ifndef CUSTOM_H
@@ -43,7 +43,10 @@ typedef union
  * PUBLIC FUNCTIONS
  * ---------------------------------------------------------------- */
 
-// TODO: Add Doxygen
+/**
+ * @brief Returns the application-specific FSM transition table.
+ * @return Pointer to the statically allocated transition table.
+ */
 const FSM_Transition_t *CUSTOM_getFsmTable(void);
 
 

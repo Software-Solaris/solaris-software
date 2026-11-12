@@ -1,6 +1,8 @@
 # Datalogger
 
-SD card packet logger. Mounts a FAT filesystem over SPI, opens a log file, and writes packets as structured text — one line per packet. Subscribes to `K_SPP_APID_ALL` at `PRIO_LOW` via the module descriptor, so every published packet is appended to the log file automatically.
+SD card packet logger implemented as an SPP consumer. It stores fixed-size 64-byte packets in a static buffer and writes them directly to SD card sectors through the storage HAL, without using a filesystem.
+
+The datalogger subscribes to BMP390, ICM20948 and FSM telemetry packets at priority 0.
 
 ---
 
@@ -8,83 +10,70 @@ SD card packet logger. Mounts a FAT filesystem over SPI, opens a log file, and w
 
 | File | Description |
 |---|---|
-| `datalogger.h` | Public API and `Datalogger_t` context struct |
-| `datalogger.c` | Implementation — mount, open, write, flush, close |
-
----
-
-## Key types
-
-```c
-typedef struct {
-    /* Config — set at declaration */
-    void       *p_storageCfg;  // Pointer to SPP_StorageInitCfg_t
-    const char *p_filePath;    // Absolute path of the file to create/overwrite
-
-    /* Runtime — filled by init, do not set manually */
-    FILE       *p_file;
-    spp_bool_t  is_open;
-    uint32_t    logged_packets;
-} Datalogger_t;
-```
+| `datalogger.h` | Public API and buffer configuration |
+| `datalogger.c` | Consumer implementation and sector-based logging |
+| `storagePort.c` | ESP32-S3 SD card initialization and raw sector writing |
 
 ---
 
 ## API
 
 ```c
-SPP_RetVal_t SPP_SERVICES_DATALOGGER_init(Datalogger_t *p_logger);
-SPP_RetVal_t SPP_SERVICES_DATALOGGER_logPacket(Datalogger_t *p_logger, const SPP_Packet_t *p_packet);
-SPP_RetVal_t SPP_SERVICES_DATALOGGER_flush(Datalogger_t *p_logger);
-SPP_RetVal_t SPP_SERVICES_DATALOGGER_deinit(Datalogger_t *p_logger);
+const SPP_SERVICE_ConsumerContract_t *SPP_SERVICES_DATALOGGER_getConsumerContract(void);
+SPP_RetVal_t SPP_SERVICES_DATALOGGER_getInitStatus(void);
 ```
+
+The datalogger implements three internal consumer callbacks:
+
+- `init()`: Initializes SD card storage.
+- `deliverToMailbox()`: Copies received packets into the static buffer.
+- `consumeData()`: Writes the buffer to the SD card when full.
+
 
 ---
 
-## Log line format
+## Binary storage format
 
-**Log message packets** (`apid == K_SPP_APID_LOG`):
-```
-[I] BMP390: altitude = 1234.56 m
-```
+Packets are stored in their native 64-byte SPP format, without text conversion or filesystem headers.
 
-**Sensor/telemetry packets** (all other APIDs):
-```
-ts=12345 apid=0x0004 seq=7 len=12 payload_hex=44 9A 4B 45 00 00 B8 43 00 80 FF 42
-```
+| Parameter | Value |
+|---|---|
+| Packet size | 64 bytes |
+| Buffer size | 1024 bytes |
+| Buffer capacity | 16 packets |
+| Sector size | 512 bytes |
+| Sectors per write | 2 |
+| First data sector | 16384 |
 
-Each line is terminated with `\n`. The logger flushes automatically every 20 packets.
+Once 16 packets have accumulated, the datalogger attempts to write two consecutive sectors. On success, the sector index advances and the packet buffer is cleared.
+
+On write failure, the current implementation retains the buffer for a later attempt, but does not report the failure through `consumeData()`.
 
 ---
 
-## Usage via module descriptor
+## Registration
+
+The datalogger is registered as a PUBSUB consumer during application initialization in `main/custom.c`.
 
 ```c
-#include "spp/services/datalogger/datalogger.h"
+const SPP_SERVICE_ConsumerContract_t *p_sdContract =
+    SPP_SERVICES_DATALOGGER_getConsumerContract();
 
-static const SPP_StorageInitCfg_t s_storageCfg = {
-    .p_basePath          = "/sdcard",
-    .spiHostId           = 1,
-    .pinCs               = 9,
-    .maxFiles            = 5U,
-    .allocationUnitSize  = 16384U,
-    .formatIfMountFailed = false,
-};
-
-static Datalogger_t s_logger = {
-    .p_storageCfg = (void *)&s_storageCfg,
-    .p_filePath   = "/sdcard/log.txt",
-};
-
-// Register before the superloop — subscribes to K_SPP_APID_ALL at PRIO_LOW automatically
-SPP_SERVICES_register(&g_sdLoggerModule, &s_logger);
+SPP_SERVICES_PUBSUB_registerConsumer(
+    p_sdContract,
+    sdSubscription
+);
 ```
 
----
+The subscription includes BMP390, ICM20948 and FSM telemetry.
 
-## Hardware configuration (ESP32-S3)
+## Hardware interface
 
-- SPI bus: SPI2_HOST (host ID 1)
-- CS GPIO: 8 or 9
-- Mount point: `/sdcard`
-- Default allocation unit: 16 KB
+SD card access is implemented through the storage HAL:
+
+- `SPP_HAL_STORAGE_init()`: Initializes the SD card.
+- `SPP_HAL_STORAGE_write()`: Writes consecutive 512-byte sectors.
+
+The ESP32-S3 implementation uses SDSPI through the ESP-IDF SDMMC driver.
+
+Raw sector writing bypasses the filesystem. The current implementation does not provide file creation, mounting, flushing or filesystem management.
