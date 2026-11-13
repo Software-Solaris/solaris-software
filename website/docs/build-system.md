@@ -30,9 +30,9 @@ set(SPP_SRC_FILES
 )
 ```
 
-None of these files are guarded by an `option()`; any project that uses SPP requires all of them.
+These files are compiled unconditionally in the ESP-IDF firmware build. The standalone SPP build uses a separate core source list.
 
-## Services and ports are opt-in
+## Services and ports are configurable
 
 Everything beyond the core is guarded by one CMake `option()` per module, with an `if()` block that appends the corresponding source file(s) only when the option is enabled:
 
