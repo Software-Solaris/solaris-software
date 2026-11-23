@@ -24,7 +24,7 @@ solaris-software/
 - `.github/` — CI workflows.
 - `scripts/` — `install-linux.sh` / `install-windows.ps1`, which set up Docker, VS Code and SSH on a new machine.
 - `solaris-v2/` — the ESP32-S3 firmware project.
-    - `main/` — `app_main`, where `FSM_init` and `FSM_tick` are called.
+    - `main/` — Application entry point, HAL initialization, FSM configuration and execution loop.
     - `compiler/` — ESP-IDF "component" wrappers (`spp/`, `spp_ports/`) that pull SPP's sources into the ESP-IDF build. See the [Build System](build-system.md) page for details.
     - `CMakeLists.txt`, `sdkconfig` — the ESP-IDF project itself.
     - `spp/` — where the SPP submodule is mounted.
@@ -49,7 +49,7 @@ spp/
         └── stub/
 ```
 
-- `core/` — packet format, pub/sub, FSM, core init. See the [Core](core-overview.md) section.
+- `core/` — packet format, pub/sub and core initialization. See the [Core](core-overview.md) section.
 - `hal/` — the HAL contract: structs of function pointers, no board code.
 - `services/` — sensor drivers and other producers/consumers.
 - `util/` — CRC, compile-time flags, small portable helpers.
@@ -61,4 +61,4 @@ spp/
 
 `core/`, `hal/`, `services/`, `util/`, `external/` and `tests/` contain plain, portable C11, with no dependency on ESP-IDF, FreeRTOS or board-specific headers. This follows directly from the HAL design described above: the HAL layer only invokes function pointers and never accesses hardware registers directly. `ports/` is where those function pointers are bound to a concrete implementation — one per target board, or, in the case of the stub port, to no implementation at all: every call returns `K_SPP_OK`, which allows the unit tests to run on a standard Linux machine.
 
-Because `ports/` resides within SPP rather than in solaris-software, SPP can be built, tested and reused independently of it: cloning SPP alone and building against the stub port compiles and runs the entire core and all services, without requiring an ESP32-S3 target, a Docker container, or any of the tooling described above.
+Because `ports/` resides within SPP, the library can be built and tested independently of solaris-software. The standalone CMake build supports selectable services and a stub HAL port for host-side testing, without requiring ESP32-S3 hardware or ESP-IDF.

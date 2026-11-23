@@ -1,4 +1,4 @@
-FROM espressif/idf:v6.0-dev
+FROM ubuntu:latest
 
 USER root
 
@@ -11,68 +11,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     coreutils \
     grep \
-    sed \
-    util-linux \
-    locales \
-    doxygen \
-    graphviz \
-    texlive-latex-extra \
-    texlive-fonts-recommended \
-    texlive-plain-generic \
-    latexmk \
     clang-format \
     cppcheck \
-    flawfinder \
-    python3-pip \
-    cmake \
-    && locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
-    && rm -rf /var/lib/apt/lists/*
+    cmake
 
-# Install cgreen unit testing library (build from source — not in apt repos)
-# The shallow clone has no git history, so GITREVISION is never defined by cmake.
-# Patch the one line in utils.c that uses it before building.
-RUN git clone --depth=1 https://github.com/cgreen-devs/cgreen.git /tmp/cgreen \
-    && sed -i \
-        's/char \*cgreen_library_revision = GITREVISION;/char *cgreen_library_revision = "custom-build";/' \
-        /tmp/cgreen/src/utils.c \
-    && cmake -S /tmp/cgreen -B /tmp/cgreen/build \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=ON \
-    && cmake --build /tmp/cgreen/build --parallel \
-    && cmake --install /tmp/cgreen/build \
-    && ldconfig \
-    && rm -rf /tmp/cgreen
+RUN mkdir solaris 
 
-# Install SonarScanner CLI (SonarQube)
-ARG SONAR_SCANNER_VERSION=7.1.0.4889
-
-RUN curl -fsSL -o /tmp/sonar-scanner.zip \
-    https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip \
-    && apt-get update && apt-get install -y unzip \
-    && unzip /tmp/sonar-scanner.zip -d /opt \
-    && ln -s /opt/sonar-scanner-${SONAR_SCANNER_VERSION}-linux-x64/bin/sonar-scanner /usr/local/bin/sonar-scanner \
-    && rm /tmp/sonar-scanner.zip \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN git config --system core.editor "nano" \
-    && git config --system --add safe.directory /home/user/Documents/solaris-software
-
-WORKDIR /root
-
-RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+WORKDIR /solaris
 
 RUN curl -o /etc/bash_completion.d/git-completion.bash \
     https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
 
-COPY .devcontainer/setup-terminal.sh /root/setup-terminal.sh
-RUN chmod +x /root/setup-terminal.sh
+COPY .devcontainer/setup-terminal.sh /solaris/setup-terminal.sh
+RUN chmod +x /solaris/setup-terminal.sh
 
-RUN echo "source /opt/esp/idf/export.sh >/dev/null 2>&1" >> /root/.bashrc \
-    && echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
-    && echo "source /root/setup-terminal.sh" >> /root/.bashrc
+RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
+    && echo "source /solaris/setup-terminal.sh" >> /root/.bashrc
 
-ENV LANG=en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
-
-USER root
+RUN useradd -ms /bin/bash solaris
+USER solaris

@@ -38,12 +38,11 @@ Now that we've covered the idea, let's look at how it's actually organized in th
 ```
 typedef struct
 {
-    SPP_HALSpi_t spi;
-    SPP_HALGpio_t gpio;
-    SPP_HALStorage_t storage;
-    SPP_HALTime_t time;
-    SPP_HALUart_t uart;
-} SPP_HalPort_t;
+    SPP_RetVal_t (*uartPortInit)(void);
+    SPP_RetVal_t (*uartTransmit)(const void *p_data, spp_uint32_t len);
+    SPP_RetVal_t (*uartRead)(void *p_data, spp_uint32_t len, spp_uint32_t *p_readBytes);
+} SPP_HALUart_t;
+
 ```
 
 Each field is itself a struct of function pointers, one per peripheral. Here's the UART one, which we've already seen in action:
@@ -80,8 +79,13 @@ typedef struct
 Each board decides what these actually point to. For the ESP32S3, that's set in /ports/hal/esp32/halEsp32.c:
 
 ```
-const static SPP_HALUart_t s_esp32HalUart = {.uartPortInit = SPP_PORTS_HAL_ESP32_uartPortInit,
-                                             .uartTransmit = SPP_PORTS_HAL_ESP32_uartTransmit};
+
+static const SPP_HALUart_t s_esp32HalUart = {
+    .uartPortInit = SPP_PORTS_HAL_ESP32_uartPortInit,
+    .uartTransmit = SPP_PORTS_HAL_ESP32_uartTransmit,
+    .uartRead = SPP_PORTS_HAL_ESP32_uartRead,
+};
+
 ```
 
 So every time something calls the pointer *uartTransmit, it's actually running SPP_PORTS_HAL_ESP32_uartTransmit, the real implementation.
@@ -101,17 +105,18 @@ static const SPP_HalPort_t s_esp32HalPorts = {
 This is passed into the HAL layer once, at startup:
 
 ```
-//Get HAl port
+
 const SPP_HalPort_t *p_halPorts = SPP_PORTS_ESP32S3_getHalPorts();
-// Pass the HAL port to the FSM
-(void)FSM_init((void *)p_halPorts);
+SPP_RetVal_t ret = SPP_HAL_init((void *)p_halPorts);
+
 ```
 
 We'll go into more detail on the FSM later, but for now just note that this struct is what ends up handed to the HAL layer, through:
 
 ```
 /**
-* @brief This functions initializes the ports struct and initializes all the peripherals.
+* @brief This function registers the selected HAL port and initializes the SPI bus. Other peripherals are initialized separately when required by their services.
+
 */
 SPP_RetVal_t SPP_HAL_init(void *p_halPorts);
 ```

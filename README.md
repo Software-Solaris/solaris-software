@@ -1,7 +1,8 @@
 # Solaris
 
-Open-source firmware framework for amateur rocketry, targeting **ESP32-S3** microcontrollers.
-Solaris provides reusable sensor drivers and a software architecture built around the
+Open-source embedded software for amateur rocketry, developed by **Solaris (UVigo Aerotech)**.
+
+Solaris Software provides reusable sensor drivers and a software architecture built around the
 **Solaris Packet Protocol (SPP)**, designed so that teams without the time or resources
 to build their own stack can get flying faster.
 
@@ -89,16 +90,20 @@ Docker builds the image on the first run — this takes a few minutes. Subsequen
 Once inside the container, open a terminal (`Ctrl+` `` ` ``):
 
 ```bash
-cd solaris-v1
+cd solaris-v2
 idf.py build
 ```
 
-A successful build produces the firmware binaries under `solaris-v1/build/`.
+A successful build produces the firmware binaries under `solaris-v2/build/`.
 
 ### Step 5 — Flash and debug
 
-Flashing and debugging require access to the remote development station via WireGuard VPN.
-See [System Architecture](docs/system-architecture.md) for the full setup.
+
+Flashing and debugging can be performed locally through USB or remotely through the Solaris development station.
+
+The repository provides scripts under `.devcontainer/` for building, flashing, serial monitoring, and debugging.
+
+For remote access and debugging infrastructure, see [System Architecture](docs/system-architecture.md).
 
 ---
 
@@ -108,7 +113,8 @@ See [System Architecture](docs/system-architecture.md) for the full setup.
 |---|---|---|
 | `solaris-v0.1` | Legacy | BMP390 barometer — standalone ESP-IDF driver |
 | `solaris-v0.2` | Legacy | ICM20948 IMU — standalone ESP-IDF driver |
-| `solaris-v1` | **Active** | Combined sensors + SPP v2 bare-metal superloop |
+| `solaris-v1` | Superseded | Combined sensors + SPP v2 bare-metal superloop |
+| `solaris-v2` | **Active** | Modular FSM, improved PUBSUB, expanded HAL and new services |
 
 ---
 ### Checkout a specific release tag

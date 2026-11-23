@@ -1,4 +1,4 @@
-The Publish-Subscribe (PUBSUB) service coordinates the system. It registers producers and assigns them an APID, and it registers consumers, subscribing each of them to the producers they are interested in.
+The Publish-Subscribe (PUBSUB) service coordinates data exchange between producers and consumers. It assigns a unique KPID to each registered producer and routes published packets to consumers according to their subscription bitmasks and execution priorities.
 
 ## Producers
 
@@ -43,7 +43,6 @@ typedef struct
     spp_int8_t priority;         /**< Priority of the consumer */
     const char *p_nameConsumer;  /**< Human-readable module name (for logging). */
     spp_uint16_t timeoutMs;      /**< Timeout for the consumer to receive a packet */
-    spp_uint16_t suscribeToApid; /**< APID subscription bitmask */
     SPP_RetVal_t (*init)();      /**< Initialise the module. */
     SPP_RetVal_t (*deliverToMailbox)(const SPP_Packet_t packet);
     SPP_RetVal_t (*consumeData)(void *p_data); /**< Consume data from the module. */
@@ -53,10 +52,11 @@ typedef struct
 - Priority: the higher the value, the more priority it has. This is what lets the PUBSUB service order the registered consumers, so that the ones with the most priority run first.
 - Name of the consumer.
 - Timeout: same idea as for the producer — if a consumer takes too long, some measure has to be taken to stop giving it CPU time.
-- subscribeToApid: set when registering the consumer with the PUBSUB service, it determines which producer's data gets sent to this consumer's mailbox.
 - init: same concept as before, a pointer to a private function responsible for initializing the consumer.
 - deliverToMailbox: a pointer to a function that receives a copy of an SPP packet. Think of it as the delivery guy having a letter for you: he puts it in your mailbox so you can check its contents later. The only responsibility here is to take that packet copy and store it in a static array, nothing more. This step is delicate, because if it doesn't return, it blocks the rest of the program too — that is why we might revisit this API in the future to make it less error-prone. You can look at the existing consumers for reference.
 - consumeData: a pointer to the function responsible for actually doing something with that data. Here you cannot block the execution of the system. You can't poll on things, for example, because right now there's no way to stop a service from running — everything runs bare-metal, on a single core. If a service takes too long, it affects interrupts, data acquisition, and every other service, which is why consumers need to be fast and non-blocking.
+
+Subscription: configured during `SPP_SERVICES_PUBSUB_registerConsumer()`, independently of the consumer contract. The KPID bitmask determines which packets the consumer receives.
 
 ## Flow of information
 
@@ -64,10 +64,23 @@ This can be a bit overwhelming, so let's go through how the PUBSUB service works
 
 ![PUBSUB inner workings](assets/pubsub.svg){ .center }
 
-Based on the figure above, there are three distinct stages. The first is when consumers and producers are registered with the PUBSUB service. This is custom, defined by the team or user building the binary — you choose how many producers and consumers your project has, and which consumers subscribe to which producers. In our FSM (Finite State Machine), this happens in the init state, inside a private function called __SPP_CORE_FSM_registerConsumerProducer__: just before anything else runs, the user registers the services it wants as producers and consumers. A quick look at that function in fsm.c should make it clear; the FSM is covered in more detail in the next chapter. This is the top part of the figure.
+The first stage is registration. During the FSM initialization state, `CUSTOM_registerConsumerProducer()` in `main/custom.c` registers the application's producers and consumers.
 
-The second stage happens when __PUBSUB_init__ is called. It walks over all the registered consumers and producers and calls the init function pointer from each one's contract. It first sorts the consumers by priority, then initializes every module in that order — that's the middle part of the figure.
+Each producer is assigned a unique KPID, while each consumer receives a subscription bitmask identifying the packet types it wants to receive.
 
-Lastly, there's the ongoing work of the PUBSUB service, shown in the bottom part of the figure. The PUBSUB service calls the acquireData function of every registered producer. If a producer has data, it publishes it through __publish__, as described above. The PUBSUB service then checks whether any data has been published and, if so, delivers a copy of it to the subscribed consumers. Once a copy has been delivered, the packet is returned to the DATABANK service so it can be cleared and made available again. Finally, the PUBSUB service calls the __consumeData__ function of every registered consumer, in the same priority order it sorted them into back in __PUBSUB_init__.
+The second stage begins when `SPP_SERVICES_PUBSUB_init()` is called by the SPP core.
+
+PUBSUB sorts consumers in ascending priority order, initializes them, and then initializes producers in registration order. Individual initialization results are stored internally, allowing PUBSUB to skip modules that failed initialization.
+
+During normal operation, the FSM periodically executes the PUBSUB cycle:
+
+1. `SPP_SERVICES_PUBSUB_callProducers()` invokes successfully initialized producers.
+2. Producers acquire data and publish packets into the internal circular buffer.
+3. `SPP_SERVICES_PUBSUB_callConsumers()` dispatches one buffered packet to subscribed consumer mailboxes.
+4. Consumers process their pending data in ascending priority order.
+
+PUBSUB also supports cooperative preemption through `SPP_SERVICES_PUBSUB_signalProducerReady()`. When new producer data is pending, lower-priority consumers (priority > 1) may be skipped for the remainder of the current cycle.
+
+The internal packet buffer holds up to 128 packets. If it becomes full, publication returns an error and the incoming packet is discarded.
 
 That's it — the PUBSUB service is mainly responsible for managing SPP packets and delivering them to the right parts of the system in a safe way. Next, we'll look at the Finite State Machine, the last piece needed to understand how the full system fits together.

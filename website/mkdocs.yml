@@ -73,8 +73,10 @@ nav:
       - Solaris Packet: packet.md
       - Databank: databank.md
   - Services:
+      - Overview: services/index.md
       - BMP390: services/bmp390.md
       - ICM20948: services/icm20948.md
+      - SX1262: services/sx1262.md
       - Datalogger: services/datalogger.md
       - Databank: services/databank.md
       - Log: services/log.md

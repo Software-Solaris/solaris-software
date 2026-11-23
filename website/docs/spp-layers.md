@@ -5,7 +5,7 @@ Solaris Software is built in layers. Each layer has no knowledge of the layers a
 
 
 ## HAL layer
-The lowest layer is the HAL, or Hardware Abstraction Layer. It's the layer responsible for talking to the board's hardware — SPI, UART, clocks, I2C, and so on. If you need to reach a peripheral, this is where you'll find the function for it.
+The lowest layer is the HAL, or Hardware Abstraction Layer. It's the layer responsible for talking to the board's hardware — SPI, UART, GPIO, time, storage, and so on. If you need to reach a peripheral, this is where you'll find the function for it.
 
 The interesting part is that, because the HAL is the "abstracted" side of the code, it doesn't actually implement any functionality itself. For example, in the HAL layer you'll find a function like this one:
 
@@ -22,7 +22,7 @@ The interesting part is that, because the HAL is the "abstracted" side of the co
 SPP_RetVal_t SPP_HAL_SPI_transmit(void *p_handle, spp_uint8_t *p_data, spp_uint8_t length);
 ```
 
-This function sends an SPI transaction, and lives at solaris-packet-protocol/hal/spi/spi.h. But look at its implementation and you'll be a little underwhelmed — it looks like this:
+This function sends an SPI transaction, and lives at solaris-v2/spp/hal/spi/spi.h. But look at its implementation and you'll be a little underwhelmed — it looks like this:
 
 ```
 SPP_RetVal_t SPP_HAL_SPI_transmit(void *p_handle, spp_uint8_t *p_data, spp_uint8_t length)

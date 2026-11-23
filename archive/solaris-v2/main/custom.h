@@ -1,6 +1,6 @@
 /**
  * @file custom.h
- * @brief Finite State Machine (FSM) module for the SPP core.
+ * @brief Application-specific FSM configuration and error tracking.
  */
 
 #ifndef CUSTOM_H
@@ -14,7 +14,7 @@
 /* ----------------------------------------------------------------
  * DEFINES
  * ---------------------------------------------------------------- */
-#define K_CUSTOM_FSM_TABLE_SIZE (spp_uint8_t)(2U)
+#define K_CUSTOM_FSM_TABLE_SIZE (spp_uint8_t)(1U)
 
 /* ----------------------------------------------------------------
 * STRUCTS
@@ -28,13 +28,13 @@ typedef union
         spp_uint16_t bmpPubsubError         : 1;
         spp_uint16_t icmPubsubError         : 1;
         spp_uint16_t datalogggerPubsubError : 1;
-        spp_uint16_t e22mbl01PubsubError    : 1;
-        spp_uint16_t m10mPubsubError        : 1;
+        spp_uint16_t uartPubsubError        : 1;
+        spp_uint16_t sx1262PubsubError      : 1;
         spp_uint16_t bmpInitError           : 1;
         spp_uint16_t icmInitError           : 1;
         spp_uint16_t dataloggerInitError    : 1;
-        spp_uint16_t e22mbl01InitError      : 1;
-        spp_uint16_t m10mInitError          : 1;
+        spp_uint16_t uartInitError          : 1;
+        spp_uint16_t sx1262InitError        : 1;
         spp_uint16_t reserved               : 5;
     };
 } FsmErrors_t;
@@ -43,11 +43,11 @@ typedef union
  * PUBLIC FUNCTIONS
  * ---------------------------------------------------------------- */
 
-// TODO: Add Doxygen
+/**
+ * @brief Returns the application-specific FSM transition table.
+ * @return Pointer to the statically allocated transition table.
+ */
 const FSM_Transition_t *CUSTOM_getFsmTable(void);
-
-spp_uint32_t CUSTOM_getBusyTimeUs(void);
-spp_uint16_t CUSTOM_getProcessedSamples(void);
 
 
 #endif /* CUSTOM_H*/

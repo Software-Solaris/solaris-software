@@ -8,10 +8,15 @@ happening under the hood.
 
 ## The big picture
 
-The ESP32-S3 board is not plugged into anyone's laptop. It lives on a **remote VPS**
-connected 24/7. Developers connect to that server over an encrypted tunnel (WireGuard
-VPN) and use VS Code on their own machine to build code, flash it to the chip, and
-debug it — as if the board were on their desk.
+
+The Solaris development environment supports both local and remote ESP32-S3 development.
+
+- **Local:** The board is connected directly to the developer's computer via USB.
+- **Remote:** The board is connected to the Solaris development server, accessible through WireGuard VPN and SSH.
+
+Both configurations use Docker and ESP-IDF for building, flashing and debugging.
+
+### Remote development architecture
 
 ```
   ╔══════════════════════════════════════════════════════╗
@@ -57,7 +62,7 @@ debug it — as if the board were on their desk.
 
 ## Step 1 — Connect to the VPN
 
-Before you can do anything with the board, you need to be on the VPN.
+VPN access is required only for remote flashing, debugging and serial monitoring. Local USB development does not require a VPN connection.
 
 ### What is WireGuard?
 
@@ -186,7 +191,7 @@ other tools are available without installing anything on your machine.
 Open the terminal inside the container and run:
 
 ```bash
-cd solaris-v1
+cd solaris-v2
 idf.py build        # compiles everything → produces .elf and .bin files
 idf.py merge-bin    # merges bootloader + partition table + app into one .bin
 ```
@@ -197,7 +202,7 @@ Once built, run the VS Code task `flash-esp32s3-remote-only`
 (`Ctrl+Shift+P` → *Tasks: Run Task*). It does three things automatically:
 
 ```
-1. Finds the merged .bin in solaris-v1/build/
+1. Finds the merged .bin in solaris-v2/build/
 2. Copies it to the VPS:   scp merged.bin → raspi:/tmp/merged.bin
 3. Flashes via SSH:        ssh raspi "esptool write-flash 0x0 /tmp/merged.bin"
 ```

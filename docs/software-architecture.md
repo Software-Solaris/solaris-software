@@ -1,6 +1,6 @@
 # Software Architecture
 
-This document describes the repository structure, the firmware layers, the build system, and how everything fits together in `solaris-v1`. It is written for students who know basic C but have not worked on embedded systems before.
+This document describes the repository structure, the firmware layers, the build system, and how everything fits together in `solaris-v2`. It is written for students who know basic C but have not worked on embedded systems before.
 
 ---
 
@@ -8,135 +8,83 @@ This document describes the repository structure, the firmware layers, the build
 
 ```
 solaris-software/
-├── solaris-v1/                  # Active firmware version
-│   ├── main/                    # Application entry point (main.c)
-│   ├── compiler/                # ESP-IDF components (CMake build adapters)
-│   │   ├── spp/                 # Compiles SPP core + selected services
-│   │   └── spp_ports/           # Compiles platform HAL ports
-│   └── spp/                     # SPP library (git submodule)
-│       ├── core/                # Packet format, types, return codes, core init
-│       ├── hal/                 # HAL contract (headers + dispatch.c)
-│       ├── services/            # Packet lifecycle + sensor services
-│       │   ├── databank/        # Static packet pool
-│       │   ├── pubsub/          # Synchronous publish-subscribe router
-│       │   ├── log/             # Level-filtered logging
-│       │   ├── bmp390/          # BMP390 pressure/altitude service
-│       │   ├── icm20948/        # ICM20948 IMU service
-│       │   └── datalogger/      # SD card packet logger
-│       ├── util/                # CRC-16, macros, structof
-│       ├── ports/               # Concrete HAL implementations
-│       │   └── hal/
-│       │       ├── esp32/       # ESP32-S3 polling SPI, GPIO ISR, SD card
-│       │       └── stub/        # No-op stubs for host unit tests
-│       ├── tests/               # Cgreen unit tests (run on host)
-│       └── examples/            # baremetal_main.c — reference superloop
-├── archive/                     # Legacy firmware (v0.1, v0.2)
-├── docs/                        # Architecture documentation
-├── scripts/                     # Setup scripts (Linux, Windows)
-├── .devcontainer/               # Docker build environment
-├── .vscode/                     # VS Code tasks and debug config
-└── .github/workflows/           # CI/CD pipeline
+├── solaris-v2/                # Active firmware
+│   ├── main/                 # Application, FSM configuration
+│   ├── compiler/             # ESP-IDF components
+│   │   ├── spp/              # SPP library integration
+│   │   └── spp_ports/        # Platform ports integration
+│   └── spp/                  # SPP Git submodule
+│       ├── core/             # Packet definitions, PUBSUB, core
+│       ├── services/         # FSM, databank, sensors, telemetry
+│       ├── hal/              # Hardware abstraction interfaces
+│       ├── ports/            # Platform-specific implementations
+│       ├── util/             # Shared utilities
+│       └── tests/            # Unit tests
+├── archive/                  # Legacy firmware
+├── docs/                     # Architecture documentation
+├── scripts/                  # Setup scripts
+├── .devcontainer/            # Development environment
+├── .vscode/                  # Editor and debugger configuration
+└── .github/workflows/        # CI/CD
+
 ```
 
 ---
 
+
 ## Firmware layers
 
-Solaris v1 runs on a **bare-metal superloop** — there is no RTOS, no tasks, no queues, and no scheduler. Each layer only depends on the one below it.
+Solaris v2 uses a cooperative superloop architecture within ESP-IDF. Application execution is coordinated by a modular Finite State Machine (FSM).
 
-```
-  ┌──────────────────────────────────────────────────────────┐
-  │                      Application                         │
-  │         superloop / bare-metal main / user code          │
-  ├──────────────────────────────────────────────────────────┤
-  │                  Sensor Services                         │
-  │        bmp390 · icm20948 · datalogger                    │
-  ├──────────────────────────────────────────────────────────┤
-  │                  SPP Services                            │
-  │      databank · pubsub · log · service registry          │
-  ├──────────────────────────────────────────────────────────┤
-  │                       HAL                                │
-  │           SPI · GPIO · Storage · Time                    │
-  │               (contract only)                            │
-  ├──────────────────────────────────────────────────────────┤
-  │                  Platform Ports                          │
-  │   ports/hal/esp32/        ports/hal/stub/                │
-  └──────────────────────────────────────────────────────────┘
-              Hardware: ESP32-S3 · SPI bus
-```
+The firmware is divided into the following layers:
 
-### Data flow (bare-metal superloop pattern)
+1. **Application:** System startup and custom FSM configuration.
+2. **FSM:** State transitions and periodic execution of the PUBSUB cycle.
+3. **SPP Core:** Packet handling, PUBSUB routing and initialization.
+4. **Services:** Sensor acquisition, telemetry, data logging and other functional modules.
+5. **HAL:** Platform-independent interfaces for SPI, UART, GPIO, storage and time.
+6. **Platform Ports:** Hardware-specific implementations of the HAL interfaces.
 
-```
-ISR sets volatile drdyFlag
-  → superloop detects flag
-    → ServiceTask()
-        → SPP_SERVICES_DATABANK_getPacket()
-        → SPP_SERVICES_DATABANK_packetData(pkt, apid, seq, data, len)
-              fills all headers, copies payload, computes CRC-16
-        → SPP_SERVICES_PUBSUB_publish(pkt)
-              dispatches to all matching subscribers synchronously
-              then calls SPP_SERVICES_DATABANK_returnPacket(pkt) automatically
-```
+### Initialization
 
-### HAL — Hardware Abstraction Layer
+`app_main()` initializes the HAL and FSM, then enters the main execution loop through `APP_fsmLoop()`.
 
-HAL defines *what* hardware operations exist (SPI, GPIO, SD card storage) but contains no implementation. The headers in `spp/hal/` describe the `SPP_HalPort_t` struct — a table of function pointers. Platform-specific code fills this struct in `spp/ports/hal/`.
+During the initialization state, the application registers producers and consumers. `SPP_CORE_init()` then initializes logging, the databank and PUBSUB, including the registered modules.
 
-| Function | What it does |
-|---|---|
-| `SPP_HAL_SPI_busInit()` | Initialises SPI2_HOST (MISO 47, MOSI 38, CLK 48) |
-| `SPP_HAL_SPI_deviceInit()` | Registers a device on the bus (ICM at CS 21, BMP at CS 18) |
-| `SPP_HAL_SPI_transmit()` | Full-duplex SPI transaction; handles R/W bit per device |
-| `SPP_HAL_GPIO_configInterrupt()` | Configures a GPIO pin for edge-triggered interrupts |
-| `SPP_HAL_GPIO_registerIsr()` | Attaches an ISR that sets a `volatile spp_bool_t` flag |
-| `SPP_HAL_STORAGE_mount()` | Mounts the SD card via FATFS + SDSPI |
-| `SPP_HAL_STORAGE_unmount()` | Unmounts the SD card safely |
-| `SPP_HAL_TIME_getTimeMs()` | Returns the current time in milliseconds |
+The custom FSM transitions the application to READY after successful core initialization and publishes an initialization-status packet.
 
-GPIO ISRs are minimal: they set a `volatile spp_bool_t` flag and return immediately. No RTOS calls, no yield.
+### Data flow
 
-### SPP Core
+The FSM periodically executes the PUBSUB cycle:
 
-The Solaris Packet Protocol defines a common packet format for all sensor data:
+1. `SPP_SERVICES_PUBSUB_callProducers()` invokes registered producers.
+2. Producers acquire data, obtain packets from the databank and publish them.
+3. `publish()` copies packets into the internal circular buffer and returns the originals to the databank.
+4. `SPP_SERVICES_PUBSUB_callConsumers()` dispatches one buffered packet to matching consumer mailboxes and invokes consumer processing.
 
-```
-SPP_Packet_t
-├── Primary header    APID · sequence · payload_len
-├── Secondary header  timestamp_ms · drop_counter
-├── Payload           up to 48 bytes of sensor data
-└── CRC-16/CCITT
-```
+Consumers execute in ascending numerical priority order. The implementation also supports producer-ready signaling for preemption.
 
-**Built-in services on top of Core:**
+### Packet format
 
-**Databank** — static pool of 5 packets. Call `SPP_SERVICES_DATABANK_getPacket()` to lease one, fill it with `SPP_SERVICES_DATABANK_packetData()`, then publish it. No `malloc` is ever called.
+SPP uses a fixed-size 64-byte packet containing:
 
-**Pub/Sub** — synchronous publish-subscribe router. Subscribers register with `SPP_SERVICES_PUBSUB_subscribe(apid, handler, ctx)`. `SPP_SERVICES_PUBSUB_publish(pkt)` dispatches to all matching handlers synchronously and returns the packet to the databank automatically. `K_SPP_APID_ALL (0xFFFF)` subscribes to every packet.
+- Primary header: version, APID, sequence and payload length.
+- Secondary header: timestamp and drop counter.
+- Payload: up to 50 bytes.
+- CRC-16.
 
-**Logging** — `SPP_LOGE/W/I/D/V(tag, fmt, ...)` level-filtered macros. Output registered via `SPP_SERVICES_LOG_registerOutput()`. In `main.c` the log output is bridged into pub/sub so log messages are published as `K_SPP_APID_LOG (0x0001)` packets and reach the SD card logger.
+### Main services
 
-**Service registry** — up to 16 services registered via `SPP_SERVICES_register()`. `SPP_SERVICES_initAll()` and `SPP_SERVICES_startAll()` iterate the registry and call each service's `init` and `start` callbacks.
+- **Databank:** Static pool of 50 packets.
+- **PUBSUB:** Producer/consumer registration, buffered routing and priority handling.
+- **FSM:** Modular transition tables with internal and application-defined behavior.
+- **BMP390:** Pressure, temperature and altitude acquisition.
+- **ICM20948:** Accelerometer, gyroscope and quaternion telemetry.
+- **Datalogger:** Binary packet logging directly to SD card sectors.
+- **SX1262:** Radio telemetry consumer.
+- **Logging:** Configurable diagnostic output.
 
-### Sensor services
-
-**BMP390** (`spp/services/bmp390/`)
-- Barometer: pressure, temperature, altitude (APID `0x0101`)
-- Data-ready interrupt via GPIO → sets `bmpData.drdyFlag`
-- `SPP_SERVICES_BMP390_serviceTask()` called from superloop when flag is set
-- Publishes 3×float payload (pressure, temperature, altitude)
-
-**ICM20948** (`spp/services/icm20948/`)
-- 9-axis IMU: accelerometer, gyroscope, magnetometer AK09916 (APID `0x0201`)
-- DMP (Digital Motion Processor) computes quaternions on-chip
-- Data-ready interrupt → sets `icmData.drdyFlag`
-- `SPP_SERVICES_ICM20948_serviceTask()` drains DMP FIFO, publishes 9×float (ax/ay/az/gx/gy/gz/mx/my/mz)
-
-**Datalogger** (`spp/services/datalogger/`)
-- Pub/sub subscriber. Writes one line per packet to SD card:
-  - `K_SPP_APID_LOG` packets: payload string + `\n`
-  - Sensor packets: `ts=<ms> apid=0x<X> seq=<N> len=<N> payload_hex=...\n`
-- Flushes every N packets to limit data loss on power cut
+Additional modules, including GNSS, are available in the source tree but are not necessarily enabled in the default build.
 
 ---
 
@@ -144,7 +92,7 @@ SPP_Packet_t
 
 ### How ESP-IDF finds the SPP library
 
-ESP-IDF discovers components by scanning directories listed in `EXTRA_COMPONENT_DIRS`. In `solaris-v1/CMakeLists.txt`, this is set to the `compiler/` directory:
+ESP-IDF discovers components by scanning directories listed in `EXTRA_COMPONENT_DIRS`. In `solaris-v2/CMakeLists.txt`, this is set to the `compiler/` directory:
 
 ```cmake
 set(EXTRA_COMPONENT_DIRS compiler)
@@ -155,7 +103,7 @@ ESP-IDF then finds two components inside `compiler/`:
 - `compiler/spp/` — compiles the SPP core and any enabled services
 - `compiler/spp_ports/` — compiles the ESP32 HAL port
 
-The actual SPP source code lives in `solaris-v1/spp/` as a **git submodule** — a separate repository embedded inside this one. After cloning `solaris-software`, initialise it:
+The actual SPP source code lives in `solaris-v2/spp/` as a **git submodule** — a separate repository embedded inside this one. After cloning `solaris-software`, initialise it:
 
 ```bash
 git submodule update --init
@@ -165,12 +113,20 @@ git submodule update --init
 
 `compiler/spp/CMakeLists.txt` exposes options to include or exclude individual services. All default to ON.
 
-| Option | Default | What it enables |
+
+| Option | Default | Description |
 |---|---|---|
-| `SPP_SERVICE_BMP390` | ON | BMP390 pressure sensor service |
-| `SPP_SERVICE_ICM20948` | ON | ICM20948 IMU service |
-| `SPP_SERVICE_DATALOGGER` | ON | SD card datalogger service |
-| `SPP_HAL_ESP32` | ON | ESP32-S3 HAL (polling SPI, no FreeRTOS) |
+| `SPP_SERVICE_BMP390` | ON | BMP390 sensor |
+| `SPP_SERVICE_BMP390_SIM` | OFF | Simulated BMP390 data |
+| `SPP_SERVICE_ICM20948` | ON | ICM20948 IMU |
+| `SPP_SERVICE_DATALOGGER` | ON | SD card datalogger |
+| `SPP_SX1262` | ON | SX1262 radio telemetry |
+| `SPP_MAXM10M20B` | OFF | GNSS service |
+| `SPP_SERVICE_UART` | OFF | UART consumer |
+| `SPP_ENCRYPTION` | OFF | AES-128-GCM encryption |
+| `SPP_DEBUG_PRINT` | OFF | Sensor debug output |
+| `SPP_ANTENNA_DEVKIT` | OFF | Antenna development module |
+| `SPP_HAL_ESP32` | ON | ESP32-S3 HAL port |
 
 To disable a service at build time:
 
@@ -215,30 +171,31 @@ ESP-IDF picks up the new component automatically because `compiler/` is already 
 
 ---
 
+
 ## HAL contract
 
-The full port contract is defined in `spp/hal/port.h`.
+The HAL interface is defined in `spp/hal/hal.h` through `SPP_HalPort_t`.
 
-### SPP_HalPort_t
+The structure contains platform-independent function pointers grouped into five interfaces:
 
-| Field | What it does |
+| Interface | Responsibilities |
 |---|---|
-| `spiBusInit` | Initialise the SPI bus |
-| `spiGetHandle` | Return a device handle by index |
-| `spiDeviceInit` | Register a device on the bus |
-| `spiTransmit` | Perform a full-duplex SPI transaction |
-| `gpioConfigInterrupt` | Configure a GPIO pin for interrupts |
-| `gpioRegisterIsr` | Attach an ISR to a GPIO pin |
-| `storageMount` | Mount a storage medium |
-| `storageUnmount` | Unmount a storage medium |
-| `getTimeMs` | Return the current system time in milliseconds |
-| `delayMs` | Busy-wait delay |
+| `SPP_HALSpi_t` | SPI initialization, transactions and device configuration |
+| `SPP_HALUart_t` | UART initialization, transmission and reception |
+| `SPP_HALGpio_t` | GPIO interrupts, digital input and output |
+| `SPP_HALStorage_t` | Storage initialization and block writing |
+| `SPP_HALTime_t` | Time measurement and delays |
+
+The ESP32-S3 implementation is located in `spp/ports/hal/esp32/`.
+
+The application registers the selected HAL port through `SPP_HAL_init()`.
 
 ---
 
 ## Return types and error handling
 
-All SPP functions return `SPP_RetVal_t`. Check the return value of every call.
+
+SPP functions that return `SPP_RetVal_t` report their execution status through the standard error codes. Callers should handle these results appropriately.
 
 | Value | Meaning |
 |---|---|
@@ -255,8 +212,6 @@ All SPP functions return `SPP_RetVal_t`. Check the return value of every call.
 | `K_SPP_ERROR_NO_PORT` | A HAL port was not registered before use |
 | `K_SPP_ERROR_REGISTRY_FULL` | The service registry has no free slots |
 
-For rich error context (source file and line number), use `SPP_CORE_errToString()` and `SPP_CORE_errToStringR()`.
-
 ---
 
 ## Naming conventions
@@ -266,7 +221,7 @@ For rich error context (source file and line number), use `SPP_CORE_errToString(
 | `K_MODULE_*` | Constants and `#define` macros | `K_SPP_PKT_PAYLOAD_MAX`, `K_ICM20948_BANK0` |
 | `K_MODULE_ENUM_VALUE` | Enum values | `K_SPP_LOG_VERBOSE` |
 | `MODULE_TypeName_t` | Type definitions (struct, enum, typedef) | `SPP_Packet_t`, `BMP390_ServiceCtx_t` |
-| `MODULE_SUBMODULE_functionName()` | Public functions | `SPP_SERVICES_DATABANK_getPacket()`, `SPP_SERVICES_BMP390_serviceTask()` |
+| `MODULE_SUBMODULE_functionName()` | Public functions | `SPP_SERVICES_DATABANK_getPacket()`, `SPP_SERVICES_BMP390_getProducerContract()` |
 | `HAL_TARGET_functionName()` | HAL port internal functions | `SPP_PORTS_HAL_ESP32_spiBusInit()` |
 | `p_name` | Pointer parameters and pointer variables | `p_cfg`, `p_handler`, `p_data` |
 | `s_name` | Static module-level variables | `s_busInitialized`, `s_logBusy` |
@@ -276,15 +231,18 @@ File names use **camelCase**: `halEsp32.c`, `macrosEsp32.h`, `returnTypes.h`.
 
 ---
 
-## APID allocation
 
-| Range | Owner |
-|---|---|
-| `0x0001` | `K_SPP_APID_LOG` — log message packets |
-| `0x0100`–`0x01FF` | Solaris sensor services (BMP390 = `0x0101`) |
-| `0x0200`–`0x02FF` | Reserved (ICM20948 = `0x0201`) |
-| `0x0300`–`0xFFFE` | User-defined |
-| `0xFFFF` | `K_SPP_APID_ALL` — pub/sub wildcard |
+## Packet identifiers (KPID)
+
+SPP uses a 16-bit identifier field as a routing bitmask.
+
+- `0x0001`: Reserved for logging.
+- `0x0002`: Reserved for FSM telemetry.
+- Remaining bits: Assigned to registered producers.
+
+Each producer receives a unique bit during registration. Consumers subscribe using a bitmask combining the identifiers they wish to receive.
+
+Identifier definitions are maintained in `spp/services/kpid.h`.
 
 ---
 
@@ -298,17 +256,7 @@ Run the setup script with sudo — it installs Git, Docker Engine, and VS Code/V
 sudo ./scripts/install-linux.sh
 ```
 
-After the script finishes, add your user to the `docker` group so you can run Docker without sudo:
-
-```bash
-sudo usermod -aG docker $USER
-```
-
-Then **log out and back in** (or run `newgrp docker`) for the group change to take effect. Verify with:
-
-```bash
-docker run --rm hello-world
-```
+The script automatically configures Docker permissions and starts a new user session if necessary.
 
 ### Windows
 
@@ -318,7 +266,7 @@ docker run --rm hello-world
 
 ---
 
-## SSH configuration (required for flash and debug)
+## SSH configuration (remote flash and debug)
 
 Flash and debug connect to the remote ESP32-S3 board over SSH. The `ssh raspi` alias must be configured on your **host machine** — not inside the container. The container inherits the host's `~/.ssh` folder automatically (see `.devcontainer/devcontainer.json`).
 
