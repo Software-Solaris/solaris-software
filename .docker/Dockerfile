@@ -1,10 +1,11 @@
 FROM ubuntu:latest
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     curl \
+    git \
     gnupg2 \
     nano \
     bash-completion \
@@ -13,20 +14,17 @@ RUN apt-get update && apt-get install -y \
     grep \
     clang-format \
     cppcheck \
-    cmake
+    cmake 
 
-RUN mkdir solaris 
+RUN useradd -m -s /bin/bash solaris
 
 WORKDIR /solaris
 
-RUN curl -o /etc/bash_completion.d/git-completion.bash \
-    https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
-
 COPY setup-terminal.sh /solaris/setup-terminal.sh
-RUN chmod +x /solaris/setup-terminal.sh
+RUN chmod +x /solaris/setup-terminal.sh \
+    && echo "source /etc/bash_completion.d/git-completion.bash" >> /home/solaris/.bashrc \
+    && echo "source /solaris/setup-terminal.sh" >> /home/solaris/.bashrc \
+    && chown -R solaris:solaris /solaris
 
-RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \
-    && echo "source /solaris/setup-terminal.sh" >> /root/.bashrc
-
-RUN useradd -ms /bin/bash solaris
 USER solaris
+RUN echo 'source /solaris/setup-terminal.sh' >> /home/solaris/.bashrc

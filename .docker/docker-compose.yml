@@ -3,13 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        USERNAME: solaris
-        USER_UID: 1000
-        USER_GID: 1000
-    privileged: true
-    user: solaris
-    volumes:
-      - ${HOME}/.ssh:/tmp/host-ssh:ro
-      - ${HOME}/.gitconfig:/tmp/host-gitconfig:ro
     working_dir: /solaris
+    volumes:
+      - ..:/solaris
+      - ${HOME}/.ssh:/home/solaris/.ssh:ro
+    command: sleep infinity
