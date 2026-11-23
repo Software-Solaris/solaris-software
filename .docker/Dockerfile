@@ -22,7 +22,7 @@ WORKDIR /solaris
 RUN curl -o /etc/bash_completion.d/git-completion.bash \
     https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
 
-COPY .devcontainer/setup-terminal.sh /solaris/setup-terminal.sh
+COPY setup-terminal.sh /solaris/setup-terminal.sh
 RUN chmod +x /solaris/setup-terminal.sh
 
 RUN echo "source /etc/bash_completion.d/git-completion.bash" >> /root/.bashrc \

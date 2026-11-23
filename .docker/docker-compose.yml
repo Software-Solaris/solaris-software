@@ -1,8 +1,8 @@
 services:
   solaris-development:
     build:
-      context: ..
-      dockerfile: .devcontainer/Dockerfile
+      context: .
+      dockerfile: Dockerfile
       args:
         USERNAME: solaris
         USER_UID: 1000
@@ -10,7 +10,6 @@ services:
     privileged: true
     user: solaris
     volumes:
-      - ..:${HOME}/Documents/solaris-software:cached
       - ${HOME}/.ssh:/tmp/host-ssh:ro
       - ${HOME}/.gitconfig:/tmp/host-gitconfig:ro
     working_dir: /solaris
